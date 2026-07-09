@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+/* K-Kouman design tokens */
+:root {
+  --kk-bg: #F6F2EA;
+  --kk-dark: #2C342E;
+  --kk-mid: #5C645B;
+  --kk-muted: #8A9183;
+  --kk-faint: #A8AEA1;
+  --kk-green: #557B53;
+  --kk-green-hover: #486946;
+  --kk-green-light: #E4EDDD;
+  --kk-purple: #8E7CB8;
+  --kk-purple-hover: #7A6AA5;
+  --kk-purple-light: #ECE7F5;
+  --kk-gold: #C58A3D;
+  --kk-gold-light: #FBEEDD;
+  --kk-border: #EDE8DC;
+  --kk-border-mid: #D8D2C4;
+  --kk-footer: #F1ECE1;
+  --kk-selection: #DCD2EE;
+}
+
+@theme inline {
+  --color-background: var(--kk-bg);
+  --color-foreground: var(--kk-dark);
+  --font-sans: var(--font-mulish);
+  --font-serif: var(--font-lora);
+
+  /* Tailwind custom color classes */
+  --color-kk-bg: var(--kk-bg);
+  --color-kk-dark: var(--kk-dark);
+  --color-kk-mid: var(--kk-mid);
+  --color-kk-muted: var(--kk-muted);
+  --color-kk-faint: var(--kk-faint);
+  --color-kk-green: var(--kk-green);
+  --color-kk-green-light: var(--kk-green-light);
+  --color-kk-purple: var(--kk-purple);
+  --color-kk-purple-light: var(--kk-purple-light);
+  --color-kk-gold: var(--kk-gold);
+  --color-kk-gold-light: var(--kk-gold-light);
+  --color-kk-border: var(--kk-border);
+  --color-kk-border-mid: var(--kk-border-mid);
+  --color-kk-footer: var(--kk-footer);
+}
+
+body {
+  background: var(--kk-bg);
+  color: var(--kk-dark);
+  font-family: var(--font-mulish, 'Mulish', sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--kk-selection);
+}
+
+/* Reusable K-Kouman component styles */
+.kk-input {
+  width: 100%;
+  border: 1.5px solid var(--kk-border-mid);
+  border-radius: 14px;
+  padding: 13px 16px;
+  color: var(--kk-dark);
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  font-family: var(--font-mulish, 'Mulish', sans-serif);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.kk-input::placeholder {
+  color: var(--kk-faint);
+}
+
+.kk-input:focus {
+  border-color: var(--kk-purple);
+  box-shadow: 0 0 0 3px rgba(142, 124, 184, 0.12);
+}
+
+.kk-input:focus.kk-input--green {
+  border-color: var(--kk-green);
+  box-shadow: 0 0 0 3px rgba(85, 123, 83, 0.12);
+}
+
+.kk-btn-purple {
+  background: var(--kk-purple);
+  color: #fff;
+  border-radius: 24px;
+  padding: 14px 30px;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-mulish, 'Mulish', sans-serif);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.kk-btn-purple:hover:not(:disabled) {
+  background: var(--kk-purple-hover);
+}
+
+.kk-btn-purple:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.kk-btn-green {
+  background: var(--kk-green);
+  color: #fff;
+  border-radius: 24px;
+  padding: 14px 30px;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-mulish, 'Mulish', sans-serif);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kk-btn-green:hover:not(:disabled) {
+  background: var(--kk-green-hover);
+}
+
+.kk-btn-green:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.kk-btn-outline {
+  background: #fff;
+  color: var(--kk-mid);
+  border-radius: 24px;
+  padding: 13px 28px;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: var(--font-mulish, 'Mulish', sans-serif);
+  cursor: pointer;
+  border: 1.5px solid var(--kk-border-mid);
+  transition: border-color 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kk-btn-outline:hover {
+  border-color: var(--kk-green);
+  color: var(--kk-green);
+}
+
+.kk-card {
+  background: #fff;
+  border: 1px solid var(--kk-border);
+  border-radius: 20px;
+  box-shadow: 0 10px 34px rgba(60, 70, 55, 0.05);
+}
+
+.kk-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--kk-mid);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.kk-error {
+  padding: 12px 16px;
+  background: #FFF1F0;
+  border: 1px solid #FFCAC8;
+  border-radius: 14px;
+  font-size: 13.5px;
+  color: #C0392B;
+}
+
+/* Register page choice cards */
+.kk-register-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1.5px solid var(--kk-border);
+  background: #fff;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.kk-register-card--green:hover {
+  border-color: var(--kk-green);
+  background: var(--kk-green-light);
+}
+
+.kk-register-card--purple:hover {
+  border-color: var(--kk-purple);
+  background: var(--kk-purple-light);
+}

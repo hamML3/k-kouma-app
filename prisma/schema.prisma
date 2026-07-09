@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================================================
+// MODULE 1 : UTILISATEURS & PROFILS
+// =========================================================================
+
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique @db.VarChar(180)
+  phoneNumber  String?    @unique @db.VarChar(20) @map("phone_number")
+  passwordHash String     @db.VarChar(255) @map("password_hash")
+  status       UserStatus @default(active)
+  role         UserRole   @default(patient)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  patientProfile       PatientProfile?
+  therapistProfile     TherapistProfile?
+  patientSubscription  PatientSubscription?
+
+  patientAssignments   PatientTherapistAssignment[] @relation("PatientAssignments")
+  therapistAssignments PatientTherapistAssignment[] @relation("TherapistAssignments")
+
+  patientAppointments   Appointment[] @relation("PatientAppointments")
+  therapistAppointments Appointment[] @relation("TherapistAppointments")
+
+  @@index([status, role])
+  @@map("users")
+}
+
+enum UserStatus {
+  active
+  suspended
+  archived
+}
+
+enum UserRole {
+  patient
+  therapist
+  admin
+}
+
+model PatientProfile {
+  id                Int     @id @default(autoincrement())
+  userId            Int     @unique @map("user_id")
+  nickname          String  @db.VarChar(50)
+  avatarUrl         String? @db.VarChar(255) @map("avatar_url")
+  onboardingAnswers Json?   @map("onboarding_answers")
+  timezone          String  @default("UTC") @db.VarChar(50)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("patient_profiles")
+}
+
+model TherapistProfile {
+  id                Int     @id @default(autoincrement())
+  userId            Int     @unique @map("user_id")
+  firstName         String  @db.VarChar(100) @map("first_name")
+  lastName          String  @db.VarChar(100) @map("last_name")
+  specialties       String? @db.Text
+  bio               String? @db.Text
+  profilePictureUrl String? @db.VarChar(255) @map("profile_picture_url")
+  isVerified        Boolean  @default(false) @map("is_verified")
+  hourlyRate        Decimal  @default(0.00) @db.Decimal(10, 2) @map("hourly_rate")
+  languages         String?  @db.VarChar(255)
+  diplomaUrl        String?  @db.VarChar(512) @map("diploma_url")
+  documentsJson     Json?    @map("documents_json")
+  rejectedAt        DateTime? @map("rejected_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("therapist_profiles")
+}
+
+// =========================================================================
+// MODULE 2 : ABONNEMENTS & PAIEMENT MOBILE MONEY
+// =========================================================================
+
+model SubscriptionPlan {
+  id                   Int     @id @default(autoincrement())
+  name                 String  @db.VarChar(50)
+  price                Decimal @db.Decimal(10, 2)
+  currency             String  @default("XOF") @db.VarChar(3)
+  videoMinutesIncluded Int     @default(180) @map("video_minutes_included")
+  isActive             Boolean @default(true) @map("is_active")
+
+  subscriptions PatientSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model PatientSubscription {
+  id                    Int                @id @default(autoincrement())
+  patientId             Int                @unique @map("patient_id")
+  planId                Int                @map("plan_id")
+  status                SubscriptionStatus @default(unpaid)
+  lastOmTransactionRef  String?            @db.VarChar(255) @map("last_om_transaction_ref")
+  currentPeriodStart    DateTime           @map("current_period_start")
+  currentPeriodEnd      DateTime           @map("current_period_end")
+  videoMinutesRemaining Int                @map("video_minutes_remaining")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  patient User             @relation(fields: [patientId], references: [id])
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([status])
+  @@map("patient_subscriptions")
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  unpaid
+}
+
+// =========================================================================
+// MODULE 3 : RELATIONS, MATCHING & RENDEZ-VOUS
+// =========================================================================
+
+model PatientTherapistAssignment {
+  id          Int              @id @default(autoincrement())
+  patientId   Int              @map("patient_id")
+  therapistId Int              @map("therapist_id")
+  status      AssignmentStatus @default(active)
+  assignedAt  DateTime         @default(now()) @map("assigned_at")
+
+  patient   User @relation("PatientAssignments", fields: [patientId], references: [id])
+  therapist User @relation("TherapistAssignments", fields: [therapistId], references: [id])
+
+  @@unique([patientId, therapistId])
+  @@map("patient_therapist_assignments")
+}
+
+enum AssignmentStatus {
+  active
+  paused
+  terminated
+}
+
+model Appointment {
+  id              Int               @id @default(autoincrement())
+  patientId       Int               @map("patient_id")
+  therapistId     Int               @map("therapist_id")
+  scheduledAt     DateTime          @map("scheduled_at")
+  durationMinutes Int               @default(45) @map("duration_minutes")
+  status          AppointmentStatus @default(pending)
+  type            AppointmentType   @default(video)
+  webrtcRoomId    String?           @db.VarChar(100) @map("webrtc_room_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
+  therapist User @relation("TherapistAppointments", fields: [therapistId], references: [id])
+
+  @@index([scheduledAt])
+  @@map("appointments")
+}
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  canceled
+  completed
+}
+
+enum AppointmentType {
+  text
+  audio
+  video
+}
+
+// =========================================================================
+// MODULE 4 : WEBRTC SIGNALING
+// =========================================================================
+
+model WebrtcSignal {
+  id        Int      @id @default(autoincrement())
+  roomId    String   @db.VarChar(100) @map("room_id")
+  fromRole  String   @db.VarChar(20)  @map("from_role")
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([roomId, createdAt])
+  @@map("webrtc_signals")
+}

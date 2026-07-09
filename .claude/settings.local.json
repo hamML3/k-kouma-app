@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /home/ham/Documents/k_kouma_app/lib/actions)",
+      "Bash(npx prisma *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/next-auth/package.json'\\); console.log\\(pkg.version\\)\")",
+      "Bash(mkdir -p /home/ham/Documents/k_kouma_app/app/therapists/\\\\[id\\\\])",
+      "Bash(mkdir -p /home/ham/Documents/k_kouma_app/app/patients/\\\\[id\\\\])",
+      "Bash(sudo /opt/lampp/bin/mysql -u root -e \"CREATE TABLE IF NOT EXISTS k_koumadb.webrtc_signals \\(id INT AUTO_INCREMENT PRIMARY KEY, room_id VARCHAR\\(100\\) NOT NULL, from_role VARCHAR\\(20\\) NOT NULL, payload JSON NOT NULL, created_at DATETIME\\(3\\) NOT NULL DEFAULT CURRENT_TIMESTAMP\\(3\\), INDEX idx_room_created \\(room_id, created_at\\)\\) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\")",
+      "Bash(mkdir -p /home/ham/Documents/k_kouma_app/app/api/webrtc/\\\\[roomId\\\\]/signal)",
+      "Bash(mkdir -p \"/home/ham/Documents/k_kouma_app/app/appointments/[id]/room\")",
+      "Bash(npx tsx -e ' *)",
+      "Bash(/opt/lampp/bin/mysql -u root k_koumadb -e \"SELECT * FROM patient_therapist_assignments; SELECT * FROM therapist_profiles;\")",
+      "Bash(node -e ' *)",
+      "Bash(/opt/lampp/bin/mysql -u root k_koumadb -e \"DELETE FROM patient_therapist_assignments WHERE patient_id=1 AND therapist_id=2;\")",
+      "Bash(echo \"Started PID: $!\")",
+      "Bash(sleep 8 && tail -30 /tmp/nextjs-dev.log)",
+      "Read(//tmp/**)",
+      "Bash(kill 100294)",
+      "Bash(npx tsc *)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(npm --version)",
+      "Bash(cat /etc/os-release | head -5; which apt 2>/dev/null || which apt-get 2>/dev/null || which yum 2>/dev/null)",
+      "Read(//usr/lib/**)"
+    ],
+    "additionalDirectories": [
+      "/home/ham/Documents/k_kouma_app/lib",
+      "/home/ham/Documents/k_kouma_app/app/therapists",
+      "/home/ham/Documents/k_kouma_app/app/patients",
+      "/home/ham/Documents/k_kouma_app/app/api/webrtc/[roomId]",
+      "/home/ham/Documents/k_kouma_app/app/appointments/[id]"
+    ]
+  }
+}
