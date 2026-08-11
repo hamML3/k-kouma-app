@@ -24,7 +24,14 @@
       "Bash(gh --version)",
       "Bash(npm --version)",
       "Bash(cat /etc/os-release | head -5; which apt 2>/dev/null || which apt-get 2>/dev/null || which yum 2>/dev/null)",
-      "Read(//usr/lib/**)"
+      "Read(//usr/lib/**)",
+      "Read(//proc/**)",
+      "Bash(pm2 --version)",
+      "Bash(/opt/lampp/bin/mysql --version)",
+      "Bash(mysql --version)",
+      "Read(//opt/lampp/bin/**)",
+      "Bash(nginx -v)",
+      "Bash(apache2 -v)"
     ],
     "additionalDirectories": [
       "/home/ham/Documents/k_kouma_app/lib",
