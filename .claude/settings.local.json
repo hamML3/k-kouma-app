@@ -31,7 +31,12 @@
       "Bash(mysql --version)",
       "Read(//opt/lampp/bin/**)",
       "Bash(nginx -v)",
-      "Bash(apache2 -v)"
+      "Bash(apache2 -v)",
+      "Read(//home/ham/Téléchargements/**)",
+      "Bash(mkdir -p /home/ham/Documents/k_kouma_app/public/images)",
+      "Bash(cp \"/home/ham/Téléchargements/WhatsApp Image 2026-08-15 at 12.19.42.jpeg\" /home/ham/Documents/k_kouma_app/public/images/therapy-session.jpg)",
+      "Bash(cp \"/home/ham/Téléchargements/WhatsApp Image 2026-08-15 at 12.19.42 \\(1\\).jpeg\" /home/ham/Documents/k_kouma_app/public/images/meditation.jpg)",
+      "Bash(cp \"/home/ham/Téléchargements/WhatsApp Image 2026-08-15 at 12.19.43.jpeg\" /home/ham/Documents/k_kouma_app/public/images/thinking.jpg)"
     ],
     "additionalDirectories": [
       "/home/ham/Documents/k_kouma_app/lib",
