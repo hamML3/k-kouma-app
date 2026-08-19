@@ -26,7 +26,7 @@ function Navbar() {
           <Logo size={34} />
           <div>
             <p className="font-bold text-base leading-none" style={{ fontFamily: "var(--font-lora)", color: "#2C342E" }}>
-              K-Kouman
+              K-Kouma
             </p>
             <p className="text-[10px] leading-none mt-0.5" style={{ color: "#8A9183" }}>
               Votre bien-être, notre mission
@@ -83,7 +83,7 @@ function Hero() {
           Prenez soin de votre <span style={{ color: "#557B53" }}>bien-être mental</span>
         </h1>
         <p className="text-base leading-relaxed mb-8" style={{ color: "#5C645B" }}>
-          K-Kouman vous met en relation avec des psychologues qualifiés pour vous écouter,
+          K-Kouma vous met en relation avec des psychologues qualifiés pour vous écouter,
           vous soutenir et vous accompagner en toute confidentialité.
         </p>
 
@@ -216,14 +216,17 @@ function TherapyTypes() {
 /* ─── Wellbeing quizzes ──────────────────────────────────────────────────── */
 function WellbeingSection() {
   const topics = [
-    { emoji: "🌿", label: "Stress" },
-    { emoji: "😰", label: "Anxiété" },
-    { emoji: "🌧️", label: "Dépression" },
-    { emoji: "🔥", label: "Burn-out" },
-    { emoji: "⚡", label: "TDAH" },
-    { emoji: "🧩", label: "Autisme" },
-    { emoji: "💛", label: "Estime de soi" },
-    { emoji: "🌙", label: "Qualité du sommeil" },
+    { emoji: "🌿", label: "Stress",               key: "stress"    },
+    { emoji: "😰", label: "Anxiété",              key: "anxiete"   },
+    { emoji: "🌧️", label: "Dépression",           key: "depression"},
+    { emoji: "🔥", label: "Burn-out",             key: "burnout"   },
+    { emoji: "⚡", label: "TDAH",                 key: "tdah"      },
+    { emoji: "🧩", label: "Autisme",              key: "autisme"   },
+    { emoji: "💛", label: "Estime de soi",        key: "estime"    },
+    { emoji: "😴", label: "Qualité du sommeil",   key: "sommeil"   },
+    { emoji: "🫂", label: "Solitude",             key: "solitude"  },
+    { emoji: "🌊", label: "Émotions",             key: "emotions"  },
+    { emoji: "🌱", label: "Bien-être global",     key: "bienetre"  },
   ];
 
   return (
@@ -240,17 +243,18 @@ function WellbeingSection() {
             Explorez votre bien-être émotionnel gratuitement.
           </p>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
             {topics.map((t) => (
-              <div
-                key={t.label}
-                className="rounded-2xl p-3 flex flex-col items-center text-center cursor-pointer transition-all hover:scale-105"
+              <Link
+                key={t.key}
+                href={`/quiz?topic=${t.key}`}
+                className="rounded-2xl p-3 flex flex-col items-center text-center transition-all hover:scale-105 hover:shadow-sm"
                 style={{ background: "#fff", border: "1px solid #EDE8DC" }}
               >
                 <span className="text-2xl mb-1.5">{t.emoji}</span>
                 <p className="text-xs font-bold leading-tight" style={{ color: "#2C342E" }}>{t.label}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "#A8AEA1" }}>Quiz</p>
-              </div>
+                <p className="text-[10px] mt-0.5 font-semibold" style={{ color: "#557B53" }}>Quiz gratuit</p>
+              </Link>
             ))}
           </div>
 
@@ -263,7 +267,7 @@ function WellbeingSection() {
               Mieux vous comprendre est le premier pas vers le mieux-être.
             </p>
             <Link
-              href="/onboarding"
+              href="/quiz"
               className="shrink-0 font-bold text-sm px-4 py-2.5 rounded-full whitespace-nowrap"
               style={{ background: "#557B53", color: "#fff" }}
             >
@@ -608,7 +612,7 @@ function Footer() {
           <div className="flex items-center gap-2.5 mb-3">
             <Logo size={30} />
             <p className="font-bold text-base" style={{ fontFamily: "var(--font-lora)", color: "#fff" }}>
-              K-Kouman
+              K-Kouma
             </p>
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "#8A9183" }}>
@@ -676,7 +680,7 @@ function Footer() {
         style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
       >
         <p className="text-xs" style={{ color: "#8A9183" }}>
-          © 2026 K-Kouman. Tous droits réservés.
+          © 2026 K-Kouma. Tous droits réservés.
         </p>
       </div>
     </footer>

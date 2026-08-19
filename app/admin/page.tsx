@@ -74,7 +74,7 @@ export default async function AdminDashboardPage() {
           Tableau de bord
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-          Vue d&apos;ensemble de la plateforme K-Kouman
+          Vue d&apos;ensemble de la plateforme K-Kouma
         </p>
       </div>
 

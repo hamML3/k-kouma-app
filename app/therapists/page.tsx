@@ -6,7 +6,7 @@ import { chooseTherapistAction } from "@/lib/actions/assignments";
 import { scoreTherapist, matchBadge, type OnboardingAnswers } from "@/lib/matching";
 
 export const metadata = {
-  title: "Psychologues — K-Kouman",
+  title: "Psychologues — K-Kouma",
 };
 
 const SPECIALTIES_FILTER = [
@@ -116,7 +116,7 @@ export default async function TherapistsPage({
           className="text-xl font-bold"
           style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
         >
-          K-Kouman
+          K-Kouma
         </Link>
         <Link href="/dashboard" className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
           Mon espace

@@ -17,7 +17,7 @@ const mulish = Mulish({
 });
 
 export const metadata: Metadata = {
-  title: "K-Kouman — Soutien psychologique en ligne",
+  title: "K-Kouma — Soutien psychologique en ligne",
   description:
     "Plateforme de téléconsultation psychologique pour le Mali et la sous-région UEMOA. Consultez un psychologue qualifié par visio, appel ou message.",
 };

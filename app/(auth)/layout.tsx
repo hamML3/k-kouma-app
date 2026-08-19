@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               className="text-2xl font-bold tracking-tight"
               style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
             >
-              K-Kouman
+              K-Kouma
             </span>
             <span className="text-xs" style={{ color: "var(--kk-muted)" }}>
               Votre bien-être, notre mission

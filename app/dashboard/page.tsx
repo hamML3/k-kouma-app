@@ -67,7 +67,7 @@ export default async function DashboardPage() {
             className="text-xl font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </Link>
           <div className="flex items-center gap-5">
             <span className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
             Bonjour, {displayName}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-            Bienvenue sur votre espace K-Kouman.
+            Bienvenue sur votre espace K-Kouma.
           </p>
         </div>
 

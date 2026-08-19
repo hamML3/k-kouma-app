@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import OnboardingClient from "./_client";
 
 export const metadata = {
-  title: "Questionnaire d'admission — K-Kouman",
+  title: "Questionnaire d'admission — K-Kouma",
 };
 
 export default async function OnboardingPage() {

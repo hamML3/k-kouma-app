@@ -52,7 +52,7 @@ export default function BookingClient({
             className="text-base font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </span>
         </div>
       </header>

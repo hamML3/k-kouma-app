@@ -215,7 +215,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
           className="text-lg font-bold"
           style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
         >
-          K-Kouman
+          K-Kouma
         </span>
       </header>
 
@@ -373,7 +373,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
                 Si vous êtes en danger immédiat, appelez le{" "}
                 <strong>15</strong> (SAMU) ou le{" "}
                 <strong>17</strong> (Police). Vous pouvez continuer à utiliser
-                K-Kouman pour un soutien professionnel.
+                K-Kouma pour un soutien professionnel.
               </p>
             </div>
           )}

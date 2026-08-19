@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 export const metadata = {
-  title: "Mes rendez-vous — K-Kouman",
+  title: "Mes rendez-vous — K-Kouma",
 };
 
 export default async function PatientAppointmentsPage() {
@@ -65,7 +65,7 @@ export default async function PatientAppointmentsPage() {
             className="text-xl font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </Link>
           <div className="flex items-center gap-4">
             {!isTherapist && (

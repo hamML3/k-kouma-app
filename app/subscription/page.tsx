@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
-export const metadata = { title: "Mon abonnement — K-Kouman" };
+export const metadata = { title: "Mon abonnement — K-Kouma" };
 
 const PLANS = [
   {

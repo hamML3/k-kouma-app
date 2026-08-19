@@ -144,7 +144,7 @@ export default async function PatientDetailPage({
             className="text-xl font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </Link>
         </div>
       </header>

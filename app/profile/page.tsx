@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileClient from "./_client";
 
-export const metadata = { title: "Mon profil — K-Kouman" };
+export const metadata = { title: "Mon profil — K-Kouma" };
 
 export default async function ProfilePage() {
   const session = await auth();

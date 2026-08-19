@@ -4,7 +4,7 @@ import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth";
 
 export const metadata = {
-  title: "Administration — K-Kouman",
+  title: "Administration — K-Kouma",
 };
 
 const NAV_LINKS = [
@@ -56,7 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             className="text-lg font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </span>
           <span
             className="block text-xs font-semibold mt-0.5"

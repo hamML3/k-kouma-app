@@ -107,7 +107,7 @@ export default async function TherapistProfilePage({
                 className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
                 style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
               >
-                ✓ Vérifié K-Kouman
+                ✓ Vérifié K-Kouma
               </span>
             </div>
 

@@ -131,7 +131,7 @@ export default function RegisterTherapistPage() {
         className="text-2xl font-bold mb-1"
         style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
       >
-        Rejoindre K-Kouman
+        Rejoindre K-Kouma
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--kk-muted)" }}>
         Votre profil sera vérifié par notre équipe avant activation (48h max).

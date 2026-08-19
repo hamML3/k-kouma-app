@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* K-Kouman design tokens */
+/* K-Kouma design tokens */
 :root {
   --kk-bg: #F6F2EA;
   --kk-dark: #2C342E;
@@ -56,7 +56,7 @@ body {
   background: var(--kk-selection);
 }
 
-/* Reusable K-Kouman component styles */
+/* Reusable K-Kouma component styles */
 .kk-input {
   width: 100%;
   border: 1.5px solid var(--kk-border-mid);

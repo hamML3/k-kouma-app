@@ -22,7 +22,7 @@ const THERAPY_LABELS: Record<string, string> = {
 };
 
 export const metadata = {
-  title: "Mes patients — K-Kouman",
+  title: "Mes patients — K-Kouma",
 };
 
 export default async function PatientsPage() {
@@ -104,7 +104,7 @@ export default async function PatientsPage() {
             className="text-xl font-bold"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            K-Kouman
+            K-Kouma
           </Link>
           <nav className="flex items-center gap-4">
             <Link href="/appointments" className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
