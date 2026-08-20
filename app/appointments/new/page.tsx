@@ -47,6 +47,7 @@ export default async function NewAppointmentPage({
       therapistId={therapistId}
       therapistName={therapistName}
       rate={rate}
+      displayName={session.user.email ?? "Mon compte"}
     />
   );
 }

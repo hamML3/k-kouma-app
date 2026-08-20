@@ -1,17 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-
-/* ─── Logo SVG ──────────────────────────────────────────────────────────── */
-function Logo({ size = 36 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" fill="#557B53" />
-      <circle cx="18" cy="13" r="5" fill="#fff" opacity="0.9" />
-      <path d="M8 30c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" opacity="0.9" />
-      <path d="M22 10c2-1.5 5-1 6 2" stroke="#C8DFBB" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
+import { Logo } from "@/components/Logo";
+import { Icon, type IconName } from "@/components/Icon";
+import { getSpecialtyIcon } from "@/lib/icons";
 
 /* ─── Nav ───────────────────────────────────────────────────────────────── */
 function Navbar() {
@@ -22,16 +13,13 @@ function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <Logo size={34} />
-          <div>
-            <p className="font-bold text-base leading-none" style={{ fontFamily: "var(--font-lora)", color: "#2C342E" }}>
-              K-Kouma
-            </p>
-            <p className="text-[10px] leading-none mt-0.5" style={{ color: "#8A9183" }}>
-              Votre bien-être, notre mission
-            </p>
-          </div>
+        <Link href="/" className="flex items-center gap-3 shrink-0">
+          <Logo size={30} />
+          <p className="text-[10px] leading-tight hidden sm:block" style={{ color: "#8A9183" }}>
+            Votre bien-être,
+            <br />
+            notre mission
+          </p>
         </Link>
 
         {/* Nav links — masqué sur mobile */}
@@ -215,18 +203,18 @@ function TherapyTypes() {
 
 /* ─── Wellbeing quizzes ──────────────────────────────────────────────────── */
 function WellbeingSection() {
-  const topics = [
-    { emoji: "🌿", label: "Stress",               key: "stress"    },
-    { emoji: "😰", label: "Anxiété",              key: "anxiete"   },
-    { emoji: "🌧️", label: "Dépression",           key: "depression"},
-    { emoji: "🔥", label: "Burn-out",             key: "burnout"   },
-    { emoji: "⚡", label: "TDAH",                 key: "tdah"      },
-    { emoji: "🧩", label: "Autisme",              key: "autisme"   },
-    { emoji: "💛", label: "Estime de soi",        key: "estime"    },
-    { emoji: "😴", label: "Qualité du sommeil",   key: "sommeil"   },
-    { emoji: "🫂", label: "Solitude",             key: "solitude"  },
-    { emoji: "🌊", label: "Émotions",             key: "emotions"  },
-    { emoji: "🌱", label: "Bien-être global",     key: "bienetre"  },
+  const topics: { icon: IconName; label: string; key: string; color: string; bg: string }[] = [
+    { icon: "overwhelm", label: "Stress",             key: "stress",     color: "#557B53", bg: "#E4EDDD" },
+    { icon: "anxiety",   label: "Anxiété",             key: "anxiete",    color: "#4A7C9B", bg: "#E0EEF7" },
+    { icon: "journal",   label: "Dépression",          key: "depression", color: "#6B8BA4", bg: "#E8EFF4" },
+    { icon: "burnout",   label: "Burn-out",            key: "burnout",    color: "#C0392B", bg: "#FDECEA" },
+    { icon: "energy",    label: "TDAH",                key: "tdah",       color: "#E67E22", bg: "#FEF0E3" },
+    { icon: "puzzle",    label: "Autisme",             key: "autisme",    color: "#8E7CB8", bg: "#ECE7F5" },
+    { icon: "self-care", label: "Estime de soi",       key: "estime",     color: "#C58A3D", bg: "#FBEEDD" },
+    { icon: "sleep",     label: "Qualité du sommeil",  key: "sommeil",    color: "#3D5A87", bg: "#E3EAF4" },
+    { icon: "user",      label: "Solitude",            key: "solitude",   color: "#B85E7C", bg: "#F8E8EE" },
+    { icon: "chat-alt",  label: "Émotions",            key: "emotions",   color: "#2E86AB", bg: "#E0F0F7" },
+    { icon: "globe",     label: "Bien-être global",    key: "bienetre",   color: "#557B53", bg: "#E4EDDD" },
   ];
 
   return (
@@ -251,7 +239,12 @@ function WellbeingSection() {
                 className="rounded-2xl p-3 flex flex-col items-center text-center transition-all hover:scale-105 hover:shadow-sm"
                 style={{ background: "#fff", border: "1px solid #EDE8DC" }}
               >
-                <span className="text-2xl mb-1.5">{t.emoji}</span>
+                <div
+                  className="w-10 h-10 mb-1.5 rounded-full flex items-center justify-center"
+                  style={{ background: t.bg }}
+                >
+                  <Icon name={t.icon} size={19} color={t.color} />
+                </div>
                 <p className="text-xs font-bold leading-tight" style={{ color: "#2C342E" }}>{t.label}</p>
                 <p className="text-[10px] mt-0.5 font-semibold" style={{ color: "#557B53" }}>Quiz gratuit</p>
               </Link>
@@ -348,7 +341,11 @@ function TherapistsPreview() {
                 </div>
               </div>
 
-              <p className="text-xs font-semibold mb-1" style={{ color: "#5C645B" }}>
+              <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: "#5C645B" }}>
+                {(() => {
+                  const icon = getSpecialtyIcon(t.specialty);
+                  return icon ? <Icon name={icon} size={13} /> : null;
+                })()}
                 Spécialité : {t.specialty}
               </p>
 
@@ -392,23 +389,23 @@ function TherapistsPreview() {
 
 /* ─── Consultation modes ─────────────────────────────────────────────────── */
 function ConsultationModes() {
-  const modes = [
+  const modes: { icon: IconName; title: string; desc: string; bg: string; color: string }[] = [
     {
-      icon: "💬",
+      icon: "chat",
       title: "Chat",
       desc: "Pour ceux qui sont timides ou veulent réfléchir avant de répondre.",
       bg: "#E4EDDD",
       color: "#557B53",
     },
     {
-      icon: "🎧",
+      icon: "headphones",
       title: "Audio",
       desc: "Pour davantage de confidentialité.",
       bg: "#ECE7F5",
       color: "#8E7CB8",
     },
     {
-      icon: "🎥",
+      icon: "video",
       title: "Vidéo",
       desc: "Pour une expérience proche du cabinet.",
       bg: "#FBEEDD",
@@ -437,7 +434,9 @@ function ConsultationModes() {
                 className="flex-1 min-w-[140px] rounded-2xl p-5 text-center"
                 style={{ background: m.bg }}
               >
-                <div className="text-3xl mb-2">{m.icon}</div>
+                <div className="w-11 h-11 mx-auto mb-2 rounded-full flex items-center justify-center" style={{ background: "#fff" }}>
+                  <Icon name={m.icon} size={22} />
+                </div>
                 <p className="font-bold mb-1" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>{m.title}</p>
                 <p className="text-xs leading-relaxed" style={{ color: "#5C645B" }}>{m.desc}</p>
               </div>
@@ -461,7 +460,7 @@ function ConsultationModes() {
 
           <div className="space-y-4">
             {[
-              { label: "Individuelle", price: "8 000 FCFA", pack4: "30 000 FCFA", pack8: "60 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
+              { label: "Individuelle", price: "8 500 FCFA", pack4: "32 000 FCFA", pack8: "60 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
               { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack8: "90 000 FCFA", color: "#8E7CB8", bg: "#ECE7F5" },
               { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack8: null, color: "#C58A3D", bg: "#FBEEDD" },
             ].map((p) => (
@@ -472,7 +471,11 @@ function ConsultationModes() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-bold text-sm" style={{ color: p.color, fontFamily: "var(--font-lora)" }}>{p.label}</p>
-                  <span className="text-xs" style={{ color: "#8A9183" }}>💬 Audio 🎥 Vidéo</span>
+                  <span className="text-xs flex items-center gap-1" style={{ color: "#8A9183" }}>
+                    <Icon name="chat" size={12} />
+                    <Icon name="headphones" size={12} />
+                    <Icon name="video" size={12} />
+                  </span>
                 </div>
                 <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{p.price}</strong></p>
                 <div className="text-xs space-y-0.5" style={{ color: "#5C645B" }}>
@@ -609,11 +612,8 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="md:col-span-1">
-          <div className="flex items-center gap-2.5 mb-3">
-            <Logo size={30} />
-            <p className="font-bold text-base" style={{ fontFamily: "var(--font-lora)", color: "#fff" }}>
-              K-Kouma
-            </p>
+          <div className="mb-3">
+            <Logo tone="white" size={28} />
           </div>
           <p className="text-xs leading-relaxed" style={{ color: "#8A9183" }}>
             Votre bien-être mental, notre priorité. Plateforme de téléconsultation psychologique pour l&apos;Afrique de l&apos;Ouest.

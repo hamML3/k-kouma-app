@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { chooseTherapistAction } from "@/lib/actions/assignments";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { getSpecialtyIcon } from "@/lib/icons";
+import { AppHeader } from "@/components/AppHeader";
 
 const AVATAR_COLORS = ["#557B53", "#8E7CB8", "#C58A3D", "#4A7C9B", "#B85E7C"];
 
@@ -48,37 +51,20 @@ export default async function TherapistProfilePage({
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
-            href="/therapists"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold"
-            style={{ color: "var(--kk-muted)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Retour
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm font-semibold"
-            style={{ color: "var(--kk-mid)" }}
-          >
-            Mon espace
-          </Link>
-        </div>
-      </header>
+      <AppHeader role={session.user.role} displayName={session.user.email ?? "Mon compte"} />
 
       <main className="max-w-3xl mx-auto px-5 py-8">
+        <Link
+          href="/therapists"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold mb-4"
+          style={{ color: "var(--kk-muted)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Retour aux psychologues
+        </Link>
+
         {/* Profile header */}
         <div
           className="rounded-2xl p-6 mb-5 flex gap-5 items-start"
@@ -112,15 +98,19 @@ export default async function TherapistProfilePage({
             </div>
 
             <div className="flex flex-wrap gap-2 mt-3">
-              {specialtiesList.map((s) => (
-                <span
-                  key={s}
-                  className="text-xs font-semibold px-3 py-1 rounded-full"
-                  style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
-                >
-                  {s}
-                </span>
-              ))}
+              {specialtiesList.map((s) => {
+                const icon = getSpecialtyIcon(s);
+                return (
+                  <span
+                    key={s}
+                    className="text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
+                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                  >
+                    {icon && <Icon name={icon} size={13} />}
+                    {s}
+                  </span>
+                );
+              })}
               {languages.map((l) => (
                 <span
                   key={l}

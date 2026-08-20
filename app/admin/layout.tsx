@@ -1,36 +1,13 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
+import { AdminNav } from "@/components/AdminNav";
 import { signOutAction } from "@/lib/actions/auth";
 
 export const metadata = {
   title: "Administration — K-Kouma",
 };
-
-const NAV_LINKS = [
-  {
-    href: "/admin",
-    label: "Tableau de bord",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <rect x="2" y="2" width="6" height="6" rx="2" stroke="currentColor" strokeWidth="1.6" />
-        <rect x="10" y="2" width="6" height="6" rx="2" stroke="currentColor" strokeWidth="1.6" />
-        <rect x="2" y="10" width="6" height="6" rx="2" stroke="currentColor" strokeWidth="1.6" />
-        <rect x="10" y="10" width="6" height="6" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/admin/therapists",
-    label: "Psychologues",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-        <circle cx="9" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -48,16 +25,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           boxShadow: "2px 0 12px rgba(60,70,55,0.04)",
         }}
       >
-        <Link
-          href="/admin"
-          className="block mb-8 px-2"
-        >
-          <span
-            className="text-lg font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </span>
+        <Link href="/admin" className="block mb-8 px-2">
+          <Logo size={24} />
           <span
             className="block text-xs font-semibold mt-0.5"
             style={{ color: "var(--kk-purple)" }}
@@ -66,19 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </span>
         </Link>
 
-        <nav className="flex-1 space-y-1">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ color: "var(--kk-mid)" }}
-            >
-              <span style={{ color: "var(--kk-muted)" }}>{link.icon}</span>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav />
 
         <div className="pt-4" style={{ borderTop: "1px solid var(--kk-border)" }}>
           <p className="text-xs px-3 mb-2 font-semibold truncate" style={{ color: "var(--kk-muted)" }}>

@@ -2,11 +2,13 @@
 
 import { createAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
+import { Icon, type IconName } from "@/components/Icon";
 
-const SESSION_TYPES = [
-  { value: "video", label: "Vidéo", desc: "L'expérience la plus proche d'une consultation en cabinet.", icon: "🎥" },
-  { value: "audio", label: "Audio", desc: "Un appel vocal uniquement, discret et simple.", icon: "🎧" },
-  { value: "text", label: "Messagerie", desc: "Échangez par messages écrits à votre rythme.", icon: "💬" },
+const SESSION_TYPES: { value: string; label: string; desc: string; icon: IconName }[] = [
+  { value: "video", label: "Vidéo", desc: "L'expérience la plus proche d'une consultation en cabinet.", icon: "video" },
+  { value: "audio", label: "Audio", desc: "Un appel vocal uniquement, discret et simple.", icon: "headphones" },
+  { value: "text", label: "Messagerie", desc: "Échangez par messages écrits à votre rythme.", icon: "chat" },
 ];
 
 function tomorrow9am(): string {
@@ -21,43 +23,29 @@ export default function BookingClient({
   therapistId,
   therapistName,
   rate,
+  displayName,
 }: {
   patientId: number;
   therapistId: number;
   therapistName: string;
   rate: number;
+  displayName: string;
 }) {
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-xl mx-auto flex items-center justify-between">
-          <Link
-            href="/therapists"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold"
-            style={{ color: "var(--kk-muted)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Retour
-          </Link>
-          <span
-            className="text-base font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </span>
-        </div>
-      </header>
+      <AppHeader role="patient" displayName={displayName} />
 
       <main className="max-w-xl mx-auto px-5 py-8">
+        <Link
+          href="/therapists"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold mb-4"
+          style={{ color: "var(--kk-muted)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Retour
+        </Link>
         <h1
           className="text-2xl font-bold mb-1"
           style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
@@ -125,8 +113,9 @@ export default function BookingClient({
                     className="mt-0.5"
                   />
                   <div>
-                    <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
-                      {t.icon} {t.label}
+                    <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: "var(--kk-dark)" }}>
+                      <Icon name={t.icon} size={15} />
+                      {t.label}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
                       {t.desc}

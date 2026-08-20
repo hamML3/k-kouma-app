@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 
 const ANSWER_LABELS: Record<string, Record<string, string>> = {
   therapyType: {
@@ -120,36 +121,20 @@ export default async function PatientDetailPage({
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
-            href="/patients"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold"
-            style={{ color: "var(--kk-muted)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Mes patients
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-xl font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </Link>
-        </div>
-      </header>
+      <AppHeader role="therapist" displayName={session.user.email ?? "Mon compte"} />
 
       <main className="max-w-3xl mx-auto px-5 py-8">
+        <Link
+          href="/patients"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold mb-4"
+          style={{ color: "var(--kk-muted)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Mes patients
+        </Link>
+
         {/* Patient header */}
         <div
           className="rounded-2xl p-6 mb-5 flex items-center gap-4"

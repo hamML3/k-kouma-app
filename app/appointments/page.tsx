@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { cancelAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
+import { Icon, type IconName } from "@/components/Icon";
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   pending:   { label: "En attente",  bg: "var(--kk-gold-light)",   color: "var(--kk-gold)" },
@@ -11,10 +13,10 @@ const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }
   completed: { label: "Terminé",     bg: "var(--kk-border)",       color: "var(--kk-muted)" },
 };
 
-const TYPE_ICONS: Record<string, string> = {
-  video: "🎥",
-  audio: "🎧",
-  text:  "💬",
+const TYPE_ICONS: Record<string, IconName> = {
+  video: "video",
+  audio: "headphones",
+  text:  "chat",
 };
 
 export const metadata = {
@@ -51,50 +53,30 @@ export default async function PatientAppointmentsPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="text-xl font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </Link>
-          <div className="flex items-center gap-4">
-            {!isTherapist && (
-              <Link
-                href="/therapists"
-                className="text-sm font-semibold px-4 py-2 rounded-full"
-                style={{ background: "var(--kk-green)", color: "#fff" }}
-              >
-                + Nouveau RDV
-              </Link>
-            )}
-            <Link href="/dashboard" className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-              Mon espace
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AppHeader role={session.user.role} displayName={session.user.email ?? "Mon compte"} />
 
       <main className="max-w-3xl mx-auto px-5 py-8">
-        <div className="mb-7">
-          <h1
-            className="text-3xl font-bold mb-1"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            {isTherapist ? "Mes séances" : "Mes rendez-vous"}
-          </h1>
-          <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
-            {upcoming.length} à venir · {past.length} passés
-          </p>
+        <div className="mb-7 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1
+              className="text-3xl font-bold mb-1"
+              style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+            >
+              {isTherapist ? "Mes séances" : "Mes rendez-vous"}
+            </h1>
+            <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
+              {upcoming.length} à venir · {past.length} passés
+            </p>
+          </div>
+          {!isTherapist && (
+            <Link
+              href="/therapists"
+              className="text-sm font-semibold px-4 py-2.5 rounded-full shrink-0"
+              style={{ background: "var(--kk-green)", color: "#fff" }}
+            >
+              + Nouveau RDV
+            </Link>
+          )}
         </div>
 
         {/* Upcoming */}
@@ -133,8 +115,9 @@ export default async function PatientAppointmentsPage() {
                   >
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="text-sm font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
-                          {TYPE_ICONS[a.type]} Séance {a.type === "video" ? "vidéo" : a.type === "audio" ? "audio" : "par messagerie"}
+                        <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
+                          <Icon name={TYPE_ICONS[a.type]} size={14} />
+                          Séance {a.type === "video" ? "vidéo" : a.type === "audio" ? "audio" : "par messagerie"}
                         </p>
                         <p className="text-sm mt-0.5" style={{ color: "var(--kk-mid)" }}>
                           Avec {otherName}
@@ -230,8 +213,9 @@ export default async function PatientAppointmentsPage() {
                     style={{ background: "#fff", border: "1px solid var(--kk-border)", opacity: 0.75 }}
                   >
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>
-                        {TYPE_ICONS[a.type]} Avec {otherName}
+                      <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--kk-dark)" }}>
+                        <Icon name={TYPE_ICONS[a.type]} size={13} />
+                        Avec {otherName}
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
                         {date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}

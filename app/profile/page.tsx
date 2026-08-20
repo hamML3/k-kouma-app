@@ -29,6 +29,7 @@ export default async function ProfilePage() {
   return (
     <ProfileClient
       userId={userId}
+      displayName={session.user.email ?? "Mon compte"}
       profile={{
         firstName:  profile.firstName,
         lastName:   profile.lastName,

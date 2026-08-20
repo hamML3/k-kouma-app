@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import { signOutAction } from "@/lib/actions/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 import { changeTherapistAction } from "@/lib/actions/assignments";
 
 export default async function DashboardPage() {
@@ -52,39 +52,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-xl font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </Link>
-          <div className="flex items-center gap-5">
-            <span className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-              {displayName}
-            </span>
-            <form action={signOutAction}>
-              <button
-                type="submit"
-                className="text-sm font-semibold"
-                style={{ color: "var(--kk-muted)" }}
-              >
-                Déconnexion
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <AppHeader role={user?.role ?? "patient"} displayName={String(displayName)} />
 
       <main className="max-w-5xl mx-auto px-5 py-10">
         {/* Therapist verification banner */}

@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
 type Quiz = {
@@ -273,17 +274,6 @@ function interpret(score: number, quiz: Quiz) {
   return { idx, label: quiz.levelLabels[idx], color: colors[idx], bg: bgColors[idx], pct, effectiveScore };
 }
 
-/* ─── Logo ───────────────────────────────────────────────────────────────── */
-function Logo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="18" r="18" fill="#557B53" />
-      <circle cx="18" cy="13" r="5" fill="#fff" opacity="0.9" />
-      <path d="M8 30c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" opacity="0.9" />
-    </svg>
-  );
-}
-
 /* ─── Topic picker ───────────────────────────────────────────────────────── */
 function TopicPicker({ onSelect }: { onSelect: (key: string) => void }) {
   return (
@@ -293,8 +283,7 @@ function TopicPicker({ onSelect }: { onSelect: (key: string) => void }) {
         style={{ background: "rgba(246,242,234,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #EDE8DC" }}
       >
         <Link href="/" className="flex items-center gap-2">
-          <Logo />
-          <span className="font-bold text-base" style={{ fontFamily: "var(--font-lora)", color: "#2C342E" }}>K-Kouma</span>
+          <Logo size={26} />
         </Link>
         <Link href="/" className="text-sm font-semibold" style={{ color: "#8A9183" }}>← Accueil</Link>
       </header>
@@ -371,8 +360,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
         style={{ background: "rgba(246,242,234,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #EDE8DC" }}
       >
         <button onClick={onRestart} className="flex items-center gap-2">
-          <Logo />
-          <span className="font-bold text-base" style={{ fontFamily: "var(--font-lora)", color: "#2C342E" }}>K-Kouma</span>
+          <Logo size={26} />
         </button>
         <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ background: quiz.colorLight, color: quiz.color }}>
           {quiz.emoji} {quiz.label}
@@ -496,30 +484,6 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
               <div className="flex justify-between text-xs" style={{ color: "#8A9183" }}>
                 <span>0 — Stable</span>
                 <span>30 — Élevé</span>
-              </div>
-
-              {/* Répartition des niveaux */}
-              <div className="grid grid-cols-4 gap-1 mt-4">
-                {[
-                  { label: "Faible",  range: "0–7.5",   color: "#557B53", bg: "#E4EDDD" },
-                  { label: "Léger",   range: "7.5–15",  color: "#C58A3D", bg: "#FBEEDD" },
-                  { label: "Modéré",  range: "15–22.5", color: "#E67E22", bg: "#FEF0E3" },
-                  { label: "Élevé",   range: "22.5–30", color: "#C0392B", bg: "#FDECEA" },
-                ].map((l, i) => (
-                  <div
-                    key={l.label}
-                    className="rounded-xl p-2 text-center"
-                    style={{
-                      background: i === result.idx ? l.bg : "#F6F2EA",
-                      border: i === result.idx ? `1.5px solid ${l.color}` : "1px solid #EDE8DC",
-                    }}
-                  >
-                    <p className="text-[10px] font-bold" style={{ color: i === result.idx ? l.color : "#8A9183" }}>
-                      {l.label}
-                    </p>
-                    <p className="text-[9px]" style={{ color: "#A8AEA1" }}>{l.range}</p>
-                  </div>
-                ))}
               </div>
             </div>
 

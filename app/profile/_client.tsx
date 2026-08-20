@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { updateTherapistProfileAction } from "@/lib/actions/profile";
-import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 
 const SPECIALTIES = [
   "Anxiété et stress",
@@ -29,9 +29,11 @@ type Profile = {
 
 export default function ProfileClient({
   userId,
+  displayName,
   profile,
 }: {
   userId: number;
+  displayName: string;
   profile: Profile;
 }) {
   const [state, action, pending] = useActionState(updateTherapistProfileAction, {});
@@ -44,37 +46,15 @@ export default function ProfileClient({
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 text-sm font-semibold"
-            style={{ color: "var(--kk-mid)" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L6 8l4 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Tableau de bord
-          </Link>
-          <span
-            className="text-base font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            Mon profil
-          </span>
-          <div className="w-24" />
-        </div>
-      </header>
+      <AppHeader role="therapist" displayName={displayName} />
 
       <main className="max-w-2xl mx-auto px-5 py-8">
+        <h1
+          className="text-2xl font-bold mb-6"
+          style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+        >
+          Mon profil
+        </h1>
         {/* Success banner */}
         {state.success && (
           <div

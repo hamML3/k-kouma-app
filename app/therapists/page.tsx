@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
+import { Icon } from "@/components/Icon";
+import { getSpecialtyIcon } from "@/lib/icons";
 import { chooseTherapistAction } from "@/lib/actions/assignments";
 import { scoreTherapist, matchBadge, type OnboardingAnswers } from "@/lib/matching";
 
@@ -102,26 +105,7 @@ export default async function TherapistsPage({
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <Link
-          href="/dashboard"
-          className="text-xl font-bold"
-          style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-        >
-          K-Kouma
-        </Link>
-        <Link href="/dashboard" className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-          Mon espace
-        </Link>
-      </header>
+      <AppHeader role={session.user.role} displayName={session.user.email ?? "Mon compte"} />
 
       <main className="max-w-3xl mx-auto px-5 py-8">
         {/* Success banner after choosing */}
@@ -201,17 +185,19 @@ export default async function TherapistsPage({
         <div className="flex gap-2 flex-wrap mb-7">
           {SPECIALTIES_FILTER.map((s) => {
             const active = selectedFilter === s;
+            const icon = getSpecialtyIcon(s);
             return (
               <Link
                 key={s}
                 href={`/therapists${s === "Tous" ? "" : `?specialty=${encodeURIComponent(s)}`}`}
-                className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
+                className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5"
                 style={{
                   background: active ? "var(--kk-green)" : "#fff",
                   color: active ? "#fff" : "var(--kk-mid)",
                   border: active ? "none" : "1.5px solid var(--kk-border-mid)",
                 }}
               >
+                {icon && <Icon name={icon} size={14} className={active ? "invert brightness-0 opacity-90" : "opacity-70"} />}
                 {s}
               </Link>
             );
@@ -330,15 +316,19 @@ export default async function TherapistsPage({
 
                       {/* Specialty + language tags */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {specialtiesList.slice(0, 2).map((s) => (
-                          <span
-                            key={s}
-                            className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
-                          >
-                            {s}
-                          </span>
-                        ))}
+                        {specialtiesList.slice(0, 2).map((s) => {
+                          const icon = getSpecialtyIcon(s);
+                          return (
+                            <span
+                              key={s}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
+                              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                            >
+                              {icon && <Icon name={icon} size={12} />}
+                              {s}
+                            </span>
+                          );
+                        })}
                         {languages.slice(0, 2).map((l) => (
                           <span
                             key={l}

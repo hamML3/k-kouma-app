@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { confirmAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
+import { AppHeader } from "@/components/AppHeader";
 
 const MOTIF_LABELS: Record<string, string> = {
   anxiete: "Anxiété / stress",
@@ -68,21 +69,24 @@ export default async function PatientsPage() {
 
   if (!therapistProfile?.isVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--kk-bg)" }}>
-        <div className="text-center max-w-sm px-5">
-          <div className="text-4xl mb-4">⏳</div>
-          <h1
-            className="text-xl font-bold mb-2"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            Compte en attente de vérification
-          </h1>
-          <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
-            Votre profil est en cours de vérification. Vous aurez accès à vos patients une fois validé.
-          </p>
-          <Link href="/dashboard" className="kk-btn-outline mt-6 inline-block px-6 py-3 text-sm">
-            Retour au tableau de bord
-          </Link>
+      <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
+        <AppHeader role="therapist" displayName={session.user.email ?? "Mon compte"} />
+        <div className="flex items-center justify-center px-5 py-20">
+          <div className="text-center max-w-sm">
+            <div className="text-4xl mb-4">⏳</div>
+            <h1
+              className="text-xl font-bold mb-2"
+              style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+            >
+              Compte en attente de vérification
+            </h1>
+            <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
+              Votre profil est en cours de vérification. Vous aurez accès à vos patients une fois validé.
+            </p>
+            <Link href="/dashboard" className="kk-btn-outline mt-6 inline-block px-6 py-3 text-sm">
+              Retour au tableau de bord
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -90,32 +94,7 @@ export default async function PatientsPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <header
-        className="sticky top-0 z-10 px-5 py-4"
-        style={{
-          background: "rgba(246,242,234,0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--kk-border)",
-        }}
-      >
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="text-xl font-bold"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            K-Kouma
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/appointments" className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-              Planning
-            </Link>
-            <Link href="/dashboard" className="text-sm font-semibold" style={{ color: "var(--kk-muted)" }}>
-              Mon espace
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <AppHeader role="therapist" displayName={session.user.email ?? "Mon compte"} />
 
       <main className="max-w-4xl mx-auto px-5 py-8">
         <div className="mb-7">

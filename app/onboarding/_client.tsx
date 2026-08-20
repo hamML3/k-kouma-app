@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { saveOnboardingAnswers, type OnboardingAnswers } from "@/lib/actions/onboarding";
+import { Logo } from "@/components/Logo";
+import { Icon, type IconName } from "@/components/Icon";
 
 type StepType = "single" | "multi" | "scale" | "safety";
 
@@ -11,6 +13,7 @@ interface Option {
   desc?: string;
   emergency?: boolean;
   accent?: "green" | "purple" | "gold";
+  icon?: IconName;
 }
 
 interface Step {
@@ -42,14 +45,14 @@ const STEPS: Step[] = [
     type: "multi",
     required: true,
     options: [
-      { value: "anxiete", label: "Anxiété / stress" },
-      { value: "humeur", label: "Humeur / tristesse" },
-      { value: "relations", label: "Relations" },
-      { value: "sommeil", label: "Sommeil" },
-      { value: "confiance", label: "Confiance en soi" },
-      { value: "traumatisme", label: "Traumatisme" },
+      { value: "anxiete", label: "Anxiété / stress", icon: "anxiety" },
+      { value: "humeur", label: "Humeur / tristesse", icon: "overwhelm" },
+      { value: "relations", label: "Relations", icon: "family" },
+      { value: "sommeil", label: "Sommeil", icon: "sleep" },
+      { value: "confiance", label: "Confiance en soi", icon: "self-care" },
+      { value: "traumatisme", label: "Traumatisme", icon: "burnout" },
       { value: "deuil", label: "Deuil / perte" },
-      { value: "autre", label: "Autre" },
+      { value: "autre", label: "Autre", icon: "puzzle" },
     ],
   },
   {
@@ -123,9 +126,9 @@ const STEPS: Step[] = [
     type: "single",
     required: true,
     options: [
-      { value: "chat", label: "Chat", desc: "Échangez par messages écrits." },
-      { value: "audio", label: "Audio", desc: "Consultez par appel vocal uniquement." },
-      { value: "video", label: "Vidéo", desc: "L'expérience la plus proche du cabinet." },
+      { value: "chat", label: "Chat", desc: "Échangez par messages écrits.", icon: "chat" },
+      { value: "audio", label: "Audio", desc: "Consultez par appel vocal uniquement.", icon: "headphones" },
+      { value: "video", label: "Vidéo", desc: "L'expérience la plus proche du cabinet.", icon: "video" },
     ],
   },
   {
@@ -211,12 +214,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
     <div className="min-h-screen flex flex-col" style={{ background: "var(--kk-bg)" }}>
       {/* Header */}
       <header className="px-5 py-4 flex items-center gap-3">
-        <span
-          className="text-lg font-bold"
-          style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-        >
-          K-Kouma
-        </span>
+        <Logo size={24} />
       </header>
 
       {/* Progress bar */}
@@ -273,12 +271,24 @@ export default function OnboardingClient({ userId }: { userId: number }) {
                         boxShadow: selected ? "none" : "0 2px 8px rgba(60,70,55,0.04)",
                       }}
                     >
-                      <p className="font-bold text-sm" style={{ color: "var(--kk-dark)" }}>
-                        {opt.label}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                        {opt.desc}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        {opt.icon && (
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                            style={{ background: accent?.lightBg ?? "var(--kk-purple-light)" }}
+                          >
+                            <Icon name={opt.icon} size={18} />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: "var(--kk-dark)" }}>
+                            {opt.label}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                            {opt.desc}
+                          </p>
+                        </div>
+                      </div>
                     </button>
                   );
                 }
@@ -314,15 +324,16 @@ export default function OnboardingClient({ userId }: { userId: number }) {
                     key={opt.value}
                     type="button"
                     onClick={() => handleMulti(opt.value)}
-                    className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all"
+                    className="px-4 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5"
                     style={{
                       border: selected ? "none" : "1.5px solid var(--kk-border-mid)",
                       background: selected ? "var(--kk-green)" : "#fff",
                       color: selected ? "#fff" : "var(--kk-mid)",
                     }}
                   >
-                    {selected && (
-                      <span className="mr-1.5">✓</span>
+                    {selected && <span>✓</span>}
+                    {opt.icon && (
+                      <Icon name={opt.icon} size={15} className={selected ? "invert brightness-0" : "opacity-80"} />
                     )}
                     {opt.label}
                   </button>
