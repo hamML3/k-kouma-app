@@ -7,6 +7,15 @@ import { completeAppointmentAction } from "@/lib/actions/appointments";
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  // Serveur TURN (relais) — indispensable quand les deux participants sont sur
+  // des réseaux différents (ex: wifi vs données mobiles) et que la connexion
+  // directe échoue. Sans TURN, l'appel reste bloqué sur "en attente".
+  // Ceux-ci sont un service public gratuit (Open Relay Project), utile pour
+  // valider que c'est bien la cause — à remplacer par un TURN dédié
+  // (coturn auto-hébergé sur le VPS, ou un service payant) avant la mise en prod.
+  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
 ];
 
 type ConnectionState = "requesting" | "waiting" | "connecting" | "connected" | "failed" | "ended";

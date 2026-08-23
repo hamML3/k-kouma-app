@@ -142,11 +142,17 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { patientId: true, therapistId: true, status: true },
+    select: { patientId: true, therapistId: true, status: true, type: true },
   });
 
   if (!appointment || (appointment.patientId !== userId && appointment.therapistId !== userId)) {
     redirect("/appointments");
+  }
+
+  // Une séance de messagerie n'est close que par le psychologue — le patient
+  // ne peut pas y mettre fin de son côté (appels vidéo/audio : les deux le peuvent).
+  if (appointment.type === "text" && appointment.therapistId !== userId) {
+    redirect(`/appointments/${appointmentId}/chat`);
   }
 
   if (appointment.status === "completed") {

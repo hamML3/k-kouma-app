@@ -48,26 +48,47 @@ export default function ChatClient({
     scrollToEnd();
   }, [messages.length, scrollToEnd]);
 
-  // Poll for new messages
-  useEffect(() => {
-    async function poll() {
-      try {
-        const res = await fetch(`/api/messages/${appointmentId}?after=${encodeURIComponent(lastAt.current)}`);
-        if (!res.ok) return;
-        const fresh = (await res.json()) as Message[];
-        if (fresh.length > 0) {
-          lastAt.current = fresh[fresh.length - 1].createdAt;
-          setMessages((prev) => [...prev, ...fresh]);
-        }
-      } catch {
-        // network error; retry on next tick
-      }
+  // Ajoute des messages en évitant les doublons (le flux temps réel et le
+  // filet de secours peuvent parfois livrer le même message deux fois).
+  const addFresh = useCallback((fresh: Message[]) => {
+    if (fresh.length === 0) return;
+    setMessages((prev) => {
+      const known = new Set(prev.map((m) => m.id));
+      const toAdd = fresh.filter((m) => !known.has(m.id));
+      if (toAdd.length === 0) return prev;
+      return [...prev, ...toAdd].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    });
+    const latest = fresh[fresh.length - 1].createdAt;
+    if (latest > lastAt.current) lastAt.current = latest;
+  }, []);
+
+  const poll = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/messages/${appointmentId}?after=${encodeURIComponent(lastAt.current)}`);
+      if (!res.ok) return;
+      addFresh((await res.json()) as Message[]);
+    } catch {
+      // erreur réseau ; nouvel essai au prochain tick
     }
-    pollingTimer.current = setInterval(poll, 2000);
+  }, [appointmentId, addFresh]);
+
+  // Flux temps réel (SSE) — messages instantanés dès qu'ils sont envoyés.
+  useEffect(() => {
+    const source = new EventSource(`/api/messages/${appointmentId}/stream`);
+    source.addEventListener("message", (ev) => {
+      addFresh([JSON.parse(ev.data) as Message]);
+    });
+    return () => source.close();
+  }, [appointmentId, addFresh]);
+
+  // Filet de secours : un poll espacé, au cas où le flux temps réel serait
+  // coupé silencieusement par un proxy intermédiaire.
+  useEffect(() => {
+    pollingTimer.current = setInterval(poll, 8000);
     return () => {
       if (pollingTimer.current) clearInterval(pollingTimer.current);
     };
-  }, [appointmentId]);
+  }, [poll]);
 
   const sendMessage = useCallback(async () => {
     const body = draft.trim();
@@ -87,15 +108,14 @@ export default function ChatClient({
         return;
       }
       const message = (await res.json()) as Message;
-      lastAt.current = message.createdAt;
-      setMessages((prev) => [...prev, message]);
+      addFresh([message]);
       setDraft("");
     } catch {
       setError("Impossible d'envoyer le message. Vérifiez votre connexion.");
     } finally {
       setSending(false);
     }
-  }, [appointmentId, draft, sending]);
+  }, [appointmentId, draft, sending, addFresh]);
 
   const endConversation = () => {
     if (pollingTimer.current) clearInterval(pollingTimer.current);
@@ -130,7 +150,12 @@ export default function ChatClient({
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role={role} displayName={displayName} />
-      <ChatTopBar otherName={otherName} durationMinutes={durationMinutes} onEnd={endConversation} />
+      <ChatTopBar
+        otherName={otherName}
+        durationMinutes={durationMinutes}
+        onEnd={endConversation}
+        canEnd={role === "therapist"}
+      />
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-5">
@@ -206,10 +231,12 @@ function ChatTopBar({
   otherName,
   durationMinutes,
   onEnd,
+  canEnd,
 }: {
   otherName: string;
   durationMinutes: number;
   onEnd: () => void;
+  canEnd: boolean;
 }) {
   return (
     <div
@@ -234,14 +261,23 @@ function ChatTopBar({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onEnd}
-          className="text-xs font-bold px-3.5 py-2 rounded-full shrink-0"
-          style={{ background: "#FFF1F0", color: "#C0392B" }}
-        >
-          Terminer
-        </button>
+        {canEnd ? (
+          <button
+            type="button"
+            onClick={onEnd}
+            className="text-xs font-bold px-3.5 py-2 rounded-full shrink-0"
+            style={{ background: "#FFF1F0", color: "#C0392B" }}
+          >
+            Terminer
+          </button>
+        ) : (
+          <span
+            className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
+            style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+          >
+            Séance en cours
+          </span>
+        )}
       </div>
     </div>
   );

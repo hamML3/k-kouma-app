@@ -44,12 +44,15 @@ export default async function PatientAppointmentsPage() {
     take: 50,
   });
 
-  const upcoming = appointments.filter(
-    (a) => a.status !== "canceled" && a.status !== "completed" && new Date(a.scheduledAt) > new Date()
-  );
-  const past = appointments.filter(
-    (a) => a.status === "completed" || a.status === "canceled" || new Date(a.scheduledAt) <= new Date()
-  );
+  // Une séance de messagerie reste active tant que le psychologue ne l'a pas
+  // clôturée — elle n'est jamais "en retard" comme un appel programmé.
+  const isActive = (a: (typeof appointments)[number]) =>
+    a.status !== "canceled" &&
+    a.status !== "completed" &&
+    (a.type === "text" || new Date(a.scheduledAt) > new Date());
+
+  const upcoming = appointments.filter(isActive);
+  const past = appointments.filter((a) => !isActive(a));
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -91,12 +94,13 @@ export default async function PatientAppointmentsPage() {
                 const date = new Date(a.scheduledAt);
                 const now = new Date();
                 const msToStart = date.getTime() - now.getTime();
-                // joinable: from 30 min before until 60 min after scheduled start
+                // Vidéo/audio : joignable seulement autour de l'horaire (30 min avant → 60 min après).
+                // Messagerie : joignable en continu tant que la séance est confirmée et non close.
                 const isJoinable =
                   a.status === "confirmed" &&
-                  (a.type === "text" || a.webrtcRoomId) &&
-                  msToStart <= 30 * 60 * 1000 &&
-                  msToStart >= -60 * 60 * 1000;
+                  (a.type === "text"
+                    ? true
+                    : a.webrtcRoomId && msToStart <= 30 * 60 * 1000 && msToStart >= -60 * 60 * 1000);
                 const joinHref = a.type === "text" ? `/appointments/${a.id}/chat` : `/appointments/${a.id}/room`;
 
                 const otherName = isTherapist

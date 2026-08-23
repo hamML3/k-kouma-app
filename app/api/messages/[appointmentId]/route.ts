@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { publishMessage } from "@/lib/chatBus";
 
 async function getParticipantAppointment(appointmentId: number, userId: number) {
   const appt = await prisma.appointment.findUnique({
@@ -71,6 +72,8 @@ export async function POST(
     data: { appointmentId: id, senderId: userId, body: trimmed },
     select: { id: true, senderId: true, body: true, createdAt: true },
   });
+
+  publishMessage(id, { ...message, createdAt: message.createdAt.toISOString() });
 
   return NextResponse.json(message);
 }
