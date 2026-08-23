@@ -94,10 +94,10 @@ export default async function PatientAppointmentsPage() {
                 // joinable: from 30 min before until 60 min after scheduled start
                 const isJoinable =
                   a.status === "confirmed" &&
-                  a.webrtcRoomId &&
-                  a.type !== "text" &&
+                  (a.type === "text" || a.webrtcRoomId) &&
                   msToStart <= 30 * 60 * 1000 &&
                   msToStart >= -60 * 60 * 1000;
+                const joinHref = a.type === "text" ? `/appointments/${a.id}/chat` : `/appointments/${a.id}/room`;
 
                 const otherName = isTherapist
                   ? (a.patient.patientProfile?.nickname ?? a.patient.email)
@@ -138,14 +138,18 @@ export default async function PatientAppointmentsPage() {
                     {isJoinable && (
                       <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--kk-border)" }}>
                         <Link
-                          href={`/appointments/${a.id}/room`}
+                          href={joinHref}
                           className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold w-full transition-all"
                           style={{ background: "var(--kk-green)", color: "#fff" }}
                         >
-                          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <path d="M3 6h9l3 2v4l-3 2H3V6z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          Rejoindre la séance
+                          {a.type === "text" ? (
+                            <Icon name="chat" size={16} className="invert brightness-0" />
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                              <path d="M3 6h9l3 2v4l-3 2H3V6z" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                          {a.type === "text" ? "Rejoindre la conversation" : "Rejoindre la séance"}
                         </Link>
                       </div>
                     )}

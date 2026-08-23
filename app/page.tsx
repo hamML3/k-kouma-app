@@ -460,9 +460,9 @@ function ConsultationModes() {
 
           <div className="space-y-4">
             {[
-              { label: "Individuelle", price: "8 500 FCFA", pack4: "32 000 FCFA", pack8: "60 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
-              { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack8: "90 000 FCFA", color: "#8E7CB8", bg: "#ECE7F5" },
-              { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack8: null, color: "#C58A3D", bg: "#FBEEDD" },
+              { label: "Individuelle", price: "8 500 FCFA", pack4: "32 000 FCFA", pack4Was: "34 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
+              { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack4Was: null, color: "#8E7CB8", bg: "#ECE7F5" },
+              { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack4Was: null, color: "#C58A3D", bg: "#FBEEDD" },
             ].map((p) => (
               <div
                 key={p.label}
@@ -478,9 +478,22 @@ function ConsultationModes() {
                   </span>
                 </div>
                 <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{p.price}</strong></p>
-                <div className="text-xs space-y-0.5" style={{ color: "#5C645B" }}>
-                  <p>• 4 séances : <strong>{p.pack4}</strong></p>
-                  {p.pack8 && <p>• 8 séances : <strong>{p.pack8}</strong></p>}
+                <div className="text-xs" style={{ color: "#5C645B" }}>
+                  {p.pack4Was ? (
+                    <p className="flex items-center gap-1.5 flex-wrap">
+                      • 4 séances :
+                      <s style={{ color: "#A8AEA1" }}>{p.pack4Was}</s>
+                      <strong style={{ color: p.color }}>{p.pack4}</strong>
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                        style={{ background: p.color, color: "#fff" }}
+                      >
+                        Offre
+                      </span>
+                    </p>
+                  ) : (
+                    <p>• 4 séances : <strong>{p.pack4}</strong></p>
+                  )}
                 </div>
               </div>
             ))}

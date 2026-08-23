@@ -142,7 +142,9 @@ export default function RoomClient({
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await sendSignal({ type: "answer", sdp: answer.sdp! });
-            setConnState("connecting");
+            // `ontrack` peut se déclencher dès `setRemoteDescription`, avant même
+            // que ce point du code soit atteint — ne jamais écraser "connected".
+            setConnState((s) => (s === "connected" ? s : "connecting"));
           }
         } else if (payload.type === "answer" && payload.sdp) {
           // Patient (caller) receives answer

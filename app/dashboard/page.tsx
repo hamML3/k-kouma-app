@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+import { ResendVerificationBanner } from "@/components/ResendVerificationBanner";
 import { changeTherapistAction } from "@/lib/actions/assignments";
 
 export default async function DashboardPage() {
@@ -16,6 +17,7 @@ export default async function DashboardPage() {
       where: { id: userId },
       select: {
         role: true,
+        emailVerifiedAt: true,
         patientProfile: {
           select: { nickname: true, onboardingAnswers: true },
         },
@@ -69,6 +71,9 @@ export default async function DashboardPage() {
             </p>
           </div>
         )}
+
+        {/* Email verification nudge */}
+        {!user?.emailVerifiedAt && <ResendVerificationBanner />}
 
         {/* Onboarding nudge for patients */}
         {needsOnboarding && (

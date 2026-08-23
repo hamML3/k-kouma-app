@@ -47,9 +47,14 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="kk-label">
-            Mot de passe
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="kk-label">
+              Mot de passe
+            </label>
+            <Link href="/forgot-password" className="text-xs font-semibold" style={{ color: "var(--kk-purple)" }}>
+              Oublié ?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"

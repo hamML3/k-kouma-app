@@ -1,10 +1,12 @@
 'use server'
 
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   registerPatientSchema,
   registerTherapistSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from "@/lib/validators/auth";
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
@@ -12,6 +14,22 @@ import { redirect } from "next/navigation";
 import path from "path";
 import { writeFile, mkdir } from "fs/promises";
 import { randomUUID } from "crypto";
+import {
+  createVerificationToken,
+  consumeVerificationToken,
+  invalidatePendingTokens,
+} from "@/lib/tokens";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
+
+/** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
+async function dispatchVerificationEmail(userId: number, email: string, name: string) {
+  try {
+    const token = await createVerificationToken(userId, "email_verify");
+    await sendVerificationEmail(email, name, token);
+  } catch (err) {
+    console.error("[email_verify] envoi échoué:", err);
+  }
+}
 
 export type AuthState = {
   error?: string;
@@ -77,7 +95,7 @@ export async function registerPatientAction(
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email,
       passwordHash,
@@ -88,6 +106,8 @@ export async function registerPatientAction(
       },
     },
   });
+
+  await dispatchVerificationEmail(user.id, email, nickname);
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/onboarding" });
@@ -171,7 +191,7 @@ export async function registerTherapistAction(
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         passwordHash,
@@ -192,6 +212,8 @@ export async function registerTherapistAction(
         },
       },
     });
+
+    await dispatchVerificationEmail(user.id, email, firstName);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("phone_number")) {
@@ -204,6 +226,144 @@ export async function registerTherapistAction(
   }
 
   redirect("/register/therapist/pending");
+}
+
+/** Résultat d'une tentative de vérification d'email, consommé par la page /verify-email. */
+export type VerifyEmailResult = "success" | "already_verified" | "invalid" | "expired";
+
+export async function verifyEmailToken(token: string): Promise<VerifyEmailResult> {
+  const result = await consumeVerificationToken(token, "email_verify");
+
+  if (!result.ok) {
+    if (result.reason === "invalid") return "invalid";
+    // Lien réutilisé (ex: page rechargée) après un succès précédent : si le
+    // compte est déjà vérifié, ce n'est pas une erreur — on le confirme calmement.
+    const user = await prisma.user.findUnique({
+      where: { id: result.userId },
+      select: { emailVerifiedAt: true },
+    });
+    if (result.reason === "used" && user?.emailVerifiedAt) return "already_verified";
+    return result.reason === "expired" ? "expired" : "invalid";
+  }
+
+  await prisma.user.update({
+    where: { id: result.userId },
+    data: { emailVerifiedAt: new Date() },
+  });
+
+  return "success";
+}
+
+export type ResendState = { message?: string; error?: string };
+
+/** Renvoie l'email de vérification au compte actuellement connecté (limité à 1 par minute). */
+export async function resendVerificationEmailAction(
+  _prevState: ResendState
+): Promise<ResendState> {
+  const session = await auth();
+  if (!session?.user) return { error: "Vous devez être connecté." };
+
+  const userId = Number(session.user.id);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      emailVerifiedAt: true,
+      patientProfile: { select: { nickname: true } },
+      therapistProfile: { select: { firstName: true } },
+    },
+  });
+  if (!user) return { error: "Compte introuvable." };
+  if (user.emailVerifiedAt) return { message: "Votre email est déjà vérifié." };
+
+  const recent = await prisma.verificationToken.findFirst({
+    where: {
+      userId,
+      type: "email_verify",
+      createdAt: { gt: new Date(Date.now() - 60 * 1000) },
+    },
+  });
+  if (recent) return { error: "Merci de patienter une minute avant de renvoyer l'email." };
+
+  await invalidatePendingTokens(userId, "email_verify");
+  const name = user.patientProfile?.nickname ?? user.therapistProfile?.firstName ?? "";
+  await dispatchVerificationEmail(userId, user.email, name);
+
+  return { message: "Email de vérification renvoyé." };
+}
+
+export type ForgotPasswordState = { message?: string; error?: string };
+
+/**
+ * Envoie un lien de réinitialisation si l'email correspond à un compte.
+ * Renvoie toujours le même message, que le compte existe ou non (anti-énumération).
+ */
+export async function forgotPasswordAction(
+  _prevState: ForgotPasswordState,
+  formData: FormData
+): Promise<ForgotPasswordState> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { error: "Adresse email invalide." };
+  }
+
+  const genericMessage =
+    "Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.";
+
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: {
+      id: true,
+      email: true,
+      patientProfile: { select: { nickname: true } },
+      therapistProfile: { select: { firstName: true } },
+    },
+  });
+  if (!user) return { message: genericMessage };
+
+  try {
+    await invalidatePendingTokens(user.id, "password_reset");
+    const token = await createVerificationToken(user.id, "password_reset");
+    const name = user.patientProfile?.nickname ?? user.therapistProfile?.firstName ?? "";
+    await sendPasswordResetEmail(user.email, name, token);
+  } catch (err) {
+    console.error("[password_reset] envoi échoué:", err);
+  }
+
+  return { message: genericMessage };
+}
+
+export type ResetPasswordState = { error?: string; success?: boolean };
+
+export async function resetPasswordAction(
+  _prevState: ResetPasswordState,
+  formData: FormData
+): Promise<ResetPasswordState> {
+  const parsed = resetPasswordSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors.password?.[0] ?? "Formulaire invalide." };
+  }
+
+  const result = await consumeVerificationToken(parsed.data.token, "password_reset");
+  if (!result.ok) {
+    return {
+      error:
+        result.reason === "expired"
+          ? "Ce lien a expiré. Demandez-en un nouveau."
+          : "Ce lien n'est plus valide. Demandez-en un nouveau.",
+    };
+  }
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  await prisma.user.update({
+    where: { id: result.userId },
+    data: { passwordHash },
+  });
+
+  return { success: true };
 }
 
 export async function signOutAction(): Promise<void> {

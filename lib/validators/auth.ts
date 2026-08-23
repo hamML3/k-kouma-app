@@ -25,6 +25,17 @@ export const registerTherapistSchema = z.object({
   languages: z.string().optional(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Email invalide"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterPatientInput = z.infer<typeof registerPatientSchema>;
 export type RegisterTherapistInput = z.infer<typeof registerTherapistSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

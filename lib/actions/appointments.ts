@@ -115,9 +115,18 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
 
   if (!appointmentId || !therapistId) redirect("/patients");
 
+  const appointment = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    select: { type: true },
+  });
+
   await prisma.appointment.updateMany({
     where: { id: appointmentId, therapistId },
-    data: { status: "confirmed", webrtcRoomId: { set: randomUUID() } },
+    data: {
+      status: "confirmed",
+      // Les séances "messagerie" n'ont pas de salle WebRTC — seuls audio/vidéo en ont besoin.
+      ...(appointment?.type !== "text" ? { webrtcRoomId: randomUUID() } : {}),
+    },
   });
 
   revalidatePath("/patients");
