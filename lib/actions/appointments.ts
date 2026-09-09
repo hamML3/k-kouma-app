@@ -5,58 +5,6 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 
-async function ensureActiveSubscription(patientId: number) {
-  const existing = await prisma.patientSubscription.findUnique({
-    where: { patientId },
-  });
-
-  if (existing?.status === "active") {
-    return existing;
-  }
-
-  const plan =
-    (await prisma.subscriptionPlan.findFirst({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-    })) ??
-    (await prisma.subscriptionPlan.create({
-      data: {
-        name: "Starter",
-        price: 0,
-        currency: "XOF",
-        videoMinutesIncluded: 180,
-        isActive: true,
-      },
-    }));
-
-  const now = new Date();
-  const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-  if (existing) {
-    return prisma.patientSubscription.update({
-      where: { patientId },
-      data: {
-        planId: plan.id,
-        status: "active",
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        videoMinutesRemaining: plan.videoMinutesIncluded,
-      },
-    });
-  }
-
-  return prisma.patientSubscription.create({
-    data: {
-      patientId,
-      planId: plan.id,
-      status: "active",
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-      videoMinutesRemaining: plan.videoMinutesIncluded,
-    },
-  });
-}
-
 export async function createAppointmentAction(formData: FormData): Promise<void> {
   const patientId = Number(formData.get("patientId"));
   const therapistId = Number(formData.get("therapistId"));
@@ -75,19 +23,32 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
     redirect("/therapists?error=assign");
   }
 
-  await ensureActiveSubscription(patientId);
+  // Consomme un crédit de séance de façon atomique : l'UPDATE conditionnel
+  // (sessionCredits > 0) agit comme verrou — si deux réservations partent en
+  // même temps avec un seul crédit disponible, une seule passera.
+  const created = await prisma.$transaction(async (tx) => {
+    const debited = await tx.patientProfile.updateMany({
+      where: { userId: patientId, sessionCredits: { gt: 0 } },
+      data: { sessionCredits: { decrement: 1 } },
+    });
+    if (debited.count === 0) return null;
 
-  await prisma.appointment.create({
-    data: {
-      patientId,
-      therapistId,
-      scheduledAt: new Date(scheduledAt),
-      durationMinutes: 45,
-      status: "pending",
-      type: type as "video" | "audio" | "text",
-      webrtcRoomId: type !== "text" ? randomUUID() : null,
-    },
+    return tx.appointment.create({
+      data: {
+        patientId,
+        therapistId,
+        scheduledAt: new Date(scheduledAt),
+        durationMinutes: 45,
+        status: "pending",
+        type: type as "video" | "audio" | "text",
+        webrtcRoomId: type !== "text" ? randomUUID() : null,
+      },
+    });
   });
+
+  if (!created) {
+    redirect("/subscription?error=credit");
+  }
 
   revalidatePath("/appointments");
   revalidatePath("/dashboard");
@@ -100,9 +61,19 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
 
   if (!appointmentId || !patientId) redirect("/appointments");
 
-  await prisma.appointment.updateMany({
-    where: { id: appointmentId, patientId, status: "pending" },
-    data: { status: "canceled" },
+  await prisma.$transaction(async (tx) => {
+    const canceled = await tx.appointment.updateMany({
+      where: { id: appointmentId, patientId, status: "pending" },
+      data: { status: "canceled" },
+    });
+    // Recrédite la séance uniquement si l'annulation a bien eu lieu (évite de
+    // créditer deux fois si le rendez-vous n'était déjà plus "pending").
+    if (canceled.count > 0) {
+      await tx.patientProfile.updateMany({
+        where: { userId: patientId },
+        data: { sessionCredits: { increment: 1 } },
+      });
+    }
   });
 
   revalidatePath("/appointments");
@@ -161,12 +132,28 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
     redirect("/appointments");
   }
 
-  await prisma.appointment.update({
-    where: { id: appointmentId },
-    data: { status: "completed" },
+  const therapistProfile = await prisma.therapistProfile.findUnique({
+    where: { userId: appointment.therapistId },
+    select: { hourlyRate: true },
   });
+
+  await prisma.$transaction([
+    prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: "completed" },
+    }),
+    // Gain figé au tarif du thérapeute au moment de la séance.
+    prisma.therapistEarning.create({
+      data: {
+        therapistId: appointment.therapistId,
+        appointmentId,
+        amount: therapistProfile?.hourlyRate ?? 0,
+      },
+    }),
+  ]);
 
   revalidatePath("/appointments");
   revalidatePath("/patients");
+  revalidatePath("/earnings");
   redirect("/appointments");
 }

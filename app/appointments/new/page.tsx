@@ -25,7 +25,7 @@ export default async function NewAppointmentPage({
     }),
     prisma.patientProfile.findUnique({
       where: { userId: Number(session.user.id) },
-      select: { id: true },
+      select: { id: true, sessionCredits: true },
     }),
     prisma.patientTherapistAssignment.findFirst({
       where: { patientId: Number(session.user.id), therapistId: therapistUserId, status: "active" },
@@ -35,6 +35,7 @@ export default async function NewAppointmentPage({
 
   if (!therapistProfile || !therapistProfile.isVerified || therapistProfile.userId !== therapistUserId) notFound();
   if (!assignment) redirect("/therapists?error=assign");
+  if (!patientProfile || patientProfile.sessionCredits < 1) redirect("/subscription?error=credit");
 
   const patientId = Number(session.user.id);
   const therapistId = therapistUserId;

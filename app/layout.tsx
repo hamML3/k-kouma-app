@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora, Mulish } from "next/font/google";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "./globals.css";
 
 const lora = Lora({
@@ -29,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${lora.variable} ${mulish.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-sans antialiased">{children}</body>
+      <body className="min-h-full flex flex-col font-sans antialiased">
+        {children}
+        <CookieConsentBanner />
+      </body>
     </html>
   );
 }

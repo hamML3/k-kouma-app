@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { loginAction } from "@/lib/actions/auth";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -66,11 +67,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="kk-btn-purple w-full mt-2"
-        >
+        <button type="submit" disabled={pending} className="kk-btn-purple w-full mt-2">
           {pending ? "Connexion en cours…" : "Se connecter"}
         </button>
       </form>
@@ -80,6 +77,8 @@ export default function LoginPage() {
         <span className="font-bold" style={{ color: "var(--kk-dark)" }}>15</span> ou
         rendez-vous aux urgences les plus proches.
       </p>
+
+      <LoadingOverlay show={pending} />
     </>
   );
 }

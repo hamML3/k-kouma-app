@@ -301,7 +301,11 @@ export default async function TherapistsPage({
 
                       {/* Match reasons */}
                       {match && match.reasons.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
+                        <div className="mt-2">
+                          <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--kk-faint)" }}>
+                            Pourquoi ce psychologue vous est recommandé
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
                           {match.reasons.map((r) => (
                             <span
                               key={r}
@@ -311,6 +315,7 @@ export default async function TherapistsPage({
                               ✓ {r}
                             </span>
                           ))}
+                          </div>
                         </div>
                       )}
 

@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import { registerTherapistAction } from "@/lib/actions/auth";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import Link from "next/link";
 
 const SPECIALTIES = [
@@ -314,7 +315,7 @@ export default function RegisterTherapistPage() {
 
         <p className="text-xs" style={{ color: "var(--kk-faint)" }}>
           En soumettant ce formulaire, vous acceptez nos{" "}
-          <a href="#" className="underline">Conditions d&apos;utilisation</a>. Votre
+          <a href="/legal/cgu" target="_blank" className="underline">Conditions d&apos;utilisation</a>. Votre
           dossier sera vérifié avant l&apos;activation de votre compte.
         </p>
 
@@ -329,6 +330,8 @@ export default function RegisterTherapistPage() {
           </Link>
         </p>
       </form>
+
+      <LoadingOverlay show={pending} />
     </>
   );
 }

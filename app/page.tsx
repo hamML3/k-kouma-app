@@ -1,62 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Logo } from "@/components/Logo";
 import { Icon, type IconName } from "@/components/Icon";
 import { getSpecialtyIcon } from "@/lib/icons";
-
-/* ─── Nav ───────────────────────────────────────────────────────────────── */
-function Navbar() {
-  return (
-    <header
-      className="sticky top-0 z-50 w-full"
-      style={{ background: "rgba(246,242,234,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #EDE8DC" }}
-    >
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <Logo size={30} />
-          <p className="text-[10px] leading-tight hidden sm:block" style={{ color: "#8A9183" }}>
-            Votre bien-être,
-            <br />
-            notre mission
-          </p>
-        </Link>
-
-        {/* Nav links — masqué sur mobile */}
-        <nav className="hidden md:flex items-center gap-6">
-          {["Accueil", "À propos", "Psychologues", "Tarifs", "FAQ"].map((item) => (
-            <a
-              key={item}
-              href={item === "Psychologues" ? "/therapists" : "#"}
-              className="text-sm font-semibold transition-colors hover:opacity-70"
-              style={{ color: "#5C645B" }}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        {/* CTA buttons */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/login"
-            className="hidden sm:block text-sm font-bold px-4 py-2 rounded-full border transition-all"
-            style={{ borderColor: "#557B53", color: "#557B53" }}
-          >
-            Se connecter
-          </Link>
-          <Link
-            href="/register"
-            className="text-sm font-bold px-5 py-2 rounded-full"
-            style={{ background: "#8E7CB8", color: "#fff" }}
-          >
-            S&apos;inscrire
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
+import { PublicNav } from "@/components/PublicNav";
+import { PublicFooter } from "@/components/PublicFooter";
 
 /* ─── Hero ──────────────────────────────────────────────────────────────── */
 function Hero() {
@@ -162,7 +109,7 @@ function TherapyTypes() {
   ];
 
   return (
-    <section style={{ background: "#fff" }}>
+    <section id="mission" style={{ background: "#fff", scrollMarginTop: "5rem" }}>
       <div className="max-w-6xl mx-auto px-6 py-16">
         <h2
           className="text-2xl sm:text-3xl font-bold text-center mb-2"
@@ -414,7 +361,7 @@ function ConsultationModes() {
   ];
 
   return (
-    <section style={{ background: "var(--kk-bg)" }}>
+    <section id="tarifs" style={{ background: "var(--kk-bg)", scrollMarginTop: "5rem" }}>
       <div className="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h2
@@ -531,9 +478,9 @@ function SecuritySection() {
               <p className="text-sm" style={{ color: "#5C645B" }}>
                 Si vous rencontrez un problème avec un psychologue, vous pouvez le signaler en toute confidentialité.
               </p>
-              <a href="#" className="text-sm font-bold mt-2 inline-block" style={{ color: "#557B53" }}>
+              <Link href="/security" className="text-sm font-bold mt-2 inline-block" style={{ color: "#557B53" }}>
                 En savoir plus →
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -589,122 +536,11 @@ function SecuritySection() {
   );
 }
 
-/* ─── Countries footer bar ───────────────────────────────────────────────── */
-function CountriesBar() {
-  const countries = [
-    { flag: "🇲🇱", name: "Mali" },
-    { flag: "🇸🇳", name: "Sénégal" },
-    { flag: "🇨🇮", name: "Côte d'Ivoire" },
-    { flag: "🇧🇯", name: "Bénin" },
-    { flag: "🇹🇬", name: "Togo" },
-  ];
-
-  return (
-    <div
-      className="py-4"
-      style={{ background: "#E4EDDD", borderTop: "1px solid #C2D9BC" }}
-    >
-      <div className="max-w-6xl mx-auto px-6 flex items-center justify-center gap-2 flex-wrap">
-        <p className="text-xs font-semibold mr-3" style={{ color: "#557B53" }}>
-          Nous sommes présents en Afrique de l&apos;Ouest
-        </p>
-        {countries.map((c) => (
-          <span key={c.name} className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#5C645B" }}>
-            {c.flag} {c.name}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Footer ─────────────────────────────────────────────────────────────── */
-function Footer() {
-  return (
-    <footer style={{ background: "#1F2E20" }}>
-      <div className="max-w-6xl mx-auto px-6 py-12 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
-        {/* Brand */}
-        <div className="md:col-span-1">
-          <div className="mb-3">
-            <Logo tone="white" size={28} />
-          </div>
-          <p className="text-xs leading-relaxed" style={{ color: "#8A9183" }}>
-            Votre bien-être mental, notre priorité. Plateforme de téléconsultation psychologique pour l&apos;Afrique de l&apos;Ouest.
-          </p>
-          <div className="flex gap-3 mt-4">
-            {["📘", "📸", "💬"].map((icon, i) => (
-              <a
-                key={i}
-                href="#"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                style={{ background: "rgba(255,255,255,0.1)" }}
-              >
-                {icon}
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Links */}
-        {[
-          { title: "Plateforme", links: ["À propos", "Blog", "FAQ"] },
-          { title: "Légal", links: ["Conditions d'utilisation", "Confidentialité", "Contact"] },
-        ].map((col) => (
-          <div key={col.title}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#8A9183" }}>
-              {col.title}
-            </p>
-            <ul className="space-y-2">
-              {col.links.map((l) => (
-                <li key={l}>
-                  <a href="#" className="text-sm transition-opacity hover:opacity-70" style={{ color: "#A8AEA1" }}>
-                    {l}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-
-        {/* CTA */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#8A9183" }}>
-            Commencer
-          </p>
-          <Link
-            href="/register"
-            className="block w-full text-center text-sm font-bold py-3 rounded-full mb-3"
-            style={{ background: "#557B53", color: "#fff" }}
-          >
-            S&apos;inscrire gratuitement
-          </Link>
-          <Link
-            href="/login"
-            className="block w-full text-center text-sm font-bold py-3 rounded-full"
-            style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}
-          >
-            Se connecter
-          </Link>
-        </div>
-      </div>
-
-      <div
-        className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
-      >
-        <p className="text-xs" style={{ color: "#8A9183" }}>
-          © 2026 K-Kouma. Tous droits réservés.
-        </p>
-      </div>
-    </footer>
-  );
-}
-
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function LandingPage() {
   return (
     <>
-      <Navbar />
+      <PublicNav />
       <main>
         <Hero />
         <TherapyTypes />
@@ -713,8 +549,7 @@ export default function LandingPage() {
         <ConsultationModes />
         <SecuritySection />
       </main>
-      <CountriesBar />
-      <Footer />
+      <PublicFooter />
     </>
   );
 }

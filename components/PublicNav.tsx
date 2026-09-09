@@ -1,0 +1,62 @@
+import Link from "next/link";
+import { Logo } from "@/components/Logo";
+
+const NAV_ITEMS = [
+  { label: "Accueil", href: "/" },
+  { label: "À propos", href: "/#mission" },
+  { label: "Psychologues", href: "/therapists" },
+  { label: "Tarifs", href: "/#tarifs" },
+  { label: "Blog", href: "/blog" },
+  { label: "FAQ", href: "/faq" },
+];
+
+/** Barre de navigation du site public — reprise sur toutes les pages hors espace connecté. */
+export function PublicNav() {
+  return (
+    <header
+      className="sticky top-0 z-50 w-full"
+      style={{ background: "rgba(246,242,234,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #EDE8DC" }}
+    >
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+        <Link href="/" className="flex items-center gap-3 shrink-0">
+          <Logo size={30} />
+          <p className="text-[10px] leading-tight hidden sm:block" style={{ color: "#8A9183" }}>
+            Votre bien-être,
+            <br />
+            notre mission
+          </p>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-6">
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              className="text-sm font-semibold transition-colors hover:opacity-70"
+              style={{ color: "#5C645B" }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/login"
+            className="hidden sm:block text-sm font-bold px-4 py-2 rounded-full border transition-all"
+            style={{ borderColor: "#557B53", color: "#557B53" }}
+          >
+            Se connecter
+          </Link>
+          <Link
+            href="/register"
+            className="text-sm font-bold px-5 py-2 rounded-full"
+            style={{ background: "#8E7CB8", color: "#fff" }}
+          >
+            S&apos;inscrire
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}

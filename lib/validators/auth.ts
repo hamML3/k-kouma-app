@@ -5,13 +5,39 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
 });
 
-export const registerPatientSchema = z.object({
-  email: z.string().email("Email invalide"),
-  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
-  phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
-  nickname: z.string().min(2).max(50),
-  timezone: z.string().default("UTC"),
-});
+// Case à cocher HTML : présente ("on") si cochée, absente du FormData sinon.
+const checkbox = z
+  .string()
+  .optional()
+  .transform((v) => v === "on");
+
+export const registerPatientSchema = z
+  .object({
+    email: z.string().email("Email invalide"),
+    password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
+    phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
+    nickname: z.string().min(2).max(50),
+    timezone: z.string().default("UTC"),
+    // Les 5 cases du document "Consentement au traitement des données
+    // relatives à la santé" — toutes requises avant la création du compte.
+    consentPrivacyRead: checkbox,
+    consentHealthDataNeeded: checkbox,
+    consentDataProcessing: checkbox,
+    consentInfoAccurate: checkbox,
+    consentNotEmergency: checkbox,
+  })
+  .refine(
+    (data) =>
+      data.consentPrivacyRead &&
+      data.consentHealthDataNeeded &&
+      data.consentDataProcessing &&
+      data.consentInfoAccurate &&
+      data.consentNotEmergency,
+    {
+      message:
+        "Merci de cocher les 5 cases du consentement au traitement des données de santé pour créer votre compte.",
+    }
+  );
 
 export const registerTherapistSchema = z.object({
   email: z.string().email("Email invalide"),

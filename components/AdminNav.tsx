@@ -28,6 +28,29 @@ const NAV_LINKS: NavLink[] = [
       </svg>
     ),
   },
+  {
+    href: "/admin/users",
+    label: "Utilisateurs",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="6.5" cy="6" r="2.8" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M1.5 16c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="13.5" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M12 9c2.2 0 4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/finances",
+    label: "Finances",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="6" cy="11" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
 ];
 
 /** Nav de la sidebar admin, avec surlignage de la section active. */

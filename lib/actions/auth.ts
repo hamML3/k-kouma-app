@@ -79,11 +79,22 @@ export async function registerPatientAction(
     phoneNumber: phoneRaw || undefined,
     nickname: formData.get("nickname") as string,
     timezone: (formData.get("timezone") as string) || "UTC",
+    consentPrivacyRead: (formData.get("consentPrivacyRead") as string) || undefined,
+    consentHealthDataNeeded: (formData.get("consentHealthDataNeeded") as string) || undefined,
+    consentDataProcessing: (formData.get("consentDataProcessing") as string) || undefined,
+    consentInfoAccurate: (formData.get("consentInfoAccurate") as string) || undefined,
+    consentNotEmergency: (formData.get("consentNotEmergency") as string) || undefined,
   };
 
   const parsed = registerPatientSchema.safeParse(raw);
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    const flat = parsed.error.flatten();
+    // Les cases de consentement échouent au niveau de l'objet entier (.refine) :
+    // on remonte ce message en haut du formulaire plutôt qu'en erreur de champ.
+    if (flat.formErrors.length > 0) {
+      return { error: flat.formErrors[0], fieldErrors: flat.fieldErrors };
+    }
+    return { fieldErrors: flat.fieldErrors };
   }
 
   const { email, password, phoneNumber, nickname, timezone } = parsed.data;
@@ -102,7 +113,7 @@ export async function registerPatientAction(
       phoneNumber,
       role: "patient",
       patientProfile: {
-        create: { nickname, timezone },
+        create: { nickname, timezone, healthDataConsentAt: new Date() },
       },
     },
   });

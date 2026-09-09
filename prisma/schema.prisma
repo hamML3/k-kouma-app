@@ -36,6 +36,8 @@ model User {
   verificationTokens VerificationToken[]
   otpCodes           OtpCode[]
   sentMessages       Message[]
+  payments           Payment[]
+  therapistEarnings  TherapistEarning[]
 
   @@index([status, role])
   @@map("users")
@@ -104,6 +106,14 @@ model PatientProfile {
   avatarUrl         String? @map("avatar_url") @db.VarChar(255)
   onboardingAnswers Json?   @map("onboarding_answers")
   timezone          String  @default("UTC") @db.VarChar(50)
+  // Nombre de séances payées et non encore consommées. Incrémenté quand un
+  // paiement passe à "completed", décrémenté à chaque réservation confirmée
+  // (et recrédité si le patient annule un rendez-vous en attente).
+  sessionCredits    Int     @default(0) @map("session_credits")
+  // Horodatage du consentement au traitement des données de santé, donné à
+  // l'inscription (les 5 cases du document "Consentement au traitement des
+  // données relatives à la santé" étant toutes requises avant validation).
+  healthDataConsentAt DateTime? @map("health_data_consent_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -172,6 +182,53 @@ enum SubscriptionStatus {
   unpaid
 }
 
+/// Achat d'un crédit de séance(s) — modèle au paiement à la séance (et non
+/// abonnement mensuel). Une fois `completed`, `sessionsCount` est ajouté à
+/// `PatientProfile.sessionCredits`.
+model Payment {
+  id            Int           @id @default(autoincrement())
+  patientId     Int           @map("patient_id")
+  therapyType   String        @map("therapy_type") @db.VarChar(20) // individuelle | couple | enfant
+  sessionsCount Int           @map("sessions_count") // 1 (séance seule) ou 4 (pack)
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("XOF") @db.VarChar(3)
+  provider      String        @default("paydunya") @db.VarChar(30)
+  providerRef   String?       @unique @map("provider_ref") @db.VarChar(255)
+  status        PaymentStatus @default(pending)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  paidAt        DateTime?     @map("paid_at")
+
+  patient User @relation(fields: [patientId], references: [id])
+
+  @@index([patientId, status])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  canceled
+}
+
+/// Gain d'un thérapeute pour une séance effectivement réalisée. Créé quand un
+/// rendez-vous passe à "completed" ; le montant est figé au tarif du
+/// thérapeute à ce moment-là (indépendant d'un changement ultérieur de tarif).
+model TherapistEarning {
+  id            Int      @id @default(autoincrement())
+  therapistId   Int      @map("therapist_id")
+  appointmentId Int      @unique @map("appointment_id")
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("XOF") @db.VarChar(3)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  therapist   User        @relation(fields: [therapistId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([therapistId])
+  @@map("therapist_earnings")
+}
+
 // =========================================================================
 // MODULE 3 : RELATIONS, MATCHING & RENDEZ-VOUS
 // =========================================================================
@@ -210,6 +267,7 @@ model Appointment {
   patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
   therapist User @relation("TherapistAppointments", fields: [therapistId], references: [id])
   messages  Message[]
+  earning   TherapistEarning?
 
   @@index([scheduledAt])
   @@map("appointments")

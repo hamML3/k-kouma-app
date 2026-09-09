@@ -2,9 +2,11 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { AppHeader } from "@/components/AppHeader";
 import { ResendVerificationBanner } from "@/components/ResendVerificationBanner";
 import { changeTherapistAction } from "@/lib/actions/assignments";
+import { recommendedArticles } from "@/lib/articles";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -19,7 +21,7 @@ export default async function DashboardPage() {
         role: true,
         emailVerifiedAt: true,
         patientProfile: {
-          select: { nickname: true, onboardingAnswers: true },
+          select: { nickname: true, onboardingAnswers: true, sessionCredits: true },
         },
         therapistProfile: {
           select: { firstName: true, isVerified: true },
@@ -51,6 +53,18 @@ export default async function DashboardPage() {
     !isTherapist && !user?.patientProfile?.onboardingAnswers;
 
   const assignedTherapist = activeAssignment?.therapist?.therapistProfile ?? null;
+
+  const answers = user?.patientProfile?.onboardingAnswers as { motifs?: string[] } | null;
+  const articles = !isTherapist ? recommendedArticles(answers?.motifs, 3) : [];
+
+  // Message de bienvenue personnalisé, adapté à l'étape du parcours du patient.
+  const welcomeMessage = isTherapist
+    ? "Bienvenue sur votre espace K-Kouma."
+    : needsOnboarding
+    ? "Content de vous compter parmi nous. Prenons quelques minutes pour mieux vous connaître."
+    : assignedTherapist
+    ? "Heureux de vous revoir. Votre psychologue est là pour vous, à votre rythme."
+    : "Votre profil est prêt — il ne reste plus qu'à trouver le psychologue qui vous correspond.";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -104,7 +118,7 @@ export default async function DashboardPage() {
             Bonjour, {displayName}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-            Bienvenue sur votre espace K-Kouma.
+            {welcomeMessage}
           </p>
         </div>
 
@@ -211,8 +225,12 @@ export default async function DashboardPage() {
                   </svg>
                 }
                 iconBg="var(--kk-gold-light)"
-                title="Mon abonnement"
-                desc="Gérez votre plan et vos paiements"
+                title="Mes séances"
+                desc={
+                  user?.patientProfile?.sessionCredits
+                    ? `${user.patientProfile.sessionCredits} séance${user.patientProfile.sessionCredits > 1 ? "s" : ""} disponible${user.patientProfile.sessionCredits > 1 ? "s" : ""}`
+                    : "Achetez des séances pour réserver"
+                }
               />
             </>
           )}
@@ -256,6 +274,42 @@ export default async function DashboardPage() {
             </>
           )}
         </div>
+
+        {/* Articles recommandés */}
+        {!isTherapist && articles.length > 0 && (
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+                Articles recommandés pour vous
+              </h2>
+              <Link href="/blog" className="text-xs font-bold" style={{ color: "var(--kk-green)" }}>
+                Tout le blog →
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {articles.map((a) => (
+                <Link
+                  key={a.slug}
+                  href={`/blog/${a.slug}`}
+                  className="rounded-2xl overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
+                  style={{ background: "#fff", border: "1px solid var(--kk-border)", boxShadow: "0 6px 20px rgba(60,70,55,0.05)" }}
+                >
+                  <div className="relative w-full h-28 shrink-0">
+                    <Image src={a.image} alt="" fill className="object-cover" />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-sm mb-1" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
+                      {a.title}
+                    </h3>
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--kk-muted)" }}>
+                      {a.hook}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

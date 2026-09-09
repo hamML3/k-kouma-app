@@ -4,56 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { createAppointmentSchema } from "@/lib/validators/appointment";
 import { randomUUID } from "crypto";
 
-async function ensureActiveSubscription(patientId: number) {
-  const existing = await prisma.patientSubscription.findUnique({ where: { patientId } });
-
-  if (existing?.status === "active") {
-    return existing;
-  }
-
-  const plan =
-    (await prisma.subscriptionPlan.findFirst({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-    })) ??
-    (await prisma.subscriptionPlan.create({
-      data: {
-        name: "Starter",
-        price: 0,
-        currency: "XOF",
-        videoMinutesIncluded: 180,
-        isActive: true,
-      },
-    }));
-
-  const now = new Date();
-  const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-  if (existing) {
-    return prisma.patientSubscription.update({
-      where: { patientId },
-      data: {
-        planId: plan.id,
-        status: "active",
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        videoMinutesRemaining: plan.videoMinutesIncluded,
-      },
-    });
-  }
-
-  return prisma.patientSubscription.create({
-    data: {
-      patientId,
-      planId: plan.id,
-      status: "active",
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
-      videoMinutesRemaining: plan.videoMinutesIncluded,
-    },
-  });
-}
-
 // GET : liste des rendez-vous du patient ou du thérapeute connecté
 export async function GET() {
   const session = await auth();
@@ -74,15 +24,13 @@ export async function GET() {
   return NextResponse.json({ appointments });
 }
 
-// POST : créer un rendez-vous (patient uniquement, abonnement actif requis)
+// POST : créer un rendez-vous (patient uniquement, crédit de séance requis)
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   if (session.user.role !== "patient") return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
   const patientId = Number(session.user.id);
-
-  await ensureActiveSubscription(patientId);
 
   const body = await req.json();
   const parsed = createAppointmentSchema.safeParse(body);
@@ -98,16 +46,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ce thérapeute n'est pas votre thérapeute attitré" }, { status: 403 });
   }
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      patientId,
-      therapistId,
-      scheduledAt: new Date(scheduledAt),
-      durationMinutes,
-      type,
-      webrtcRoomId: type !== "text" ? randomUUID() : null,
-    },
+  // Même verrou atomique que la réservation via l'interface web — un seul
+  // crédit débité même en cas de requêtes concurrentes.
+  const created = await prisma.$transaction(async (tx) => {
+    const debited = await tx.patientProfile.updateMany({
+      where: { userId: patientId, sessionCredits: { gt: 0 } },
+      data: { sessionCredits: { decrement: 1 } },
+    });
+    if (debited.count === 0) return null;
+
+    return tx.appointment.create({
+      data: {
+        patientId,
+        therapistId,
+        scheduledAt: new Date(scheduledAt),
+        durationMinutes,
+        type,
+        webrtcRoomId: type !== "text" ? randomUUID() : null,
+      },
+    });
   });
 
-  return NextResponse.json({ appointment }, { status: 201 });
+  if (!created) {
+    return NextResponse.json(
+      { error: "Aucune séance disponible. Achetez un crédit de séance avant de réserver." },
+      { status: 402 }
+    );
+  }
+
+  return NextResponse.json({ appointment: created }, { status: 201 });
 }

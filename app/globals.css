@@ -204,3 +204,12 @@ body {
   border-color: var(--kk-purple);
   background: var(--kk-purple-light);
 }
+
+@keyframes kk-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.kk-spin {
+  animation: kk-spin 0.9s linear infinite;
+}

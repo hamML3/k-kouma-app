@@ -1,8 +1,25 @@
 'use client'
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { registerPatientAction } from "@/lib/actions/auth";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import Link from "next/link";
+
+const CONSENT_ITEMS: { key: string; label: string }[] = [
+  { key: "consentPrivacyRead", label: "J'ai lu la Politique de confidentialité." },
+  {
+    key: "consentHealthDataNeeded",
+    label:
+      "J'ai compris que certaines données relatives à ma santé peuvent être nécessaires à la réalisation de la consultation demandée.",
+  },
+  {
+    key: "consentDataProcessing",
+    label:
+      "Je consens de manière libre, spécifique, éclairée et non équivoque au traitement des données nécessaires à la fourniture du service demandé.",
+  },
+  { key: "consentInfoAccurate", label: "Je confirme que les informations que je communique sont exactes à ma connaissance." },
+  { key: "consentNotEmergency", label: "Je comprends que K-Kouma n'est pas un service d'urgence médicale." },
+];
 
 const TIMEZONES = [
   { value: "Africa/Bamako", label: "Bamako (GMT+0)" },
@@ -24,6 +41,14 @@ function FieldError({ messages }: { messages?: string[] }) {
 
 export default function RegisterPatientPage() {
   const [state, action, pending] = useActionState(registerPatientAction, {});
+  const [consents, setConsents] = useState<Record<string, boolean>>(
+    Object.fromEntries(CONSENT_ITEMS.map((c) => [c.key, false]))
+  );
+  const allConsented = CONSENT_ITEMS.every((c) => consents[c.key]);
+
+  function toggleAll(checked: boolean) {
+    setConsents(Object.fromEntries(CONSENT_ITEMS.map((c) => [c.key, checked])));
+  }
 
   return (
     <>
@@ -144,13 +169,65 @@ export default function RegisterPatientPage() {
 
         <p className="text-xs pt-1" style={{ color: "var(--kk-faint)" }}>
           En créant un compte, vous acceptez nos{" "}
-          <a href="#" className="underline">Conditions d&apos;utilisation</a> et notre{" "}
-          <a href="#" className="underline">Politique de confidentialité</a>.
+          <a href="/legal/cgu" target="_blank" className="underline">Conditions d&apos;utilisation</a> et notre{" "}
+          <a href="/legal/confidentialite" target="_blank" className="underline">Politique de confidentialité</a>.
         </p>
+
+        <div
+          className="rounded-2xl p-5"
+          style={{ background: "var(--kk-green-light)", border: "1.5px solid #C2D9BC" }}
+        >
+          <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Consentement au traitement de vos données de santé
+          </p>
+          <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
+            Une prise en charge psychologique peut nécessiter de recueillir des informations sur votre santé
+            (symptômes, antécédents, documents transmis…). Merci de confirmer les points suivants — le détail
+            complet est disponible dans notre{" "}
+            <a href="/legal/consentement-sante" target="_blank" className="underline font-semibold">
+              document de consentement
+            </a>
+            .
+          </p>
+
+          <label
+            className="flex items-center gap-2.5 text-xs font-bold pb-2.5 mb-2.5 cursor-pointer"
+            style={{ color: "var(--kk-dark)", borderBottom: "1px solid #C2D9BC" }}
+          >
+            <input
+              type="checkbox"
+              checked={allConsented}
+              onChange={(e) => toggleAll(e.target.checked)}
+              className="mt-0 shrink-0"
+            />
+            Tout accepter
+          </label>
+
+          <div className="space-y-2.5">
+            {CONSENT_ITEMS.map((c) => (
+              <label key={c.key} className="flex items-start gap-2.5 text-xs cursor-pointer" style={{ color: "var(--kk-mid)" }}>
+                <input
+                  type="checkbox"
+                  name={c.key}
+                  checked={consents[c.key]}
+                  onChange={(e) => setConsents((prev) => ({ ...prev, [c.key]: e.target.checked }))}
+                  className="mt-0.5 shrink-0"
+                />
+                {c.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {!allConsented && (
+          <p className="text-xs text-center" style={{ color: "var(--kk-muted)" }}>
+            Cochez les 5 conditions ci-dessus pour pouvoir créer votre compte.
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !allConsented}
           className="kk-btn-purple w-full mt-2"
         >
           {pending ? "Création du compte…" : "Créer mon compte →"}
@@ -163,6 +240,8 @@ export default function RegisterPatientPage() {
           </Link>
         </p>
       </form>
+
+      <LoadingOverlay show={pending} />
     </>
   );
 }
