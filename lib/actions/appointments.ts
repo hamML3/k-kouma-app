@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
@@ -23,31 +24,60 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
     redirect("/therapists?error=assign");
   }
 
-  // Consomme un crédit de séance de façon atomique : l'UPDATE conditionnel
-  // (sessionCredits > 0) agit comme verrou — si deux réservations partent en
-  // même temps avec un seul crédit disponible, une seule passera.
-  const created = await prisma.$transaction(async (tx) => {
-    const debited = await tx.patientProfile.updateMany({
-      where: { userId: patientId, sessionCredits: { gt: 0 } },
-      data: { sessionCredits: { decrement: 1 } },
-    });
-    if (debited.count === 0) return null;
+  // Transaction sérialisable : le contrôle de créneau (lecture) et la
+  // réservation (écriture) doivent être vus comme une seule opération
+  // atomique, sinon deux réservations lancées au même instant sur le même
+  // créneau peuvent toutes les deux lire "libre" avant que l'une des deux
+  // n'écrive — MySQL lève alors une erreur de sérialisation sur la seconde
+  // plutôt que de laisser passer un double rendez-vous.
+  let result: "ok" | "conflict" | "no_credit" | "retry";
+  try {
+    result = await prisma.$transaction(
+      async (tx) => {
+        const conflict = await tx.appointment.findFirst({
+          where: {
+            therapistId,
+            scheduledAt: new Date(scheduledAt),
+            status: { in: ["pending", "confirmed"] },
+          },
+          select: { id: true },
+        });
+        if (conflict) return "conflict";
 
-    return tx.appointment.create({
-      data: {
-        patientId,
-        therapistId,
-        scheduledAt: new Date(scheduledAt),
-        durationMinutes: 45,
-        status: "pending",
-        type: type as "video" | "audio" | "text",
-        webrtcRoomId: type !== "text" ? randomUUID() : null,
+        // Consomme un crédit de séance de façon atomique : l'UPDATE
+        // conditionnel (sessionCredits > 0) agit comme verrou.
+        const debited = await tx.patientProfile.updateMany({
+          where: { userId: patientId, sessionCredits: { gt: 0 } },
+          data: { sessionCredits: { decrement: 1 } },
+        });
+        if (debited.count === 0) return "no_credit";
+
+        await tx.appointment.create({
+          data: {
+            patientId,
+            therapistId,
+            scheduledAt: new Date(scheduledAt),
+            durationMinutes: 45,
+            status: "pending",
+            type: type as "video" | "audio" | "text",
+            webrtcRoomId: type !== "text" ? randomUUID() : null,
+          },
+        });
+        return "ok";
       },
-    });
-  });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
+  } catch {
+    // Conflit de sérialisation MySQL : une autre réservation concurrente a
+    // gagné la course sur ce même créneau.
+    result = "retry";
+  }
 
-  if (!created) {
+  if (result === "no_credit") {
     redirect("/subscription?error=credit");
+  }
+  if (result === "conflict" || result === "retry") {
+    redirect("/therapists?error=slot_taken");
   }
 
   revalidatePath("/appointments");

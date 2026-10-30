@@ -270,6 +270,7 @@ model Appointment {
   earning   TherapistEarning?
 
   @@index([scheduledAt])
+  @@index([therapistId, scheduledAt])
   @@map("appointments")
 }
 

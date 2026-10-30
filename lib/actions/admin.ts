@@ -1,5 +1,6 @@
 'use server'
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -12,11 +13,26 @@ export type CreateUserState = {
   success?: boolean;
 };
 
+// Le middleware (proxy.ts) laisse volontairement passer les Server Actions
+// sans vérifier la session — chaque action admin doit donc faire ce contrôle
+// elle-même avant toute lecture/écriture sensible.
+async function requireAdmin() {
+  const session = await auth();
+  if (session?.user?.role !== "admin") {
+    throw new Error("Accès refusé : réservé aux administrateurs.");
+  }
+}
+
 /** Création directe d'un compte par un admin (patient, thérapeute ou autre admin) — sans passer par l'inscription publique. */
 export async function createUserAction(
   _prevState: CreateUserState,
   formData: FormData
 ): Promise<CreateUserState> {
+  const session = await auth();
+  if (session?.user?.role !== "admin") {
+    return { error: "Accès refusé : réservé aux administrateurs." };
+  }
+
   const raw = {
     email: formData.get("email") as string,
     password: formData.get("password") as string,
@@ -61,6 +77,7 @@ export async function createUserAction(
 }
 
 export async function suspendUserAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
 
@@ -71,6 +88,7 @@ export async function suspendUserAction(formData: FormData): Promise<void> {
 }
 
 export async function reactivateUserAction(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
 
@@ -81,6 +99,7 @@ export async function reactivateUserAction(formData: FormData): Promise<void> {
 }
 
 export async function suspendUser(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -95,6 +114,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
 }
 
 export async function unsuspendUser(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -109,6 +129,7 @@ export async function unsuspendUser(formData: FormData): Promise<void> {
 }
 
 export async function verifyTherapist(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -122,6 +143,7 @@ export async function verifyTherapist(formData: FormData): Promise<void> {
 }
 
 export async function rejectTherapist(formData: FormData): Promise<void> {
+  await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 

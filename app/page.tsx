@@ -4,6 +4,17 @@ import { Icon, type IconName } from "@/components/Icon";
 import { getSpecialtyIcon } from "@/lib/icons";
 import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
+import { SESSION_PRICING, type TherapyType } from "@/lib/pricing";
+
+const PRICING_DISPLAY: Record<TherapyType, { color: string; bg: string }> = {
+  individuelle: { color: "#557B53", bg: "#E4EDDD" },
+  couple: { color: "#8E7CB8", bg: "#ECE7F5" },
+  enfant: { color: "#C58A3D", bg: "#FBEEDD" },
+};
+
+function fcfa(amount: number): string {
+  return `${amount.toLocaleString("fr-FR")} FCFA`;
+}
 
 /* ─── Hero ──────────────────────────────────────────────────────────────── */
 function Hero() {
@@ -407,44 +418,41 @@ function ConsultationModes() {
           </div>
 
           <div className="space-y-4">
-            {[
-              { label: "Individuelle", price: "8 500 FCFA", pack4: "32 000 FCFA", pack4Was: "34 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
-              { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack4Was: "64 000 FCFA", color: "#8E7CB8", bg: "#ECE7F5" },
-              { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack4Was: "32 000 FCFA", color: "#C58A3D", bg: "#FBEEDD" },
-            ].map((p) => (
-              <div
-                key={p.label}
-                className="rounded-2xl p-4"
-                style={{ background: p.bg }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-bold text-sm" style={{ color: p.color, fontFamily: "var(--font-lora)" }}>{p.label}</p>
-                  <span className="text-xs flex items-center gap-1" style={{ color: "#8A9183" }}>
-                    <Icon name="chat" size={12} />
-                    <Icon name="headphones" size={12} />
-                    <Icon name="video" size={12} />
-                  </span>
-                </div>
-                <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{p.price}</strong></p>
-                <div className="text-xs" style={{ color: "#5C645B" }}>
-                  {p.pack4Was ? (
-                    <p className="flex items-center gap-1.5 flex-wrap">
-                      • 4 séances :
-                      <s style={{ color: "#A8AEA1" }}>{p.pack4Was}</s>
-                      <strong style={{ color: p.color }}>{p.pack4}</strong>
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                        style={{ background: p.color, color: "#fff" }}
-                      >
-                        Offre
+            {(Object.entries(SESSION_PRICING) as [TherapyType, (typeof SESSION_PRICING)[TherapyType]][]).map(
+              ([type, entry]) => {
+                const { color, bg } = PRICING_DISPLAY[type];
+                return (
+                  <div key={type} className="rounded-2xl p-4" style={{ background: bg }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-bold text-sm" style={{ color, fontFamily: "var(--font-lora)" }}>{entry.label}</p>
+                      <span className="text-xs flex items-center gap-1" style={{ color: "#8A9183" }}>
+                        <Icon name="chat" size={12} />
+                        <Icon name="headphones" size={12} />
+                        <Icon name="video" size={12} />
                       </span>
-                    </p>
-                  ) : (
-                    <p>• 4 séances : <strong>{p.pack4}</strong></p>
-                  )}
-                </div>
-              </div>
-            ))}
+                    </div>
+                    <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{fcfa(entry.single)}</strong></p>
+                    <div className="text-xs" style={{ color: "#5C645B" }}>
+                      {entry.pack4Was ? (
+                        <p className="flex items-center gap-1.5 flex-wrap">
+                          • 4 séances :
+                          <s style={{ color: "#A8AEA1" }}>{fcfa(entry.pack4Was)}</s>
+                          <strong style={{ color }}>{fcfa(entry.pack4)}</strong>
+                          <span
+                            className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                            style={{ background: color, color: "#fff" }}
+                          >
+                            Offre
+                          </span>
+                        </p>
+                      ) : (
+                        <p>• 4 séances : <strong>{fcfa(entry.pack4)}</strong></p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+            )}
           </div>
         </div>
       </div>

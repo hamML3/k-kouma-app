@@ -126,6 +126,23 @@ export default async function TherapistsPage({
           </div>
         )}
 
+        {error === "slot_taken" && (
+          <div
+            className="rounded-2xl p-4 mb-6 flex items-center gap-3"
+            style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
+          >
+            <span className="text-xl">⏰</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
+                Ce créneau vient d&apos;être réservé par quelqu&apos;un d&apos;autre.
+              </p>
+              <p className="text-xs" style={{ color: "#8A6530" }}>
+                Choisissez un autre horaire pour votre rendez-vous.
+              </p>
+            </div>
+          </div>
+        )}
+
         {error === "assign" && (
           <div
             className="rounded-2xl p-4 mb-6 flex items-center gap-3"

@@ -20,6 +20,7 @@ import {
   invalidatePendingTokens,
 } from "@/lib/tokens";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
+import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
 async function dispatchVerificationEmail(userId: number, email: string, name: string) {
@@ -42,6 +43,13 @@ export async function loginAction(
 ): Promise<AuthState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+
+  const ip = await clientIp();
+  const byEmail = rateLimit(`login:email:${email.toLowerCase()}`, 8, 10 * 60 * 1000);
+  const byIp = rateLimit(`login:ip:${ip}`, 30, 10 * 60 * 1000);
+  if (!byEmail.allowed || !byIp.allowed) {
+    return { error: retryAfterMessage(Math.max(byEmail.retryAfterMs, byIp.retryAfterMs)) };
+  }
 
   // Fetch role before sign-in so we can redirect correctly
   const dbUser = await prisma.user.findUnique({
@@ -71,6 +79,12 @@ export async function registerPatientAction(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  const ip = await clientIp();
+  const byIp = rateLimit(`register:ip:${ip}`, 10, 60 * 60 * 1000);
+  if (!byIp.allowed) {
+    return { error: retryAfterMessage(byIp.retryAfterMs) };
+  }
+
   const phoneRaw = formData.get("phoneNumber") as string;
 
   const raw = {
@@ -132,6 +146,12 @@ export async function registerTherapistAction(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  const ip = await clientIp();
+  const byIp = rateLimit(`register:ip:${ip}`, 10, 60 * 60 * 1000);
+  if (!byIp.allowed) {
+    return { error: retryAfterMessage(byIp.retryAfterMs) };
+  }
+
   const phoneRaw = formData.get("phoneNumber") as string;
 
   const raw = {
@@ -314,6 +334,13 @@ export async function forgotPasswordAction(
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return { error: "Adresse email invalide." };
+  }
+
+  const ip = await clientIp();
+  const byEmail = rateLimit(`forgot:email:${parsed.data.email.toLowerCase()}`, 5, 60 * 60 * 1000);
+  const byIp = rateLimit(`forgot:ip:${ip}`, 20, 60 * 60 * 1000);
+  if (!byEmail.allowed || !byIp.allowed) {
+    return { error: retryAfterMessage(Math.max(byEmail.retryAfterMs, byIp.retryAfterMs)) };
   }
 
   const genericMessage =
