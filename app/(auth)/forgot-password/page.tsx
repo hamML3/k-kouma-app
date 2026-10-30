@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { forgotPasswordAction } from "@/lib/actions/auth";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
@@ -56,6 +57,8 @@ export default function ForgotPasswordPage() {
           ← Retour à la connexion
         </Link>
       </p>
+
+      <LoadingOverlay show={pending} />
     </>
   );
 }

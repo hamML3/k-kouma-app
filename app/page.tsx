@@ -123,14 +123,15 @@ function TherapyTypes() {
 
         <div className="grid sm:grid-cols-3 gap-5 mb-10">
           {types.map((t) => (
-            <div
+            <Link
               key={t.title}
+              href="/register"
               className="rounded-2xl p-7 flex flex-col items-center text-center cursor-pointer transition-all hover:scale-[1.02]"
               style={{ background: t.bg, border: "1.5px solid transparent" }}
             >
               <div className="mb-4">{t.icon}</div>
               <p className="font-bold" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>{t.title}</p>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -408,8 +409,8 @@ function ConsultationModes() {
           <div className="space-y-4">
             {[
               { label: "Individuelle", price: "8 500 FCFA", pack4: "32 000 FCFA", pack4Was: "34 000 FCFA", color: "#557B53", bg: "#E4EDDD" },
-              { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack4Was: null, color: "#8E7CB8", bg: "#ECE7F5" },
-              { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack4Was: null, color: "#C58A3D", bg: "#FBEEDD" },
+              { label: "Couple",       price: "16 000 FCFA", pack4: "60 000 FCFA", pack4Was: "64 000 FCFA", color: "#8E7CB8", bg: "#ECE7F5" },
+              { label: "Adolescent / Enfant", price: "8 000 FCFA", pack4: "30 000 FCFA", pack4Was: "32 000 FCFA", color: "#C58A3D", bg: "#FBEEDD" },
             ].map((p) => (
               <div
                 key={p.label}

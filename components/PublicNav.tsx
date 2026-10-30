@@ -3,9 +3,10 @@ import { Logo } from "@/components/Logo";
 
 const NAV_ITEMS = [
   { label: "Accueil", href: "/" },
-  { label: "À propos", href: "/#mission" },
+  { label: "À propos", href: "/a-propos" },
   { label: "Psychologues", href: "/therapists" },
   { label: "Tarifs", href: "/#tarifs" },
+  { label: "Quiz", href: "/quiz" },
   { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
 ];

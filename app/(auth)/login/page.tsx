@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { loginAction } from "@/lib/actions/auth";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -56,10 +57,9 @@ export default function LoginPage() {
               Oublié ?
             </Link>
           </div>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             className="kk-input"

@@ -133,7 +133,6 @@ export async function registerTherapistAction(
   formData: FormData
 ): Promise<AuthState> {
   const phoneRaw = formData.get("phoneNumber") as string;
-  const hourlyRateRaw = formData.get("hourlyRate") as string;
 
   const raw = {
     email: formData.get("email") as string,
@@ -143,7 +142,6 @@ export async function registerTherapistAction(
     lastName: formData.get("lastName") as string,
     specialties: (formData.get("specialties") as string) || undefined,
     bio: (formData.get("bio") as string) || undefined,
-    hourlyRate: hourlyRateRaw ? Number(hourlyRateRaw) : 0,
     languages: (formData.get("languages") as string) || undefined,
   };
 

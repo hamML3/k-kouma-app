@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { registerTherapistAction } from "@/lib/actions/auth";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
 
 const SPECIALTIES = [
@@ -17,7 +18,7 @@ const SPECIALTIES = [
   "Enfants et adolescents",
 ];
 
-const RATE_PRESETS = [10000, 15000, 20000, 25000, 30000];
+const LANGUAGES = ["Français", "Bambara", "Peulh", "Malinké", "Djoula", "Akan", "Anglais"];
 
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages?.length) return null;
@@ -105,15 +106,16 @@ function DocUploadSlot({
 
 export default function RegisterTherapistPage() {
   const [state, action, pending] = useActionState(registerTherapistAction, {});
-  const [selectedRate, setSelectedRate] = useState<number | null>(null);
-  const [customRate, setCustomRate] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
   const [docs, setDocs] = useState<{ diploma: File | null; idCard: File | null; other: File | null }>({
     diploma: null,
     idCard: null,
     other: null,
   });
 
-  const effectiveRate = selectedRate ?? (customRate ? Number(customRate) : null);
+  function toggleLanguage(lang: string) {
+    setLanguages((prev) => (prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]));
+  }
 
   return (
     <>
@@ -171,13 +173,33 @@ export default function RegisterTherapistPage() {
 
         <div>
           <label htmlFor="password" className="kk-label">Mot de passe</label>
-          <input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} className="kk-input" placeholder="8 caractères minimum" />
+          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} className="kk-input" placeholder="8 caractères minimum" />
           <FieldError messages={state.fieldErrors?.password} />
         </div>
 
         <div>
-          <label htmlFor="languages" className="kk-label">Langues de consultation</label>
-          <input id="languages" name="languages" type="text" className="kk-input" placeholder="ex. Français, Bambara, Wolof" />
+          <p className="kk-label">Langues de consultation</p>
+          <div className="flex flex-wrap gap-2">
+            {LANGUAGES.map((lang) => {
+              const active = languages.includes(lang);
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => toggleLanguage(lang)}
+                  className="px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all"
+                  style={{
+                    background: active ? "var(--kk-green)" : "#fff",
+                    color: active ? "#fff" : "var(--kk-mid)",
+                    border: active ? "none" : "1.5px solid var(--kk-border-mid)",
+                  }}
+                >
+                  {lang}
+                </button>
+              );
+            })}
+          </div>
+          <input type="hidden" name="languages" value={languages.join(", ")} />
         </div>
 
         <div>
@@ -198,78 +220,6 @@ export default function RegisterTherapistPage() {
           </label>
           <textarea id="bio" name="bio" rows={3} maxLength={2000} className="kk-input resize-none" placeholder="Décrivez votre approche, votre formation et votre expérience…" />
           <FieldError messages={state.fieldErrors?.bio} />
-        </div>
-
-        {/* Hourly rate — prominent section */}
-        <div
-          className="rounded-2xl p-5"
-          style={{ background: "var(--kk-green-light)", border: "1.5px solid #C2D9BC" }}
-        >
-          <p
-            className="font-bold mb-1"
-            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-          >
-            Votre tarif par séance
-          </p>
-          <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
-            Vous fixez votre tarif librement. Les patients voient ce montant sur votre profil.
-          </p>
-
-          {/* Hidden real input */}
-          <input
-            type="hidden"
-            name="hourlyRate"
-            value={effectiveRate ?? ""}
-          />
-
-          {/* Preset chips */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            {RATE_PRESETS.map((r) => {
-              const active = selectedRate === r;
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => {
-                    setSelectedRate(active ? null : r);
-                    setCustomRate("");
-                  }}
-                  className="px-4 py-2 rounded-full text-sm font-bold transition-all"
-                  style={{
-                    background: active ? "var(--kk-green)" : "#fff",
-                    color: active ? "#fff" : "var(--kk-mid)",
-                    border: active ? "none" : "1.5px solid var(--kk-border-mid)",
-                  }}
-                >
-                  {r.toLocaleString("fr-FR")} XOF
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Custom amount */}
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="Autre montant…"
-              min={0}
-              step={500}
-              value={customRate}
-              onChange={(e) => {
-                setCustomRate(e.target.value);
-                setSelectedRate(null);
-              }}
-              className="kk-input flex-1"
-              style={{ background: "#fff" }}
-            />
-            <span className="text-sm font-semibold shrink-0" style={{ color: "var(--kk-mid)" }}>XOF / séance</span>
-          </div>
-
-          {effectiveRate !== null && effectiveRate > 0 && (
-            <p className="text-xs mt-2 font-semibold" style={{ color: "var(--kk-green)" }}>
-              ✓ Tarif sélectionné : {effectiveRate.toLocaleString("fr-FR")} XOF / séance
-            </p>
-          )}
         </div>
 
         {/* Documents section */}

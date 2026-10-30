@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { registerPatientAction } from "@/lib/actions/auth";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
 
 const CONSENT_ITEMS: { key: string; label: string }[] = [
@@ -135,10 +136,9 @@ export default function RegisterPatientPage() {
           <label htmlFor="password" className="kk-label">
             Mot de passe
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}

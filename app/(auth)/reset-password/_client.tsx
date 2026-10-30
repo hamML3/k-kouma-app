@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import { resetPasswordAction } from "@/lib/actions/auth";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
 
 export default function ResetPasswordClient({ token }: { token: string }) {
@@ -65,10 +67,9 @@ export default function ResetPasswordClient({ token }: { token: string }) {
           <label htmlFor="password" className="kk-label">
             Nouveau mot de passe
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="new-password"
             required
             minLength={8}
@@ -81,6 +82,8 @@ export default function ResetPasswordClient({ token }: { token: string }) {
           {pending ? "Enregistrement…" : "Réinitialiser le mot de passe"}
         </button>
       </form>
+
+      <LoadingOverlay show={pending} />
     </>
   );
 }

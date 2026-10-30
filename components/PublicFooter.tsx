@@ -13,7 +13,7 @@ const LINK_COLUMNS: { title: string; links: { label: string; href: string }[] }[
   {
     title: "Plateforme",
     links: [
-      { label: "À propos", href: "/#mission" },
+      { label: "À propos", href: "/a-propos" },
       { label: "Blog", href: "/blog" },
       { label: "FAQ", href: "/faq" },
     ],
