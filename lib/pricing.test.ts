@@ -3,9 +3,9 @@ import { SESSION_PRICING, amountFor, sessionsCountFor } from "./pricing";
 
 describe("amountFor", () => {
   it("returns the single-session price for each therapy type", () => {
-    expect(amountFor("individuelle", "single")).toBe(8500);
+    expect(amountFor("individuelle", "single")).toBe(10000);
     expect(amountFor("couple", "single")).toBe(16000);
-    expect(amountFor("enfant", "single")).toBe(8000);
+    expect(amountFor("enfant", "single")).toBe(8500);
   });
 
   it("returns the pack-of-4 price for each therapy type", () => {
