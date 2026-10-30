@@ -51,6 +51,16 @@ const NAV_LINKS: NavLink[] = [
       </svg>
     ),
   },
+  {
+    href: "/admin/audit",
+    label: "Journal d'audit",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M5 2h6l3 3v11a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M6.5 8h5M6.5 11h5M6.5 14h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 /** Nav de la sidebar admin, avec surlignage de la section active. */

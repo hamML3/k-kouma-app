@@ -38,6 +38,7 @@ model User {
   sentMessages       Message[]
   payments           Payment[]
   therapistEarnings  TherapistEarning[]
+  auditLogs          AuditLog[]
 
   @@index([status, role])
   @@map("users")
@@ -316,4 +317,32 @@ model WebrtcSignal {
 
   @@index([roomId, createdAt])
   @@map("webrtc_signals")
+}
+
+// =========================================================================
+// MODULE 5 : JOURNAL D'AUDIT
+// =========================================================================
+
+/// Trace des actions sensibles (admin, authentification...). Volontairement
+/// non liée par contrainte stricte à l'auteur : la ligne doit survivre même
+/// si le compte de l'auteur est supprimé plus tard (actorEmail en garde une
+/// copie lisible indépendamment de la relation).
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  actorEmail String?  @map("actor_email") @db.VarChar(180)
+  action     String   @db.VarChar(100)
+  targetType String?  @map("target_type") @db.VarChar(50)
+  targetId   Int?     @map("target_id")
+  metadata   Json?
+  ip         String?  @db.VarChar(64)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

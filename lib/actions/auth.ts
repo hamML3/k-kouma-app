@@ -21,6 +21,7 @@ import {
 } from "@/lib/tokens";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
+import { logAudit } from "@/lib/audit";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
 async function dispatchVerificationEmail(userId: number, email: string, name: string) {
@@ -54,7 +55,7 @@ export async function loginAction(
   // Fetch role before sign-in so we can redirect correctly
   const dbUser = await prisma.user.findUnique({
     where: { email },
-    select: { role: true },
+    select: { id: true, role: true },
   });
 
   const redirectTo =
@@ -68,7 +69,13 @@ export async function loginAction(
     await signIn("credentials", { email, password, redirectTo });
   } catch (error) {
     if (error instanceof AuthError) {
+      await logAudit({ actor: null, action: "auth.login.failed", metadata: { email } });
       return { error: "Email ou mot de passe incorrect" };
+    }
+    // next-auth signale un succès en levant l'erreur interne de redirection —
+    // on journalise donc ici, juste avant de la relancer.
+    if (dbUser) {
+      await logAudit({ actor: { id: dbUser.id, email }, action: "auth.login.success" });
     }
     throw error;
   }
@@ -360,6 +367,7 @@ export async function forgotPasswordAction(
   try {
     await invalidatePendingTokens(user.id, "password_reset");
     const token = await createVerificationToken(user.id, "password_reset");
+    await logAudit({ actor: { id: user.id, email: user.email }, action: "auth.password_reset.requested" });
     const name = user.patientProfile?.nickname ?? user.therapistProfile?.firstName ?? "";
     await sendPasswordResetEmail(user.email, name, token);
   } catch (err) {
@@ -398,6 +406,7 @@ export async function resetPasswordAction(
     where: { id: result.userId },
     data: { passwordHash },
   });
+  await logAudit({ actor: { id: result.userId }, action: "auth.password_reset.completed" });
 
   return { success: true };
 }

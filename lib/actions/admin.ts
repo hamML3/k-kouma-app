@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { createUserSchema } from "@/lib/validators/admin";
+import { logAudit } from "@/lib/audit";
 
 export type CreateUserState = {
   error?: string;
@@ -15,12 +16,14 @@ export type CreateUserState = {
 
 // Le middleware (proxy.ts) laisse volontairement passer les Server Actions
 // sans vérifier la session — chaque action admin doit donc faire ce contrôle
-// elle-même avant toute lecture/écriture sensible.
-async function requireAdmin() {
+// elle-même avant toute lecture/écriture sensible. Retourne l'identité de
+// l'admin, réutilisée pour le journal d'audit.
+async function requireAdmin(): Promise<{ id: number; email: string }> {
   const session = await auth();
-  if (session?.user?.role !== "admin") {
+  if (session?.user?.role !== "admin" || !session.user.email) {
     throw new Error("Accès refusé : réservé aux administrateurs.");
   }
+  return { id: Number(session.user.id), email: session.user.email };
 }
 
 /** Création directe d'un compte par un admin (patient, thérapeute ou autre admin) — sans passer par l'inscription publique. */
@@ -28,8 +31,10 @@ export async function createUserAction(
   _prevState: CreateUserState,
   formData: FormData
 ): Promise<CreateUserState> {
-  const session = await auth();
-  if (session?.user?.role !== "admin") {
+  let admin: { id: number; email: string };
+  try {
+    admin = await requireAdmin();
+  } catch {
     return { error: "Accès refusé : réservé aux administrateurs." };
   }
 
@@ -54,7 +59,7 @@ export async function createUserAction(
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       email,
       passwordHash,
@@ -72,34 +77,44 @@ export async function createUserAction(
     },
   });
 
+  await logAudit({
+    actor: admin,
+    action: "admin.user.create",
+    targetType: "user",
+    targetId: created.id,
+    metadata: { email, role },
+  });
+
   revalidatePath("/admin/users");
   return { success: true };
 }
 
 export async function suspendUserAction(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
 
   await prisma.user.update({ where: { id: userId }, data: { status: "suspended" } });
+  await logAudit({ actor: admin, action: "admin.user.suspend", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
 
 export async function reactivateUserAction(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
 
   await prisma.user.update({ where: { id: userId }, data: { status: "active" } });
+  await logAudit({ actor: admin, action: "admin.user.reactivate", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/users");
   redirect("/admin/users");
 }
 
 export async function suspendUser(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -107,6 +122,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { status: "suspended" },
   });
+  await logAudit({ actor: admin, action: "admin.therapist.suspend", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/therapists");
   revalidatePath(`/admin/therapists/${userId}`);
@@ -114,7 +130,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
 }
 
 export async function unsuspendUser(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -122,6 +138,7 @@ export async function unsuspendUser(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { status: "active" },
   });
+  await logAudit({ actor: admin, action: "admin.therapist.unsuspend", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/therapists");
   revalidatePath(`/admin/therapists/${userId}`);
@@ -129,7 +146,7 @@ export async function unsuspendUser(formData: FormData): Promise<void> {
 }
 
 export async function verifyTherapist(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -137,13 +154,14 @@ export async function verifyTherapist(formData: FormData): Promise<void> {
     where: { userId },
     data: { isVerified: true, rejectedAt: null },
   });
+  await logAudit({ actor: admin, action: "admin.therapist.verify", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/therapists");
   redirect("/admin/therapists");
 }
 
 export async function rejectTherapist(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -156,6 +174,7 @@ export async function rejectTherapist(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { status: "suspended" },
   });
+  await logAudit({ actor: admin, action: "admin.therapist.reject", targetType: "user", targetId: userId });
 
   revalidatePath("/admin/therapists");
   redirect("/admin/therapists");
