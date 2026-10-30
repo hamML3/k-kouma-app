@@ -9,9 +9,9 @@ describe("amountFor", () => {
   });
 
   it("returns the pack-of-4 price for each therapy type", () => {
-    expect(amountFor("individuelle", "pack4")).toBe(32000);
+    expect(amountFor("individuelle", "pack4")).toBe(38000);
     expect(amountFor("couple", "pack4")).toBe(60000);
-    expect(amountFor("enfant", "pack4")).toBe(30000);
+    expect(amountFor("enfant", "pack4")).toBe(32000);
   });
 });
 

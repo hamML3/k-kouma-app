@@ -14,9 +14,9 @@ export type PricingEntry = {
  * côté serveur (ne jamais faire confiance à un montant envoyé par le client).
  */
 export const SESSION_PRICING: Record<TherapyType, PricingEntry> = {
-  individuelle: { label: "Individuelle", single: 10000, pack4: 32000, pack4Was: 34000 },
+  individuelle: { label: "Individuelle", single: 10000, pack4: 38000, pack4Was: 40000 },
   couple: { label: "Couple", single: 16000, pack4: 60000, pack4Was: 64000 },
-  enfant: { label: "Adolescent / Enfant", single: 8500, pack4: 30000, pack4Was: 32000 },
+  enfant: { label: "Adolescent / Enfant", single: 8500, pack4: 32000, pack4Was: 34000 },
 };
 
 export const CURRENCY = "XOF";
