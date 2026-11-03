@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import BookingClient from "./_client";
+import { amountFor, resolveTherapyType } from "@/lib/pricing";
 
 export default async function NewAppointmentPage({
   searchParams,
@@ -21,11 +22,11 @@ export default async function NewAppointmentPage({
   const [therapistProfile, patientProfile, assignment] = await Promise.all([
     prisma.therapistProfile.findUnique({
       where: { id: therapistProfileId },
-      select: { firstName: true, lastName: true, hourlyRate: true, id: true, isVerified: true, userId: true },
+      select: { firstName: true, lastName: true, id: true, isVerified: true, userId: true },
     }),
     prisma.patientProfile.findUnique({
       where: { userId: Number(session.user.id) },
-      select: { id: true, sessionCredits: true },
+      select: { id: true, sessionCredits: true, onboardingAnswers: true },
     }),
     prisma.patientTherapistAssignment.findFirst({
       where: { patientId: Number(session.user.id), therapistId: therapistUserId, status: "active" },
@@ -40,7 +41,11 @@ export default async function NewAppointmentPage({
   const patientId = Number(session.user.id);
   const therapistId = therapistUserId;
   const therapistName = `${therapistProfile.firstName} ${therapistProfile.lastName}`;
-  const rate = Number(therapistProfile.hourlyRate);
+  // Le prix affiché doit toujours être le tarif plateforme réellement débité
+  // (lib/pricing.ts) — jamais TherapistProfile.hourlyRate, qui n'est plus
+  // collecté à l'inscription et vaut 0 pour tout thérapeute récent.
+  const answers = patientProfile.onboardingAnswers as { therapyType?: string } | null;
+  const rate = amountFor(resolveTherapyType(answers), "single");
 
   return (
     <BookingClient

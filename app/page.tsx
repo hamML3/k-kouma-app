@@ -117,6 +117,17 @@ function TherapyTypes() {
       bg: "#FBEEDD",
       title: "Adolescent / enfant",
     },
+    {
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="13" r="7" stroke="#4A7C9B" strokeWidth="2" />
+          <path d="M6 36c0-7.732 6.268-14 14-14s14 6.268 14 14" stroke="#4A7C9B" strokeWidth="2" strokeLinecap="round" />
+          <path d="M20 9v4l2.5 2.5" stroke="#4A7C9B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      bg: "#E0EEF7",
+      title: "Coach de vie / Conseil",
+    },
   ];
 
   return (
@@ -132,7 +143,7 @@ function TherapyTypes() {
           Choisissez le type de thérapie qui vous correspond
         </p>
 
-        <div className="grid sm:grid-cols-3 gap-5 mb-10">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {types.map((t) => (
             <Link
               key={t.title}
@@ -433,11 +444,11 @@ function ConsultationModes() {
                     </div>
                     <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{fcfa(entry.single)}</strong></p>
                     <div className="text-xs" style={{ color: "#5C645B" }}>
-                      {entry.pack4Was ? (
+                      {entry.pack3Was ? (
                         <p className="flex items-center gap-1.5 flex-wrap">
-                          • 4 séances :
-                          <s style={{ color: "#A8AEA1" }}>{fcfa(entry.pack4Was)}</s>
-                          <strong style={{ color }}>{fcfa(entry.pack4)}</strong>
+                          • 3 séances :
+                          <s style={{ color: "#A8AEA1" }}>{fcfa(entry.pack3Was)}</s>
+                          <strong style={{ color }}>{fcfa(entry.pack3)}</strong>
                           <span
                             className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                             style={{ background: color, color: "#fff" }}
@@ -446,7 +457,7 @@ function ConsultationModes() {
                           </span>
                         </p>
                       ) : (
-                        <p>• 4 séances : <strong>{fcfa(entry.pack4)}</strong></p>
+                        <p>• 3 séances : <strong>{fcfa(entry.pack3)}</strong></p>
                       )}
                     </div>
                   </div>

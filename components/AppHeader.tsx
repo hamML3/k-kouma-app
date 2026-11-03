@@ -12,6 +12,7 @@ const PATIENT_LINKS: NavLink[] = [
   { href: "/therapists", label: "Psychologues" },
   { href: "/appointments", label: "Rendez-vous" },
   { href: "/subscription", label: "Abonnement" },
+  { href: "/quiz", label: "Quiz" },
   { href: "/blog", label: "Articles" },
 ];
 

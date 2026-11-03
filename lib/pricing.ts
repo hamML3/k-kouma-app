@@ -3,9 +3,9 @@ export type TherapyType = "individuelle" | "couple" | "enfant";
 export type PricingEntry = {
   label: string;
   single: number;
-  pack4: number;
+  pack3: number;
   /** Prix barré affiché à côté du prix promo du pack (facultatif). */
-  pack4Was?: number;
+  pack3Was?: number;
 };
 
 /**
@@ -14,18 +14,30 @@ export type PricingEntry = {
  * côté serveur (ne jamais faire confiance à un montant envoyé par le client).
  */
 export const SESSION_PRICING: Record<TherapyType, PricingEntry> = {
-  individuelle: { label: "Individuelle", single: 10000, pack4: 38000, pack4Was: 40000 },
-  couple: { label: "Couple", single: 16000, pack4: 60000, pack4Was: 64000 },
-  enfant: { label: "Adolescent / Enfant", single: 8500, pack4: 32000, pack4Was: 34000 },
+  individuelle: { label: "Individuelle", single: 10000, pack3: 28000, pack3Was: 30000 },
+  couple: { label: "Couple", single: 20000, pack3: 57000, pack3Was: 60000 },
+  enfant: { label: "Adolescent / Enfant", single: 8500, pack3: 23500, pack3Was: 25500 },
 };
 
 export const CURRENCY = "XOF";
 
-export function sessionsCountFor(pack: "single" | "pack4"): number {
-  return pack === "pack4" ? 4 : 1;
+export function sessionsCountFor(pack: "single" | "pack3"): number {
+  return pack === "pack3" ? 3 : 1;
 }
 
-export function amountFor(therapyType: TherapyType, pack: "single" | "pack4"): number {
+export function amountFor(therapyType: TherapyType, pack: "single" | "pack3"): number {
   const entry = SESSION_PRICING[therapyType];
-  return pack === "pack4" ? entry.pack4 : entry.single;
+  return pack === "pack3" ? entry.pack3 : entry.single;
+}
+
+/**
+ * Le type de thérapie facturé est toujours celui choisi par le patient à
+ * l'onboarding — jamais une valeur reconstruite ailleurs — pour que
+ * l'affichage du prix (réservation) et le montant réellement débité
+ * (paiement) restent la même source de vérité.
+ */
+export function resolveTherapyType(answers: { therapyType?: string } | null | undefined): TherapyType {
+  return answers?.therapyType === "couple" || answers?.therapyType === "enfant"
+    ? answers.therapyType
+    : "individuelle";
 }

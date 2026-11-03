@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { BuyButton } from "./_client";
-import { SESSION_PRICING, type TherapyType } from "@/lib/pricing";
+import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
+import { isPaydunyaConfigured } from "@/lib/paydunya";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
@@ -39,12 +41,10 @@ export default async function SubscriptionPage({
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
   const answers = profile?.onboardingAnswers as { therapyType?: string } | null;
-  const therapyType: TherapyType =
-    answers?.therapyType === "couple" || answers?.therapyType === "enfant"
-      ? answers.therapyType
-      : "individuelle";
+  const therapyType = resolveTherapyType(answers);
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
+  const paymentAvailable = isPaydunyaConfigured();
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -129,6 +129,25 @@ export default async function SubscriptionPage({
           </p>
         </div>
 
+        {!paymentAvailable && (
+          <div
+            className="rounded-2xl p-4 mb-6 text-sm flex items-start gap-3"
+            style={{ background: "var(--kk-gold-light)", color: "#8A6530", border: "1px solid #E9C98A" }}
+          >
+            <span className="text-lg shrink-0">⏸️</span>
+            <div>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
+                Paiement en ligne temporairement indisponible
+              </p>
+              <p>
+                Nous changeons de prestataire de paiement. En attendant,{" "}
+                <Link href="/contact" className="underline font-semibold">contactez-nous</Link> pour acheter des
+                séances par un autre moyen.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 gap-4 mb-8">
           <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
             <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
@@ -137,14 +156,14 @@ export default async function SubscriptionPage({
             <p className="font-bold text-2xl mb-4" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
               {pricing.single.toLocaleString("fr-FR")} FCFA
             </p>
-            <BuyButton pack="single" label="Acheter 1 séance" className="kk-btn-outline w-full text-sm" />
+            <BuyButton pack="single" label="Acheter 1 séance" className="kk-btn-outline w-full text-sm" disabled={!paymentAvailable} />
           </div>
 
           <div
             className="rounded-2xl p-5 relative"
             style={{ background: "#fff", border: "2px solid var(--kk-purple)", boxShadow: "0 8px 30px rgba(142,124,184,0.12)" }}
           >
-            {pricing.pack4Was && (
+            {pricing.pack3Was && (
               <div
                 className="absolute -top-3 left-5 text-xs font-bold px-3 py-1 rounded-full"
                 style={{ background: "var(--kk-purple)", color: "#fff" }}
@@ -153,17 +172,17 @@ export default async function SubscriptionPage({
               </div>
             )}
             <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
-              Pack 4 séances
+              Pack 3 séances
             </p>
             <p className="font-bold text-2xl mb-4 flex items-baseline gap-2" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-              {pricing.pack4Was && (
+              {pricing.pack3Was && (
                 <s className="text-base font-semibold" style={{ color: "var(--kk-faint)" }}>
-                  {pricing.pack4Was.toLocaleString("fr-FR")}
+                  {pricing.pack3Was.toLocaleString("fr-FR")}
                 </s>
               )}
-              {pricing.pack4.toLocaleString("fr-FR")} FCFA
+              {pricing.pack3.toLocaleString("fr-FR")} FCFA
             </p>
-            <BuyButton pack="pack4" label="Acheter le pack de 4" className="kk-btn-purple w-full text-sm" />
+            <BuyButton pack="pack3" label="Acheter le pack de 3" className="kk-btn-purple w-full text-sm" disabled={!paymentAvailable} />
           </div>
         </div>
 

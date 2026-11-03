@@ -31,7 +31,7 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
       },
       {
         q: "Combien coûte une séance ?",
-        a: "Le tarif dépend du type de thérapie (individuelle, couple, ou adolescent/enfant). Le détail est visible sur la page Tarifs. Un pack de 4 séances est proposé à prix réduit.",
+        a: "Le tarif dépend du type de thérapie (individuelle, couple, ou adolescent/enfant). Le détail est visible sur la page Tarifs. Un pack de 3 séances est proposé à prix réduit.",
       },
       {
         q: "Comment payer ?",

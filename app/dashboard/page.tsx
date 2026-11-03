@@ -232,6 +232,18 @@ export default async function DashboardPage() {
                     : "Achetez des séances pour réserver"
                 }
               />
+              <DashboardCard
+                href="/quiz"
+                icon={
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M8 8a3 3 0 1 1 4.5 2.6c-.9.5-1.5 1-1.5 2.2" stroke="#4A7C9B" strokeWidth="1.8" strokeLinecap="round" />
+                    <circle cx="11" cy="16.5" r="1" fill="#4A7C9B" />
+                  </svg>
+                }
+                iconBg="#E0EEF7"
+                title="Quiz bien-être"
+                desc="Mieux comprendre ce que vous ressentez"
+              />
             </>
           )}
           {isTherapist && isVerified && (

@@ -8,18 +8,25 @@ export function BuyButton({
   label,
   className,
   style,
+  disabled,
 }: {
-  pack: "single" | "pack4";
+  pack: "single" | "pack3";
   label: string;
   className?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }) {
   const [state, action, pending] = useActionState(buySessionsAction, {});
 
   return (
     <form action={action}>
       <input type="hidden" name="pack" value={pack} />
-      <button type="submit" disabled={pending} className={className} style={style}>
+      <button
+        type="submit"
+        disabled={pending || disabled}
+        className={`${className ?? ""} disabled:opacity-50 disabled:cursor-not-allowed`}
+        style={style}
+      >
         {pending ? "Redirection…" : label}
       </button>
       {state.error && (

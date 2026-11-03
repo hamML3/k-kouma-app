@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createInvoice, isPaydunyaConfigured } from "@/lib/paydunya";
-import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, type TherapyType } from "@/lib/pricing";
+import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, resolveTherapyType } from "@/lib/pricing";
 
 export type BuySessionsState = { error?: string };
 
@@ -17,8 +17,8 @@ export async function buySessionsAction(
   const session = await auth();
   if (!session?.user || session.user.role !== "patient") redirect("/login");
 
-  const pack = formData.get("pack") as "single" | "pack4";
-  if (pack !== "single" && pack !== "pack4") {
+  const pack = formData.get("pack") as "single" | "pack3";
+  if (pack !== "single" && pack !== "pack3") {
     return { error: "Sélection invalide." };
   }
 
@@ -44,10 +44,7 @@ export async function buySessionsAction(
   // une valeur envoyée par le formulaire, pour éviter de payer un pack "enfant"
   // moins cher tout en réservant des séances "couple".
   const answers = patient.patientProfile?.onboardingAnswers as { therapyType?: string } | null;
-  const therapyType: TherapyType =
-    answers?.therapyType === "couple" || answers?.therapyType === "enfant"
-      ? answers.therapyType
-      : "individuelle";
+  const therapyType = resolveTherapyType(answers);
 
   const amount = amountFor(therapyType, pack);
   const sessionsCount = sessionsCountFor(pack);
@@ -66,7 +63,7 @@ export async function buySessionsAction(
 
   try {
     const invoice = await createInvoice({
-      description: `K-Kouma — ${sessionsCount === 1 ? "1 séance" : "Pack 4 séances"} (${SESSION_PRICING[therapyType].label})`,
+      description: `K-Kouma — ${sessionsCount === 1 ? "1 séance" : "Pack 3 séances"} (${SESSION_PRICING[therapyType].label})`,
       amount,
       customerEmail: patient.email,
       customerName: patient.patientProfile?.nickname ?? patient.email,
