@@ -179,3 +179,52 @@ export async function rejectTherapist(formData: FormData): Promise<void> {
   revalidatePath("/admin/therapists");
   redirect("/admin/therapists");
 }
+
+/** Valide une déclaration de paiement Orange Money manuel : crédite les séances et clôt le paiement, ensemble. */
+export async function confirmManualPaymentAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const paymentId = Number(formData.get("paymentId"));
+  if (!paymentId) redirect("/admin/finances");
+
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment || payment.status !== "pending") redirect("/admin/finances");
+
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: paymentId },
+      data: { status: "completed", paidAt: new Date() },
+    }),
+    prisma.patientProfile.updateMany({
+      where: { userId: payment.patientId },
+      data: { sessionCredits: { increment: payment.sessionsCount } },
+    }),
+  ]);
+
+  await logAudit({
+    actor: admin,
+    action: "admin.payment.confirm",
+    targetType: "payment",
+    targetId: paymentId,
+    metadata: { amount: Number(payment.amount), sessionsCount: payment.sessionsCount, provider: payment.provider },
+  });
+
+  revalidatePath("/admin/finances");
+  redirect("/admin/finances");
+}
+
+/** Rejette une déclaration de paiement Orange Money manuel (référence introuvable, montant incorrect…). */
+export async function rejectManualPaymentAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const paymentId = Number(formData.get("paymentId"));
+  if (!paymentId) redirect("/admin/finances");
+
+  await prisma.payment.updateMany({
+    where: { id: paymentId, status: "pending" },
+    data: { status: "failed" },
+  });
+
+  await logAudit({ actor: admin, action: "admin.payment.reject", targetType: "payment", targetId: paymentId });
+
+  revalidatePath("/admin/finances");
+  redirect("/admin/finances");
+}

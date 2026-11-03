@@ -2,11 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { BarChart } from "@/components/charts/BarChart";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
+import { confirmManualPaymentAction, rejectManualPaymentAction } from "@/lib/actions/admin";
 
 export const metadata = { title: "Finances — Administration K-Kouma" };
 
 export default async function AdminFinancesPage() {
-  const [payments, earnings, therapists] = await Promise.all([
+  const [payments, earnings, therapists, pendingManualPayments] = await Promise.all([
     prisma.payment.findMany({
       where: { status: "completed" },
       orderBy: { paidAt: "desc" },
@@ -20,6 +21,11 @@ export default async function AdminFinancesPage() {
     prisma.therapistProfile.findMany({
       where: { isVerified: true },
       select: { userId: true, firstName: true, lastName: true },
+    }),
+    prisma.payment.findMany({
+      where: { status: "pending", provider: "orange_money_manual" },
+      orderBy: { createdAt: "asc" },
+      include: { patient: { select: { patientProfile: { select: { nickname: true } }, email: true } } },
     }),
   ]);
 
@@ -73,6 +79,59 @@ export default async function AdminFinancesPage() {
           Vue d&apos;ensemble des paiements patients et des gains psychologues
         </p>
       </div>
+
+      {pendingManualPayments.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold)" }}>
+            Paiements Orange Money à vérifier ({pendingManualPayments.length})
+          </h2>
+          <div className="space-y-2">
+            {pendingManualPayments.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                style={{ background: "#fff", border: "1.5px solid #E9C98A" }}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
+                    {p.patient.patientProfile?.nickname ?? p.patient.email}
+                    <span className="font-normal" style={{ color: "var(--kk-mid)" }}>
+                      {" "}· {Number(p.amount).toLocaleString("fr-FR")} {p.currency} ·{" "}
+                      {p.sessionsCount === 1 ? "1 séance" : `Pack ${p.sessionsCount}`}
+                    </span>
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                    Réf. <strong>{p.providerRef}</strong> · envoyé depuis {p.payerPhone} ·{" "}
+                    {p.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <form action={rejectManualPaymentAction}>
+                    <input type="hidden" name="paymentId" value={p.id} />
+                    <button
+                      type="submit"
+                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
+                    >
+                      Rejeter
+                    </button>
+                  </form>
+                  <form action={confirmManualPaymentAction}>
+                    <input type="hidden" name="paymentId" value={p.id} />
+                    <button
+                      type="submit"
+                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      style={{ background: "var(--kk-green)", color: "#fff" }}
+                    >
+                      Valider et créditer
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {STATS.map((stat) => (

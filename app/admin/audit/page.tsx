@@ -10,6 +10,8 @@ const ACTION_INFO: Record<string, { label: string; bg: string; color: string }> 
   "admin.therapist.unsuspend": { label: "Psychologue réactivé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.therapist.verify": { label: "Psychologue validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.therapist.reject": { label: "Psychologue rejeté", bg: "#FFF1F0", color: "#C0392B" },
+  "admin.payment.confirm": { label: "Paiement manuel validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  "admin.payment.reject": { label: "Paiement manuel rejeté", bg: "#FFF1F0", color: "#C0392B" },
   "auth.login.success": { label: "Connexion réussie", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "auth.login.failed": { label: "Connexion échouée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
   "auth.password_reset.requested": { label: "Réinitialisation demandée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },

@@ -195,6 +195,10 @@ model Payment {
   currency      String        @default("XOF") @db.VarChar(3)
   provider      String        @default("paydunya") @db.VarChar(30)
   providerRef   String?       @unique @map("provider_ref") @db.VarChar(255)
+  // Numéro depuis lequel le patient dit avoir envoyé l'argent — utilisé
+  // uniquement pour les paiements déclarés manuellement (Orange Money),
+  // pour aider l'admin à recouper avec l'historique du compte marchand.
+  payerPhone    String?       @map("payer_phone") @db.VarChar(20)
   status        PaymentStatus @default(pending)
   createdAt     DateTime      @default(now()) @map("created_at")
   paidAt        DateTime?     @map("paid_at")

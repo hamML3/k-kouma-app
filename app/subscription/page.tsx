@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
-import { BuyButton } from "./_client";
+import { BuyButton, ManualPaymentForm } from "./_client";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
+import { orangeMoneyNumber } from "@/lib/orangeMoney";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
@@ -45,6 +46,7 @@ export default async function SubscriptionPage({
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
   const paymentAvailable = isPaydunyaConfigured();
+  const omNumber = orangeMoneyNumber();
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -125,11 +127,15 @@ export default async function SubscriptionPage({
             Acheter des séances
           </h2>
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
-            Paiement par Mobile Money (Orange Money, Wave) via PayDunya.
+            {paymentAvailable
+              ? "Paiement par Mobile Money (Orange Money, Wave) via PayDunya."
+              : omNumber
+              ? "Paiement par Orange Money, vérifié manuellement par notre équipe."
+              : "Paiement en ligne temporairement indisponible."}
           </p>
         </div>
 
-        {!paymentAvailable && (
+        {!paymentAvailable && !omNumber && (
           <div
             className="rounded-2xl p-4 mb-6 text-sm flex items-start gap-3"
             style={{ background: "var(--kk-gold-light)", color: "#8A6530", border: "1px solid #E9C98A" }}
@@ -148,43 +154,68 @@ export default async function SubscriptionPage({
           </div>
         )}
 
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
-          <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
-            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
-              À l&apos;unité
-            </p>
-            <p className="font-bold text-2xl mb-4" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-              {pricing.single.toLocaleString("fr-FR")} FCFA
-            </p>
-            <BuyButton pack="single" label="Acheter 1 séance" className="kk-btn-outline w-full text-sm" disabled={!paymentAvailable} />
+        {!paymentAvailable && omNumber && (
+          <div className="mb-8 space-y-4">
+            <div
+              className="rounded-2xl p-4 text-sm"
+              style={{ background: "var(--kk-purple-light)", color: "var(--kk-dark)", border: "1px solid #C8BCEB" }}
+            >
+              <p className="font-bold mb-2">Paiement par Orange Money</p>
+              <ol className="list-decimal list-inside space-y-1" style={{ color: "var(--kk-mid)" }}>
+                <li>
+                  Envoyez le montant exact via l&apos;appli Orange Money ou par USSD au{" "}
+                  <strong style={{ color: "var(--kk-dark)" }}>{omNumber}</strong>.
+                </li>
+                <li>Notez la référence de transaction reçue par SMS.</li>
+                <li>Déclarez votre paiement ci-dessous — vos séances sont créditées après vérification.</li>
+              </ol>
+            </div>
+            <ManualPaymentForm
+              singleAmount={`${pricing.single.toLocaleString("fr-FR")} FCFA`}
+              pack3Amount={`${pricing.pack3.toLocaleString("fr-FR")} FCFA`}
+            />
           </div>
+        )}
 
-          <div
-            className="rounded-2xl p-5 relative"
-            style={{ background: "#fff", border: "2px solid var(--kk-purple)", boxShadow: "0 8px 30px rgba(142,124,184,0.12)" }}
-          >
-            {pricing.pack3Was && (
-              <div
-                className="absolute -top-3 left-5 text-xs font-bold px-3 py-1 rounded-full"
-                style={{ background: "var(--kk-purple)", color: "#fff" }}
-              >
-                Offre
-              </div>
-            )}
-            <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
-              Pack 3 séances
-            </p>
-            <p className="font-bold text-2xl mb-4 flex items-baseline gap-2" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+        {paymentAvailable && (
+          <div className="grid sm:grid-cols-2 gap-4 mb-8">
+            <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
+                À l&apos;unité
+              </p>
+              <p className="font-bold text-2xl mb-4" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+                {pricing.single.toLocaleString("fr-FR")} FCFA
+              </p>
+              <BuyButton pack="single" label="Acheter 1 séance" className="kk-btn-outline w-full text-sm" />
+            </div>
+
+            <div
+              className="rounded-2xl p-5 relative"
+              style={{ background: "#fff", border: "2px solid var(--kk-purple)", boxShadow: "0 8px 30px rgba(142,124,184,0.12)" }}
+            >
               {pricing.pack3Was && (
-                <s className="text-base font-semibold" style={{ color: "var(--kk-faint)" }}>
-                  {pricing.pack3Was.toLocaleString("fr-FR")}
-                </s>
+                <div
+                  className="absolute -top-3 left-5 text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ background: "var(--kk-purple)", color: "#fff" }}
+                >
+                  Offre
+                </div>
               )}
-              {pricing.pack3.toLocaleString("fr-FR")} FCFA
-            </p>
-            <BuyButton pack="pack3" label="Acheter le pack de 3" className="kk-btn-purple w-full text-sm" disabled={!paymentAvailable} />
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
+                Pack 3 séances
+              </p>
+              <p className="font-bold text-2xl mb-4 flex items-baseline gap-2" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+                {pricing.pack3Was && (
+                  <s className="text-base font-semibold" style={{ color: "var(--kk-faint)" }}>
+                    {pricing.pack3Was.toLocaleString("fr-FR")}
+                  </s>
+                )}
+                {pricing.pack3.toLocaleString("fr-FR")} FCFA
+              </p>
+              <BuyButton pack="pack3" label="Acheter le pack de 3" className="kk-btn-purple w-full text-sm" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Payment history */}
         {payments.length > 0 && (
