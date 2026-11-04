@@ -1,15 +1,29 @@
 'use server'
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+async function requirePatientId(): Promise<number> {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  if (session.user.role !== "patient") redirect("/dashboard");
+  return Number(session.user.id);
+}
+
 // Patient chooses a therapist — deactivates any existing active assignment first
 export async function chooseTherapistAction(formData: FormData): Promise<void> {
-  const patientId   = Number(formData.get("patientId"));
+  const patientId = await requirePatientId();
   const therapistId = Number(formData.get("therapistId"));
 
-  if (!patientId || !therapistId) redirect("/therapists");
+  if (!therapistId) redirect("/therapists");
+
+  const therapist = await prisma.therapistProfile.findFirst({
+    where: { userId: therapistId, isVerified: true, user: { status: "active" } },
+    select: { id: true },
+  });
+  if (!therapist) redirect("/therapists");
 
   // Deactivate any currently active assignment for this patient
   await prisma.patientTherapistAssignment.updateMany({
@@ -30,9 +44,8 @@ export async function chooseTherapistAction(formData: FormData): Promise<void> {
 }
 
 // Patient changes their therapist
-export async function changeTherapistAction(formData: FormData): Promise<void> {
-  const patientId = Number(formData.get("patientId"));
-  if (!patientId) redirect("/dashboard");
+export async function changeTherapistAction(): Promise<void> {
+  const patientId = await requirePatientId();
 
   await prisma.patientTherapistAssignment.updateMany({
     where: { patientId, status: "active" },
@@ -42,4 +55,3 @@ export async function changeTherapistAction(formData: FormData): Promise<void> {
   revalidatePath("/dashboard");
   redirect("/therapists");
 }
-

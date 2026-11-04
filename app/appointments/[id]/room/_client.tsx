@@ -41,7 +41,6 @@ export default function RoomClient({
   otherId,
   durationMinutes,
   appointmentId,
-  userId,
 }: {
   roomId: string;
   role: "patient" | "therapist";
@@ -52,7 +51,6 @@ export default function RoomClient({
   scheduledAt: string;
   durationMinutes: number;
   appointmentId: number;
-  userId: number;
 }) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -267,7 +265,6 @@ export default function RoomClient({
 
     const formData = new FormData();
     formData.set("appointmentId", String(appointmentId));
-    formData.set("userId", String(userId));
     startCompletionTransition(() => {
       completeAppointmentAction(formData);
     });

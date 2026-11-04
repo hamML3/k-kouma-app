@@ -383,7 +383,6 @@ export default async function TherapistsPage({
 
                           {isPatient && !isAssigned && (
                             <form action={chooseTherapistAction}>
-                              <input type="hidden" name="patientId"   value={String(userId)} />
                               <input type="hidden" name="therapistId" value={String(t.user.id)} />
                               <button
                                 type="submit"

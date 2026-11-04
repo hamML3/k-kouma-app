@@ -261,7 +261,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
       // "retourne" donc jamais ici) — on efface le brouillon avant l'appel.
       clearDraft(userId);
       startTransition(async () => {
-        await saveOnboardingAnswers(userId, answers);
+        await saveOnboardingAnswers(answers);
       });
     }
   };

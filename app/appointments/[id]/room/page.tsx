@@ -64,7 +64,6 @@ export default async function RoomPage({
       scheduledAt={appointment.scheduledAt.toISOString()}
       durationMinutes={appointment.durationMinutes}
       appointmentId={appointment.id}
-      userId={userId}
     />
   );
 }

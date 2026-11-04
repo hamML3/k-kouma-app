@@ -18,12 +18,10 @@ function tomorrow9am(): string {
 }
 
 export default function BookingClient({
-  patientId,
   therapistId,
   therapistName,
   rate,
 }: {
-  patientId: number;
   therapistId: number;
   therapistName: string;
   rate: number;
@@ -52,7 +50,6 @@ export default function BookingClient({
         </p>
 
         <form action={createAppointmentAction} className="space-y-5">
-          <input type="hidden" name="patientId" value={String(patientId)} />
           <input type="hidden" name="therapistId" value={String(therapistId)} />
 
           {/* Therapist info */}

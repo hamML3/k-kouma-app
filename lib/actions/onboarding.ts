@@ -1,5 +1,6 @@
 'use server'
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
@@ -15,13 +16,11 @@ export type OnboardingAnswers = {
   therapistGender?: string;
 };
 
-// userId comes from the server component that verified the session —
-// no auth() call needed inside the action.
-export async function saveOnboardingAnswers(
-  userId: number,
-  answers: OnboardingAnswers
-): Promise<void> {
-  if (!userId) redirect("/login");
+export async function saveOnboardingAnswers(answers: OnboardingAnswers): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  if (session.user.role !== "patient") redirect("/dashboard");
+  const userId = Number(session.user.id);
 
   await prisma.patientProfile.update({
     where: { userId },

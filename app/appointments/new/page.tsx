@@ -39,7 +39,6 @@ export default async function NewAppointmentPage({
   if (!assignment) redirect("/therapists?error=assign");
   if (!patientProfile || patientProfile.sessionCredits < 1) redirect("/subscription?error=credit");
 
-  const patientId = Number(session.user.id);
   const therapistId = therapistUserId;
   const therapistName = `${therapistProfile.firstName} ${therapistProfile.lastName}`;
   // Le prix affiché est toujours le tarif catalogue plateforme (lib/pricing.ts)
@@ -51,7 +50,6 @@ export default async function NewAppointmentPage({
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role="patient" displayName={session.user.email ?? "Mon compte"} />
       <BookingClient
-        patientId={patientId}
         therapistId={therapistId}
         therapistName={therapistName}
         rate={rate}

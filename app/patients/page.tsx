@@ -154,7 +154,6 @@ export default async function PatientsPage() {
                       {a.status === "pending" && (
                         <form action={confirmAppointmentAction}>
                           <input type="hidden" name="appointmentId" value={String(a.id)} />
-                          <input type="hidden" name="therapistId" value={String(therapistId)} />
                           <button
                             type="submit"
                             className="text-xs font-bold px-3 py-1.5 rounded-full"

@@ -358,7 +358,6 @@ export default async function DashboardPage() {
                 Réserver une séance
               </Link>
               <form action={changeTherapistAction}>
-                <input type="hidden" name="patientId" value={String(userId)} />
                 <button
                   type="submit"
                   className="text-sm font-semibold px-4 py-2.5 rounded-xl"

@@ -162,7 +162,6 @@ export default async function PatientAppointmentsPage() {
                       <div className="mt-4 pt-4 flex gap-2" style={{ borderTop: "1px solid var(--kk-border)" }}>
                         <form action={cancelAppointmentAction}>
                           <input type="hidden" name="appointmentId" value={String(a.id)} />
-                          <input type="hidden" name="patientId" value={String(userId)} />
                           <button
                             type="submit"
                             className="text-xs font-semibold px-4 py-2 rounded-full"

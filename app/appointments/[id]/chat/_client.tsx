@@ -122,7 +122,6 @@ export default function ChatClient({
     if (pollingTimer.current) clearInterval(pollingTimer.current);
     const formData = new FormData();
     formData.set("appointmentId", String(appointmentId));
-    formData.set("userId", String(userId));
     startCompletionTransition(() => {
       completeAppointmentAction(formData);
     });

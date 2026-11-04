@@ -1,5 +1,6 @@
 'use server'
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
@@ -23,13 +24,29 @@ async function notify(label: string, send: () => Promise<unknown>) {
   }
 }
 
+// proxy.ts laisse passer les Server Actions sans contrôle et elles restent
+// joignables par POST direct : l'identité vient toujours de la session, jamais
+// d'un champ du formulaire.
+async function requireUserId(role?: "patient" | "therapist"): Promise<number> {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  if (role && session.user.role !== role) redirect("/dashboard");
+  return Number(session.user.id);
+}
+
 export async function createAppointmentAction(formData: FormData): Promise<void> {
-  const patientId = Number(formData.get("patientId"));
+  const patientId = await requireUserId("patient");
   const therapistId = Number(formData.get("therapistId"));
   const scheduledAt = formData.get("scheduledAt") as string;
   const type = (formData.get("type") as string) || "video";
 
-  if (!patientId || !therapistId || !scheduledAt) {
+  const scheduledTime = new Date(scheduledAt).getTime();
+  if (
+    !therapistId ||
+    Number.isNaN(scheduledTime) ||
+    scheduledTime <= new Date().getTime() ||
+    !["video", "audio", "text"].includes(type)
+  ) {
     redirect("/appointments");
   }
 
@@ -124,10 +141,10 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
 }
 
 export async function cancelAppointmentAction(formData: FormData): Promise<void> {
+  const patientId = await requireUserId("patient");
   const appointmentId = Number(formData.get("appointmentId"));
-  const patientId = Number(formData.get("patientId"));
 
-  if (!appointmentId || !patientId) redirect("/appointments");
+  if (!appointmentId) redirect("/appointments");
 
   const existing = await prisma.appointment.findUnique({
     where: { id: appointmentId },
@@ -176,10 +193,10 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
 }
 
 export async function confirmAppointmentAction(formData: FormData): Promise<void> {
+  const therapistId = await requireUserId("therapist");
   const appointmentId = Number(formData.get("appointmentId"));
-  const therapistId = Number(formData.get("therapistId"));
 
-  if (!appointmentId || !therapistId) redirect("/patients");
+  if (!appointmentId) redirect("/patients");
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
@@ -187,7 +204,7 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
   });
 
   const updated = await prisma.appointment.updateMany({
-    where: { id: appointmentId, therapistId },
+    where: { id: appointmentId, therapistId, status: "pending" },
     data: {
       status: "confirmed",
       // Les séances "messagerie" n'ont pas de salle WebRTC — seuls audio/vidéo en ont besoin.
@@ -221,10 +238,10 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
 }
 
 export async function completeAppointmentAction(formData: FormData): Promise<void> {
+  const userId = await requireUserId();
   const appointmentId = Number(formData.get("appointmentId"));
-  const userId = Number(formData.get("userId"));
 
-  if (!appointmentId || !userId) redirect("/appointments");
+  if (!appointmentId) redirect("/appointments");
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
@@ -248,7 +265,9 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
     redirect(`/appointments/${appointmentId}/chat`);
   }
 
-  if (appointment.status === "completed") {
+  // Seule une séance confirmée génère un gain — ni une demande en attente, ni
+  // un rendez-vous annulé, ni une séance déjà terminée.
+  if (appointment.status !== "confirmed") {
     revalidatePath("/appointments");
     revalidatePath("/patients");
     redirect("/appointments");
