@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from "@/auth";
+import { notifyStaff } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -167,6 +168,13 @@ export async function declareManualPaymentAction(
     console.error("[orange_money_manual] déclaration échouée:", err);
     return { error: "Une erreur est survenue. Réessayez." };
   }
+
+  await notifyStaff("manage_finances", {
+    type: "payment.declared",
+    title: "Paiement Orange Money à vérifier",
+    body: `${amount.toLocaleString("fr-FR")} ${CURRENCY}, référence ${parsed.data.reference}.`,
+    link: "/admin/finances",
+  });
 
   revalidatePath("/subscription");
   return { success: true };

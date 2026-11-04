@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
+import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { proposeArticleSchema } from "@/lib/validators/articles";
 
 export type ProposeArticleState = {
@@ -127,6 +128,15 @@ export async function proposeArticleAction(
     metadata: { title, slug },
   });
 
+  if (!isAdmin) {
+    await notifyAdmins({
+      type: "article.proposed",
+      title: "Nouvel article à relire",
+      body: title,
+      link: "/admin/articles",
+    });
+  }
+
   revalidatePath("/articles/proposer");
   if (isAdmin) {
     revalidatePath("/blog");
@@ -158,6 +168,14 @@ export async function publishArticleAction(formData: FormData): Promise<void> {
     metadata: { slug: article.slug, title: article.title },
   });
 
+  await createNotification({
+    userId: article.authorId,
+    type: "article.published",
+    title: "Votre article est publié",
+    body: article.title,
+    link: `/blog/${article.slug}`,
+  });
+
   revalidatePath("/admin/articles");
   revalidatePath("/blog");
   revalidatePath(`/blog/${article.slug}`);
@@ -185,6 +203,14 @@ export async function rejectArticleAction(formData: FormData): Promise<void> {
     targetType: "submitted_article",
     targetId: articleId,
     metadata: { slug: article.slug, title: article.title },
+  });
+
+  await createNotification({
+    userId: article.authorId,
+    type: "article.rejected",
+    title: "Article non retenu",
+    body: article.title,
+    link: "/articles/proposer",
   });
 
   revalidatePath("/admin/articles");

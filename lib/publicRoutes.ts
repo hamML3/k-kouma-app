@@ -15,6 +15,8 @@ const PUBLIC_PREFIXES = [
   "/api/therapists",
   "/api/platform-banner",
   "/api/payments/paydunya/webhook",
+  // Protégée par CRON_SECRET, le cron n'a pas de session.
+  "/api/cron",
 ];
 
 /** "/" ne vaut que pour la page d'accueil, et "/blog" couvre /blog/x mais pas /blogue. */

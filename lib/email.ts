@@ -16,6 +16,11 @@ function client(): Resend {
   return resend;
 }
 
+/** Pseudos et prénoms sont saisis librement : ils ne doivent pas pouvoir injecter de HTML. */
+function esc(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function wrapper(title: string, bodyHtml: string): string {
   return `
   <div style="background:#F6F2EA;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
@@ -43,7 +48,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
   const url = `${APP_URL}/verify-email?token=${token}`;
   const html = wrapper(
     "Confirmez votre adresse email",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${name},</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
      <p style="font-size:14px;line-height:1.6;color:#5C645B;">Merci de confirmer votre adresse email pour activer pleinement votre compte K-Kouma.</p>
      ${button(url, "Confirmer mon email")}
      <p style="font-size:12px;color:#8A9183;margin-top:20px;">Ce lien expire dans 24 heures. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>`
@@ -62,7 +67,7 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   const url = `${APP_URL}/reset-password?token=${token}`;
   const html = wrapper(
     "Réinitialisez votre mot de passe",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${name},</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
      <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous avez demandé la réinitialisation de votre mot de passe K-Kouma.</p>
      ${button(url, "Choisir un nouveau mot de passe")}
      <p style="font-size:12px;color:#8A9183;margin-top:20px;">Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe reste inchangé.</p>`
@@ -76,7 +81,7 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   });
 }
 
-function formatDateTime(d: Date): string {
+export function formatDateTime(d: Date): string {
   return d.toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 }
 
@@ -89,8 +94,8 @@ export async function sendAppointmentRequestEmail(
 ) {
   const html = wrapper(
     "Nouvelle demande de rendez-vous",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${therapistName},</p>
-     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${patientName}</strong> souhaite réserver une séance le <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(therapistName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${esc(patientName)}</strong> souhaite réserver une séance le <strong>${formatDateTime(scheduledAt)}</strong>.</p>
      ${button(`${APP_URL}/patients`, "Voir et confirmer")}
      <p style="font-size:12px;color:#8A9183;margin-top:20px;">Le rendez-vous reste en attente tant que vous ne l'avez pas confirmé.</p>`
   );
@@ -112,8 +117,8 @@ export async function sendAppointmentConfirmedEmail(
 ) {
   const html = wrapper(
     "Rendez-vous confirmé",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${patientName},</p>
-     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${therapistName}</strong> a confirmé votre séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(patientName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${esc(therapistName)}</strong> a confirmé votre séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
      ${button(`${APP_URL}/appointments`, "Voir mes rendez-vous")}`
   );
 
@@ -134,8 +139,8 @@ export async function sendAppointmentCanceledEmail(
 ) {
   const html = wrapper(
     "Rendez-vous annulé",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${therapistName},</p>
-     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${patientName}</strong> a annulé la séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(therapistName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${esc(patientName)}</strong> a annulé la séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
      ${button(`${APP_URL}/patients`, "Voir mon planning")}`
   );
 
@@ -151,7 +156,7 @@ export async function sendAppointmentCanceledEmail(
 export async function sendTherapistVerifiedEmail(to: string, firstName: string, commissionPercent: number) {
   const html = wrapper(
     "Votre compte est vérifié !",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${firstName},</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(firstName)},</p>
      <p style="font-size:14px;line-height:1.6;color:#5C645B;">Votre profil a été vérifié : vous pouvez désormais recevoir des patients sur K-Kouma.</p>
      <p style="font-size:14px;line-height:1.6;color:#5C645B;">K-Kouma prélève une commission de <strong>${commissionPercent}%</strong> sur chaque séance payée par un patient. Connectez-vous pour prendre connaissance de ces conditions et les accepter.</p>
      ${button(`${APP_URL}/login`, "Me connecter")}`
@@ -169,7 +174,7 @@ export async function sendTherapistVerifiedEmail(to: string, firstName: string, 
 export async function sendCommissionTermsChangedEmail(to: string, firstName: string, newPercent: number) {
   const html = wrapper(
     "Nouvelles conditions de commission",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${firstName},</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(firstName)},</p>
      <p style="font-size:14px;line-height:1.6;color:#5C645B;">La commission K-Kouma qui s'applique à vos séances a été mise à jour à <strong>${newPercent}%</strong>. Merci de prendre connaissance des nouvelles conditions et de les accepter pour continuer à recevoir des patients.</p>
      ${button(`${APP_URL}/conditions-commission`, "Voir et accepter")}`
   );
@@ -191,8 +196,8 @@ export async function sendNewMessageEmail(
 ) {
   const html = wrapper(
     "Nouveau message",
-    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${recipientName},</p>
-     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous avez reçu un nouveau message de <strong>${senderName}</strong>.</p>
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(recipientName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous avez reçu un nouveau message de <strong>${esc(senderName)}</strong>.</p>
      ${button(appointmentUrl, "Lire le message")}`
   );
 
@@ -200,6 +205,23 @@ export async function sendNewMessageEmail(
     from: FROM,
     to,
     subject: `Nouveau message de ${senderName} — K-Kouma`,
+    html,
+  });
+}
+
+/** Patient et psychologue : la séance a lieu demain. */
+export async function sendSessionReminderEmail(to: string, name: string, otherName: string, scheduledAt: Date) {
+  const html = wrapper(
+    "Votre séance approche",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Rappel : vous avez une séance avec <strong>${esc(otherName)}</strong> le <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+     ${button(`${APP_URL}/appointments`, "Voir mes rendez-vous")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: "Rappel : votre séance K-Kouma approche",
     html,
   });
 }

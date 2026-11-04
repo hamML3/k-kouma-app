@@ -129,6 +129,7 @@ type AdminNavProps = {
   permissions?: string[];
   /** Bloc "compte connecté + déconnexion", fourni par le layout (fermeture de session en Server Action). */
   footer: React.ReactNode;
+  bell: React.ReactNode;
 };
 
 /**
@@ -136,7 +137,7 @@ type AdminNavProps = {
  * Sidebar fixe sur grand écran ; tiroir plein écran (hamburger) sur mobile, pour que le
  * back-office reste utilisable dès 375px de large (une appli mobile dédiée est prévue plus tard).
  */
-export function AdminNav({ role, permissions, footer }: AdminNavProps) {
+export function AdminNav({ role, permissions, footer, bell }: AdminNavProps) {
   const pathname = usePathname();
   const adminLabel = role === "moderator" ? "Administration (modérateur)" : "Administration";
   const [open, setOpen] = useState(false);
@@ -207,7 +208,7 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
         <Link href="/admin" className="flex items-center gap-2">
           <Logo size={22} />
         </Link>
-        <span className="w-10" aria-hidden />
+        {bell}
       </header>
 
       {/* Tiroir mobile + fond assombri */}
@@ -266,12 +267,15 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
           boxShadow: "2px 0 12px rgba(60,70,55,0.04)",
         }}
       >
-        <Link href="/admin" className="block mb-8 px-2">
-          <Logo size={24} />
-          <span className="block text-xs font-semibold mt-0.5" style={{ color: "var(--kk-purple)" }}>
-            {adminLabel}
-          </span>
-        </Link>
+        <div className="flex items-start justify-between gap-2 mb-8 px-2">
+          <Link href="/admin" className="block">
+            <Logo size={24} />
+            <span className="block text-xs font-semibold mt-0.5" style={{ color: "var(--kk-purple)" }}>
+              {adminLabel}
+            </span>
+          </Link>
+          {bell}
+        </div>
 
         {navLinks}
         {footer}

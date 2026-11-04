@@ -23,6 +23,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
 import { logAudit } from "@/lib/audit";
 import { DOCUMENTS_DIR, MAX_DOCUMENT_BYTES, detectDocumentType, documentUrl } from "@/lib/therapistDocuments";
+import { notifyStaff } from "@/lib/notifications";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
 async function dispatchVerificationEmail(userId: number, email: string, name: string) {
@@ -249,6 +250,12 @@ export async function registerTherapistAction(
     });
 
     await dispatchVerificationEmail(user.id, email, firstName);
+    await notifyStaff("manage_therapists", {
+      type: "therapist.registered",
+      title: "Nouvelle candidature de psychologue",
+      body: `${firstName} ${lastName}`,
+      link: `/admin/therapists/${user.id}`,
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("phone_number")) {

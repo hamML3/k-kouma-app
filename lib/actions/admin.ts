@@ -11,6 +11,7 @@ import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/com
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
 import { markTherapistEarningsPaid } from "@/lib/payouts";
+import { createNotification } from "@/lib/notifications";
 
 export type CreateUserState = {
   error?: string;
@@ -239,6 +240,13 @@ export async function verifyTherapist(formData: FormData): Promise<void> {
     prisma.platformSettings.findUnique({ where: { id: 1 } }),
   ]);
   await logAudit({ actor: admin, action: "admin.therapist.verify", targetType: "user", targetId: userId });
+  await createNotification({
+    userId,
+    type: "therapist.verified",
+    title: "Votre compte est vérifié",
+    body: "Acceptez les conditions de commission pour recevoir vos premiers patients.",
+    link: "/dashboard",
+  });
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
   if (user) {
@@ -305,6 +313,14 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
     metadata: { amount: Number(payment.amount), sessionsCount: payment.sessionsCount, provider: payment.provider },
   });
 
+  await createNotification({
+    userId: payment.patientId,
+    type: "payment.confirmed",
+    title: "Paiement validé",
+    body: `${payment.sessionsCount} séance${payment.sessionsCount > 1 ? "s" : ""} ajoutée${payment.sessionsCount > 1 ? "s" : ""} à votre compte.`,
+    link: "/subscription",
+  });
+
   revalidatePath("/admin/finances");
   redirect("/admin/finances");
 }
@@ -315,12 +331,24 @@ export async function rejectManualPaymentAction(formData: FormData): Promise<voi
   const paymentId = Number(formData.get("paymentId"));
   if (!paymentId) redirect("/admin/finances");
 
-  await prisma.payment.updateMany({
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { patientId: true } });
+
+  const { count } = await prisma.payment.updateMany({
     where: { id: paymentId, status: "pending" },
     data: { status: "failed" },
   });
 
   await logAudit({ actor: admin, action: "admin.payment.reject", targetType: "payment", targetId: paymentId });
+
+  if (count > 0 && payment) {
+    await createNotification({
+      userId: payment.patientId,
+      type: "payment.rejected",
+      title: "Paiement non validé",
+      body: "Nous n'avons pas pu vérifier votre déclaration. Vérifiez la référence ou contactez-nous.",
+      link: "/subscription",
+    });
+  }
 
   revalidatePath("/admin/finances");
   redirect("/admin/finances");
@@ -366,6 +394,13 @@ export async function updateTherapistCommissionAction(formData: FormData): Promi
 
   const effective = effectiveCommissionPercent(percent, Number(settings?.defaultCommissionPercent ?? 20));
   if (needsCommissionAcceptance(effective, therapist?.commissionAcceptedPercent ? Number(therapist.commissionAcceptedPercent) : null)) {
+    await createNotification({
+      userId: therapistId,
+      type: "commission.changed",
+      title: "Nouvelles conditions de commission",
+      body: `La commission passe à ${effective} %. Merci de l'accepter pour continuer à recevoir des patients.`,
+      link: "/dashboard",
+    });
     const user = await prisma.user.findUnique({
       where: { id: therapistId },
       select: { email: true, therapistProfile: { select: { firstName: true } } },
@@ -398,6 +433,16 @@ export async function markTherapistPayoutAction(formData: FormData): Promise<voi
     targetId: therapistId,
     metadata: { earningsCount: result.count },
   });
+
+  if (result.count > 0) {
+    await createNotification({
+      userId: therapistId,
+      type: "payout.paid",
+      title: "Reversement effectué",
+      body: "Vos gains ont été marqués comme reversés.",
+      link: "/earnings",
+    });
+  }
 
   revalidatePath("/admin/finances");
   redirect("/admin/finances");

@@ -10,11 +10,13 @@ import {
   sendAppointmentRequestEmail,
   sendAppointmentConfirmedEmail,
   sendAppointmentCanceledEmail,
+  formatDateTime,
 } from "@/lib/email";
 import { claimOldestFundingPayment, releaseFundingPayment } from "@/lib/credits";
 import { effectiveCommissionPercent, therapistShare } from "@/lib/commission";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isSlotBookable } from "@/lib/therapistSlots";
+import { createNotification } from "@/lib/notifications";
 
 /** Best-effort : une notification qui échoue ne doit jamais faire échouer l'action réelle. */
 async function notify(label: string, send: () => Promise<unknown>) {
@@ -129,6 +131,13 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
     }),
     prisma.user.findUnique({ where: { id: patientId }, select: { patientProfile: { select: { nickname: true } } } }),
   ]);
+  await createNotification({
+    userId: therapistId,
+    type: "appointment.request",
+    title: "Nouvelle demande de rendez-vous",
+    body: `${patient?.patientProfile?.nickname ?? "Un patient"}, le ${formatDateTime(new Date(scheduledAt))}.`,
+    link: "/patients",
+  });
   if (therapist?.therapistProfile) {
     await notify("appointment.request", () =>
       sendAppointmentRequestEmail(
@@ -181,6 +190,13 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
       }),
       prisma.user.findUnique({ where: { id: patientId }, select: { patientProfile: { select: { nickname: true } } } }),
     ]);
+    await createNotification({
+      userId: existing.therapistId,
+      type: "appointment.canceled",
+      title: "Rendez-vous annulé",
+      body: `${patient?.patientProfile?.nickname ?? "Un patient"} a annulé la séance du ${formatDateTime(existing.scheduledAt)}.`,
+      link: "/appointments",
+    });
     if (therapist?.therapistProfile) {
       await notify("appointment.canceled", () =>
         sendAppointmentCanceledEmail(
@@ -225,6 +241,13 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
       }),
       prisma.user.findUnique({ where: { id: therapistId }, select: { therapistProfile: { select: { firstName: true } } } }),
     ]);
+    await createNotification({
+      userId: appointment.patientId,
+      type: "appointment.confirmed",
+      title: "Rendez-vous confirmé",
+      body: `${therapist?.therapistProfile?.firstName ?? "Votre psychologue"} a confirmé votre séance du ${formatDateTime(appointment.scheduledAt)}.`,
+      link: "/appointments",
+    });
     if (patient?.patientProfile) {
       await notify("appointment.confirmed", () =>
         sendAppointmentConfirmedEmail(

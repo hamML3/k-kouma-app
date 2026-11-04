@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { markTherapistEarningsPaid } from "@/lib/payouts";
+import { createNotification, notifyStaff } from "@/lib/notifications";
 
 export type RequestPayoutState = {
   error?: string;
@@ -85,6 +86,13 @@ export async function requestPayoutAction(): Promise<RequestPayoutState> {
     metadata: { amount: unpaidTotal },
   });
 
+  await notifyStaff("manage_finances", {
+    type: "payout_request.created",
+    title: "Nouvelle demande de retrait",
+    body: `${unpaidTotal.toLocaleString("fr-FR")} XOF à reverser.`,
+    link: "/admin/finances",
+  });
+
   revalidatePath("/earnings");
   revalidatePath("/admin/finances");
 
@@ -129,6 +137,14 @@ export async function approvePayoutRequestAction(formData: FormData): Promise<vo
     },
   });
 
+  await createNotification({
+    userId: request.therapistId,
+    type: "payout_request.approved",
+    title: "Demande de retrait approuvée",
+    body: `${Number(request.amount).toLocaleString("fr-FR")} XOF reversés.`,
+    link: "/earnings",
+  });
+
   revalidatePath("/admin/finances");
   revalidatePath("/earnings");
   redirect("/admin/finances");
@@ -144,7 +160,12 @@ export async function rejectPayoutRequestAction(formData: FormData): Promise<voi
   const requestId = Number(formData.get("requestId"));
   if (!requestId) redirect("/admin/finances");
 
-  await prisma.payoutRequest.updateMany({
+  const request = await prisma.payoutRequest.findUnique({
+    where: { id: requestId },
+    select: { therapistId: true },
+  });
+
+  const { count } = await prisma.payoutRequest.updateMany({
     where: { id: requestId, status: "pending" },
     data: { status: "rejected", reviewedById: admin.id, reviewedAt: new Date() },
   });
@@ -155,6 +176,16 @@ export async function rejectPayoutRequestAction(formData: FormData): Promise<voi
     targetType: "payout_request",
     targetId: requestId,
   });
+
+  if (count > 0 && request) {
+    await createNotification({
+      userId: request.therapistId,
+      type: "payout_request.rejected",
+      title: "Demande de retrait refusée",
+      body: "Vos gains restent disponibles : vous pouvez faire une nouvelle demande.",
+      link: "/earnings",
+    });
+  }
 
   revalidatePath("/admin/finances");
   revalidatePath("/earnings");

@@ -2,6 +2,7 @@ import { Logo } from "./Logo";
 import { signOutAction } from "@/lib/actions/auth";
 import { AppMobileMenu } from "./AppMobileMenu";
 import { AppNavLinks, type NavLink } from "./AppNavLinks";
+import { NotificationBell } from "./NotificationBell";
 import { PlatformBanner } from "./PlatformBanner";
 import { getPlatformSettings } from "@/lib/platformSettings";
 
@@ -61,23 +62,24 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between gap-4">
             <Logo href="/dashboard" size={26} />
-            <div className="hidden md:flex items-center gap-4 shrink-0">
-              <span className="text-sm font-semibold truncate max-w-[160px]" style={{ color: "var(--kk-mid)" }}>
+            <div className="flex items-center gap-1 md:gap-4 shrink-0">
+              <NotificationBell />
+              <span className="hidden md:block text-sm font-semibold truncate max-w-[160px]" style={{ color: "var(--kk-mid)" }}>
                 {displayName}
               </span>
-              {signOut}
+              <div className="hidden md:block">{signOut}</div>
+              <AppMobileMenu
+                links={links}
+                footer={
+                  <>
+                    <p className="text-xs font-semibold truncate mb-2" style={{ color: "var(--kk-muted)" }}>
+                      {displayName}
+                    </p>
+                    {signOut}
+                  </>
+                }
+              />
             </div>
-            <AppMobileMenu
-              links={links}
-              footer={
-                <>
-                  <p className="text-xs font-semibold truncate mb-2" style={{ color: "var(--kk-muted)" }}>
-                    {displayName}
-                  </p>
-                  {signOut}
-                </>
-              }
-            />
           </div>
 
           <div className="hidden md:block">

@@ -62,6 +62,8 @@ model User {
   therapistAvailabilities   TherapistAvailability[]
   therapistUnavailabilities TherapistUnavailability[]
 
+  notifications Notification[]
+
   @@index([status, role])
   @@map("users")
 }
@@ -376,6 +378,11 @@ model Appointment {
   // Paiement qui a fourni le crédit consommé par cette réservation (FIFO) —
   // permet de retrouver le prix réellement payé pour cette séance précise.
   fundedByPaymentId Int?            @map("funded_by_payment_id")
+  // Horodatage de l'envoi du rappel "séance dans ~24h" (email + notification
+  // in-app, voir app/api/cron/session-reminders/route.ts). Posé *avant*
+  // l'envoi : un rendez-vous déjà traité n'est jamais rappelé deux fois,
+  // même si le cron plante en plein lot ou si deux exécutions se chevauchent.
+  reminderSentAt  DateTime?         @map("reminder_sent_at")
   createdAt       DateTime          @default(now()) @map("created_at")
 
   patient         User     @relation("PatientAppointments", fields: [patientId], references: [id])
@@ -572,4 +579,31 @@ enum ReportStatus {
   pending
   reviewed
   dismissed
+}
+
+// =========================================================================
+// MODULE 8 : NOTIFICATIONS IN-APP
+// =========================================================================
+
+/// Notification affichée dans le centre de notifications (/notifications) et
+/// comptée par la cloche (components/NotificationBell.tsx). Créée en
+/// best-effort par lib/notifications.ts — jamais bloquante pour l'action qui
+/// la déclenche. `type` est une clé courte libre (ex. "appointment.confirmed",
+/// voir NOTIFICATION_TYPES) plutôt qu'un enum, pour pouvoir ajouter un
+/// nouvel évènement sans migration. `link` est toujours un chemin interne.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String    @db.VarChar(50)
+  title     String    @db.VarChar(200)
+  body      String?   @db.Text
+  link      String?   @db.VarChar(512)
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

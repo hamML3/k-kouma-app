@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
+import { notifyStaff } from "@/lib/notifications";
 import { isReportCategory } from "@/lib/reportCategories";
 
 export type FileReportState = {
@@ -116,6 +117,14 @@ export async function fileReportAction(
     targetType: "user",
     targetId: reportedId,
     metadata: { category, appointmentId, reportId: created.id },
+  });
+
+  // Ni nom ni motif ici : le contenu reste réservé à /admin/reports, et le
+  // compte signalé n'est jamais prévenu.
+  await notifyStaff("manage_reports", {
+    type: "report.filed",
+    title: "Nouveau signalement à examiner",
+    link: "/admin/reports",
   });
 
   revalidatePath("/admin/reports");

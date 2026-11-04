@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { publishMessage } from "@/lib/chatBus";
 import { sendNewMessageEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 async function getParticipantAppointment(appointmentId: number, userId: number) {
   const appt = await prisma.appointment.findUnique({
@@ -38,6 +39,13 @@ function notifyNewMessage(appointmentId: number, senderId: number, recipientId: 
       if (!recipient) return;
       const recipientName = recipient.patientProfile?.nickname ?? recipient.therapistProfile?.firstName ?? "Bonjour";
       const senderName = sender?.patientProfile?.nickname ?? sender?.therapistProfile?.firstName ?? "Un utilisateur";
+      await createNotification({
+        userId: recipientId,
+        type: "message.new",
+        title: `Nouveau message de ${senderName}`,
+        link: `/appointments/${appointmentId}/chat`,
+        dedupeUnread: true,
+      });
       const url = recipient.therapistProfile
         ? `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/patients`
         : `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/appointments/${appointmentId}/chat`;
