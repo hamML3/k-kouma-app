@@ -83,13 +83,25 @@ export default async function AdminFinancesPage() {
 
   return (
     <>
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-          Finances
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-          Vue d&apos;ensemble des paiements patients et des gains psychologues
-        </p>
+      <div className="mb-6 sm:mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Finances
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
+            Vue d&apos;ensemble des paiements patients et des gains psychologues
+          </p>
+        </div>
+        {canManageFinances && (
+          <div className="flex gap-2 flex-wrap">
+            <a href="/api/admin/export/payments" className="kk-btn-outline">
+              Exporter paiements (CSV)
+            </a>
+            <a href="/api/admin/export/earnings" className="kk-btn-outline">
+              Exporter gains (CSV)
+            </a>
+          </div>
+        )}
       </div>
 
       {pendingManualPayments.length > 0 && (

@@ -87,6 +87,16 @@ export default async function AdminUsersPage({
     return qs ? `/admin/users?${qs}` : "/admin/users";
   }
 
+  // Exporte l'intégralité des comptes correspondant aux filtres actifs
+  // (pas seulement la page affichée) — mêmes paramètres role/q, sans pagination.
+  function exportHref() {
+    const sp = new URLSearchParams();
+    if (roleFilter) sp.set("role", roleFilter);
+    if (q) sp.set("q", q);
+    const qs = sp.toString();
+    return qs ? `/api/admin/export/users?${qs}` : "/api/admin/export/users";
+  }
+
   return (
     <>
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
@@ -98,7 +108,12 @@ export default async function AdminUsersPage({
             {total} compte{total !== 1 ? "s" : ""} sur la plateforme
           </p>
         </div>
-        {canManageUsers && <CreateUserForm isAdmin={isAdmin} />}
+        <div className="flex items-center gap-2">
+          <a href={exportHref()} className="kk-btn-outline">
+            Exporter CSV
+          </a>
+          {canManageUsers && <CreateUserForm isAdmin={isAdmin} />}
+        </div>
       </div>
 
       <form action="/admin/users" method="get" className="mb-4">
