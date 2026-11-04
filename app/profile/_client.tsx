@@ -170,6 +170,24 @@ export default function ProfileClient({
             />
           </div>
 
+          {/* Proposer un article */}
+          <div
+            className="rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
+          >
+            <div>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}>
+                Proposer un article
+              </p>
+              <p className="text-xs" style={{ color: "#6B5B96" }}>
+                Partagez un conseil ou un article avec les patients — relu par un admin avant publication.
+              </p>
+            </div>
+            <Link href="/articles/proposer" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
+              Proposer →
+            </Link>
+          </div>
+
           {/* Commission — lecture seule, voir /conditions-commission pour l'acceptation */}
           <div
             className="rounded-2xl p-5"

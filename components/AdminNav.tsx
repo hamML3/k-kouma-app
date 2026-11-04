@@ -76,6 +76,26 @@ const NAV_LINKS: NavLink[] = [
     ),
   },
   {
+    href: "/admin/articles",
+    label: "Articles",
+    adminOnly: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4.5 2h9l1.5 1.5v11a1 1 0 01-1 1h-9a1 1 0 01-1-1V2.5a.5.5 0 01.5-.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M6 6.5h6M6 9.5h6M6 12.5h3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/articles/proposer",
+    label: "Proposer un article",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M11.5 2.5l4 4-8.5 8.5-4.5 1 1-4.5 8-8Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/settings",
     label: "Réglages",
     adminOnly: true,

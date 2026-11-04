@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import { AppHeader } from "@/components/AppHeader";
@@ -11,6 +12,22 @@ export const metadata = { title: "Blog & Articles — K-Kouma" };
 export default async function BlogPage() {
   const session = await auth();
   const isConnected = Boolean(session?.user);
+
+  // Articles proposés par des thérapeutes/modérateurs/admins et validés par
+  // un admin — se mêlent aux articles éditoriaux figés ci-dessus (lib/articles.ts).
+  const submitted = await prisma.submittedArticle.findMany({
+    where: { status: "published" },
+    orderBy: { createdAt: "desc" },
+    select: {
+      slug: true,
+      title: true,
+      excerpt: true,
+      imageUrl: true,
+      author: {
+        select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } },
+      },
+    },
+  });
 
   return (
     <>
@@ -65,6 +82,47 @@ export default async function BlogPage() {
                 </div>
               </Link>
             ))}
+
+            {submitted.map((a) => {
+              const authorName = a.author.therapistProfile
+                ? `${a.author.therapistProfile.firstName} ${a.author.therapistProfile.lastName}`
+                : a.author.email;
+              return (
+                <Link
+                  key={a.slug}
+                  href={`/blog/${a.slug}`}
+                  className="kk-card overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
+                >
+                  <div className="relative w-full h-40 shrink-0" style={{ background: "var(--kk-purple-light)" }}>
+                    {a.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={a.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-3xl" aria-hidden>
+                        🌿
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple)" }}>
+                      Par {authorName}
+                    </p>
+                    <h2
+                      className="font-bold text-base mb-2"
+                      style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+                    >
+                      {a.title}
+                    </h2>
+                    <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--kk-muted)" }}>
+                      {a.excerpt}
+                    </p>
+                    <p className="text-xs font-bold mt-4" style={{ color: "var(--kk-green)" }}>
+                      Lire l&apos;article →
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </main>
