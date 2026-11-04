@@ -1,20 +1,10 @@
 'use client'
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { updateTherapistProfileAction } from "@/lib/actions/profile";
-
-const SPECIALTIES = [
-  "Anxiété et stress",
-  "Dépression",
-  "Traumatisme (PTSD)",
-  "Relations et couple",
-  "Deuil et perte",
-  "Troubles alimentaires",
-  "Addictions",
-  "Développement personnel",
-  "Enfants et adolescents",
-];
+import { SpecialtyPicker } from "@/components/SpecialtyPicker";
+import { SPECIALTIES, MAX_SPECIALTIES, splitSpecialties } from "@/lib/specialties";
 
 type Profile = {
   firstName: string;
@@ -25,15 +15,20 @@ type Profile = {
 };
 
 export default function ProfileClient({
-  userId,
   profile,
   commissionPercent,
 }: {
-  userId: number;
   profile: Profile;
   commissionPercent: number;
 }) {
   const [state, action, pending] = useActionState(updateTherapistProfileAction, {});
+  // Pré-sélection depuis la valeur stockée ("A,B" ou "A, B" selon l'ancienneté).
+  const [initialSpecialties] = useState(() => splitSpecialties(profile.specialties));
+  const [specialties, setSpecialties] = useState<string[]>(initialSpecialties);
+  // Anciennes valeurs hors liste : affichées pour pouvoir être conservées ou retirées.
+  const legacySpecialties = initialSpecialties.filter(
+    (s) => !(SPECIALTIES as readonly string[]).includes(s)
+  );
 
   return (
     <>
@@ -71,8 +66,6 @@ export default function ProfileClient({
         )}
 
         <form action={action} className="space-y-5">
-          <input type="hidden" name="userId" value={String(userId)} />
-
           {/* Identity */}
           <div
             className="rounded-2xl p-5 space-y-4"
@@ -127,19 +120,17 @@ export default function ProfileClient({
               />
             </div>
             <div>
-              <label htmlFor="specialties" className="kk-label">Spécialité principale</label>
-              <select
-                id="specialties"
-                name="specialties"
-                defaultValue={profile.specialties}
-                className="kk-input"
-                style={{ cursor: "pointer" }}
-              >
-                <option value="">Sélectionner…</option>
-                {SPECIALTIES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <p className="kk-label">
+                Spécialités{" "}
+                <span className="font-normal" style={{ color: "var(--kk-faint)" }}>
+                  (1 à {MAX_SPECIALTIES})
+                </span>
+              </p>
+              <SpecialtyPicker
+                value={specialties}
+                onChange={setSpecialties}
+                extraOptions={legacySpecialties}
+              />
             </div>
           </div>
 

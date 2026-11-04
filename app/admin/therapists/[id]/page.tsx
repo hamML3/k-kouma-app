@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser, updateTherapistCommissionAction } from "@/lib/actions/admin";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { hasPermission } from "@/lib/permissions";
+import { splitSpecialties } from "@/lib/specialties";
 import Link from "next/link";
 
 type DocEntry = { label: string; url: string };
@@ -117,7 +118,7 @@ export default async function AdminTherapistDetailPage({
             })}
           />
           <InfoRow label="Langues" value={t.languages ?? "—"} />
-          <InfoRow label="Spécialités" value={t.specialties ?? "—"} />
+          <InfoRow label="Spécialités" value={splitSpecialties(t.specialties).join(", ") || "—"} />
           <InfoRow
             label="Commission"
             value={

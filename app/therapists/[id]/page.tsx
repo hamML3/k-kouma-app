@@ -5,6 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { getSpecialtyIcon } from "@/lib/icons";
+import { splitSpecialties } from "@/lib/specialties";
 import { AppHeader } from "@/components/AppHeader";
 
 const AVATAR_COLORS = ["#557B53", "#8E7CB8", "#C58A3D", "#4A7C9B", "#B85E7C"];
@@ -36,7 +37,7 @@ export default async function TherapistProfilePage({
   const color = AVATAR_COLORS[profileId % AVATAR_COLORS.length];
 
   const languages = profile.languages ? profile.languages.split(",").map((l) => l.trim()) : [];
-  const specialtiesList = profile.specialties ? profile.specialties.split(",").map((s) => s.trim()) : [];
+  const specialtiesList = splitSpecialties(profile.specialties);
   const isPatient = session.user.role === "patient";
   const currentPatientId = isPatient ? Number(session.user.id) : null;
   const currentAssignment = currentPatientId

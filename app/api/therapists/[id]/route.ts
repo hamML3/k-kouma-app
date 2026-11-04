@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { normalizeSpecialties, splitSpecialties } from "@/lib/specialties";
 
 // GET : profil public d'un thérapeute
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -27,7 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 const updateTherapistSchema = z.object({
-  specialties: z.string().optional(),
+  specialties: z.union([z.string(), z.array(z.string())]).optional(),
   bio: z.string().max(2000).optional(),
   languages: z.string().optional(),
   profilePictureUrl: z.string().url().optional(),
@@ -47,9 +48,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const parsed = updateTherapistSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
+  const { specialties: rawSpecialties, ...rest } = parsed.data;
+  let specialties: string | undefined;
+  if (rawSpecialties !== undefined) {
+    const current = await prisma.therapistProfile.findUnique({
+      where: { userId: Number(id) },
+      select: { specialties: true },
+    });
+    if (!current) return NextResponse.json({ error: "Thérapeute introuvable" }, { status: 404 });
+    const result = normalizeSpecialties(rawSpecialties, {
+      extraAllowed: splitSpecialties(current.specialties),
+    });
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+    specialties = result.value;
+  }
+
   const profile = await prisma.therapistProfile.update({
     where: { userId: Number(id) },
-    data: parsed.data,
+    data: { ...rest, ...(specialties !== undefined ? { specialties } : {}) },
   });
 
   return NextResponse.json({ profile });
