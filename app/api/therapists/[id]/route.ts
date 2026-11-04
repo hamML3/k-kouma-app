@@ -17,7 +17,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       specialties: true,
       bio: true,
       profilePictureUrl: true,
-      hourlyRate: true,
       languages: true,
     },
   });
@@ -30,7 +29,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 const updateTherapistSchema = z.object({
   specialties: z.string().optional(),
   bio: z.string().max(2000).optional(),
-  hourlyRate: z.number().min(0).optional(),
   languages: z.string().optional(),
   profilePictureUrl: z.string().url().optional(),
 });

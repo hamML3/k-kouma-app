@@ -12,19 +12,27 @@ export default async function ProfilePage() {
 
   const userId = Number(session.user.id);
 
-  const profile = await prisma.therapistProfile.findUnique({
-    where: { userId },
-    select: {
-      firstName: true,
-      lastName:  true,
-      bio:       true,
-      languages: true,
-      specialties: true,
-      hourlyRate:  true,
-    },
-  });
+  const [profile, settings] = await Promise.all([
+    prisma.therapistProfile.findUnique({
+      where: { userId },
+      select: {
+        firstName: true,
+        lastName:  true,
+        bio:       true,
+        languages: true,
+        specialties: true,
+        commissionPercent: true,
+      },
+    }),
+    prisma.platformSettings.findUnique({ where: { id: 1 } }),
+  ]);
 
   if (!profile) redirect("/dashboard");
+
+  const commissionPercent =
+    profile.commissionPercent != null
+      ? Number(profile.commissionPercent)
+      : Number(settings?.defaultCommissionPercent ?? 20);
 
   return (
     <ProfileClient
@@ -36,8 +44,8 @@ export default async function ProfilePage() {
         bio:        profile.bio        ?? "",
         languages:  profile.languages  ?? "",
         specialties: profile.specialties ?? "",
-        hourlyRate:  Number(profile.hourlyRate),
       }}
+      commissionPercent={commissionPercent}
     />
   );
 }

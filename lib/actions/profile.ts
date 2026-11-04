@@ -25,11 +25,10 @@ export async function updateTherapistProfileAction(
   const bio         = (formData.get("bio")         as string)?.trim() || null;
   const languages   = (formData.get("languages")   as string)?.trim() || null;
   const specialties = (formData.get("specialties") as string)?.trim() || null;
-  const hourlyRate  = Number(formData.get("hourlyRate") || 0);
 
   await prisma.therapistProfile.update({
     where: { userId },
-    data: { firstName, lastName, bio, languages, specialties, hourlyRate },
+    data: { firstName, lastName, bio, languages, specialties },
   });
 
   revalidatePath("/profile");

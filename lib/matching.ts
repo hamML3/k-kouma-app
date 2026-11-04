@@ -20,7 +20,6 @@ export type TherapistForMatching = {
   specialties: string | null;
   bio: string | null;
   languages: string | null;
-  hourlyRate: unknown;
 };
 
 export type MatchResult = {
@@ -77,10 +76,9 @@ const WEIGHT = {
   motif:       15,  // each matching motif (max 3 = 45)
   therapyType: 15,  // therapy type match
   bio:          5,  // has written a bio
-  price:        5,  // has set a price
 } as const;
 
-const NORMALISE_AGAINST = 90; // what a "perfect match" looks like in raw points
+const NORMALISE_AGAINST = 85; // what a "perfect match" looks like in raw points
 
 export function scoreTherapist(
   answers: OnboardingAnswers,
@@ -147,7 +145,6 @@ export function scoreTherapist(
 
   // ── Profile completeness ───────────────────────────────────────────────────
   if (therapist.bio && therapist.bio.length > 50) score += WEIGHT.bio;
-  if (Number(therapist.hourlyRate) > 0)            score += WEIGHT.price;
 
   const pct = Math.min(100, Math.round((score / NORMALISE_AGAINST) * 100));
 

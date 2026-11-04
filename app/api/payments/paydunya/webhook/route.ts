@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction([
     prisma.payment.update({
       where: { id: payment.id },
-      data: { status: "completed", paidAt: new Date() },
+      data: { status: "completed", paidAt: new Date(), sessionsRemaining: payment.sessionsCount },
     }),
     prisma.patientProfile.updateMany({
       where: { userId: payment.patientId },

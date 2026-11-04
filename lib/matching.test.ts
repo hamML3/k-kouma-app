@@ -10,7 +10,6 @@ function therapist(overrides: Partial<TherapistForMatching> = {}): TherapistForM
     specialties: null,
     bio: null,
     languages: null,
-    hourlyRate: 0,
     ...overrides,
   };
 }
@@ -88,12 +87,12 @@ describe("scoreTherapist", () => {
     expect(notAtRisk.score).toBe(0);
   });
 
-  it("rewards profile completeness (bio length and a set price) independently", () => {
+  it("rewards profile completeness (a sufficiently long bio)", () => {
     const result = scoreTherapist(
       {},
-      therapist({ bio: "A".repeat(60), hourlyRate: 15000 })
+      therapist({ bio: "A".repeat(60) })
     );
-    expect(result.score).toBe(10); // 5 (bio) + 5 (price)
+    expect(result.score).toBe(5); // 5 (bio)
   });
 
   it("does not reward a short bio", () => {
@@ -108,7 +107,6 @@ describe("scoreTherapist", () => {
         languages: "Français",
         specialties: "Anxiété et stress,Dépression,Deuil et perte,Relations et couple,Traumatisme",
         bio: "A".repeat(60),
-        hourlyRate: 15000,
       })
     );
     expect(result.pct).toBeLessThanOrEqual(100);

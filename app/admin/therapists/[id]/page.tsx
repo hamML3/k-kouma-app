@@ -1,6 +1,7 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser } from "@/lib/actions/admin";
+import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser, updateTherapistCommissionAction } from "@/lib/actions/admin";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import Link from "next/link";
 
@@ -8,17 +9,26 @@ type DocEntry = { label: string; url: string };
 
 export default async function AdminTherapistDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const userId = Number(id);
   if (isNaN(userId)) notFound();
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { therapistProfile: true },
-  });
+  const session = await auth();
+  const isAdmin = session?.user?.role === "admin";
+
+  const [user, settings] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: { therapistProfile: true },
+    }),
+    prisma.platformSettings.findUnique({ where: { id: 1 } }),
+  ]);
 
   if (!user || !user.therapistProfile) notFound();
 
@@ -98,8 +108,20 @@ export default async function AdminTherapistDetailPage({
           <InfoRow label="Langues" value={t.languages ?? "—"} />
           <InfoRow label="Spécialités" value={t.specialties ?? "—"} />
           <InfoRow
-            label="Tarif"
-            value={Number(t.hourlyRate) > 0 ? `${Number(t.hourlyRate).toLocaleString("fr-FR")} XOF / séance` : "—"}
+            label="Commission"
+            value={
+              t.commissionPercent != null
+                ? `${Number(t.commissionPercent)}% (personnalisée)`
+                : `${Number(settings?.defaultCommissionPercent ?? 20)}% (défaut plateforme)`
+            }
+          />
+          <InfoRow
+            label="Conditions"
+            value={
+              t.commissionAcceptedAt
+                ? `Acceptées le ${new Date(t.commissionAcceptedAt).toLocaleDateString("fr-FR")} (${Number(t.commissionAcceptedPercent)}%)`
+                : "Pas encore acceptées"
+            }
           />
           {t.bio && (
             <div>
@@ -144,8 +166,37 @@ export default async function AdminTherapistDetailPage({
           )}
         </div>
 
-        {/* Primary actions — pending */}
-        {isPending && (
+        {/* Commission — réservé à l'admin */}
+        {isAdmin && (
+          <div className="rounded-2xl p-5 mb-4" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+            <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-muted)" }}>COMMISSION PERSONNALISÉE</p>
+            <p className="text-xs mb-3" style={{ color: "var(--kk-faint)" }}>
+              Laissez vide pour utiliser le défaut de la plateforme ({Number(settings?.defaultCommissionPercent ?? 20)}%).
+              Un changement redemandera l&apos;acceptation des conditions au thérapeute.
+            </p>
+            {error === "commission" && <div className="kk-error mb-3">Pourcentage invalide (0 à 100).</div>}
+            <form action={updateTherapistCommissionAction} className="flex items-center gap-2">
+              <input type="hidden" name="therapistId" value={String(userId)} />
+              <input
+                type="number"
+                name="commissionPercent"
+                min={0}
+                max={100}
+                step={0.5}
+                defaultValue={t.commissionPercent != null ? Number(t.commissionPercent) : ""}
+                placeholder={`${Number(settings?.defaultCommissionPercent ?? 20)} (défaut)`}
+                className="kk-input flex-1"
+              />
+              <span className="text-sm font-bold" style={{ color: "var(--kk-mid)" }}>%</span>
+              <button type="submit" className="kk-btn-outline px-4 py-2 text-sm shrink-0">
+                Enregistrer
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Primary actions — pending, réservé à l'admin */}
+        {isPending && isAdmin && (
           <div className="flex gap-3 mb-4">
             <form action={verifyTherapist} className="flex-1">
               <input type="hidden" name="userId" value={String(userId)} />
@@ -165,6 +216,11 @@ export default async function AdminTherapistDetailPage({
             </form>
           </div>
         )}
+        {isPending && !isAdmin && (
+          <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
+            Candidature en attente — seul un administrateur peut la valider ou la rejeter.
+          </div>
+        )}
 
         {isVerified && (
           <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
@@ -172,7 +228,7 @@ export default async function AdminTherapistDetailPage({
           </div>
         )}
 
-        {isRejected && !isSuspended && (
+        {isRejected && !isSuspended && isAdmin && (
           <form action={verifyTherapist} className="mb-4">
             <input type="hidden" name="userId" value={String(userId)} />
             <button type="submit" className="kk-btn-green w-full py-3 text-sm">
@@ -181,8 +237,8 @@ export default async function AdminTherapistDetailPage({
           </form>
         )}
 
-        {/* Suspend / unsuspend — always visible for verified or rejected */}
-        {(isVerified || isRejected || isSuspended) && (
+        {/* Suspend / unsuspend — réservé à l'admin, visible pour vérifiés ou rejetés */}
+        {isAdmin && (isVerified || isRejected || isSuspended) && (
           <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
             <p className="text-xs font-bold mb-3" style={{ color: "var(--kk-muted)" }}>GESTION DU COMPTE</p>
             {isSuspended ? (

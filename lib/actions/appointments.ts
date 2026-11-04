@@ -10,6 +10,9 @@ import {
   sendAppointmentConfirmedEmail,
   sendAppointmentCanceledEmail,
 } from "@/lib/email";
+import { claimOldestFundingPayment, releaseFundingPayment } from "@/lib/credits";
+import { effectiveCommissionPercent, therapistShare } from "@/lib/commission";
+import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 
 /** Best-effort : une notification qui échoue ne doit jamais faire échouer l'action réelle. */
 async function notify(label: string, send: () => Promise<unknown>) {
@@ -66,6 +69,8 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
         });
         if (debited.count === 0) return "no_credit";
 
+        const fundedByPaymentId = await claimOldestFundingPayment(tx, patientId);
+
         await tx.appointment.create({
           data: {
             patientId,
@@ -75,6 +80,7 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
             status: "pending",
             type: type as "video" | "audio" | "text",
             webrtcRoomId: type !== "text" ? randomUUID() : null,
+            fundedByPaymentId,
           },
         });
         return "ok";
@@ -125,7 +131,7 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
 
   const existing = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { therapistId: true, scheduledAt: true },
+    select: { therapistId: true, scheduledAt: true, fundedByPaymentId: true },
   });
 
   const { count } = await prisma.$transaction(async (tx) => {
@@ -140,6 +146,7 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
         where: { userId: patientId },
         data: { sessionCredits: { increment: 1 } },
       });
+      await releaseFundingPayment(tx, existing?.fundedByPaymentId);
     }
     return { count: canceled.count };
   });
@@ -221,7 +228,14 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { patientId: true, therapistId: true, status: true, type: true },
+    select: {
+      patientId: true,
+      therapistId: true,
+      status: true,
+      type: true,
+      fundedByPayment: { select: { amount: true, sessionsCount: true } },
+      patient: { select: { patientProfile: { select: { onboardingAnswers: true } } } },
+    },
   });
 
   if (!appointment || (appointment.patientId !== userId && appointment.therapistId !== userId)) {
@@ -240,22 +254,38 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
     redirect("/appointments");
   }
 
-  const therapistProfile = await prisma.therapistProfile.findUnique({
-    where: { userId: appointment.therapistId },
-    select: { hourlyRate: true },
-  });
+  const [therapistProfile, settings] = await Promise.all([
+    prisma.therapistProfile.findUnique({
+      where: { userId: appointment.therapistId },
+      select: { commissionPercent: true },
+    }),
+    prisma.platformSettings.findUnique({ where: { id: 1 } }),
+  ]);
+
+  // Prix réel de la séance : au prorata du paiement qui l'a financée (pack ou
+  // séance seule) si connu, sinon le tarif catalogue à la séance seule — ce
+  // deuxième cas ne devrait concerner que des crédits antérieurs à ce système.
+  const sessionPrice = appointment.fundedByPayment
+    ? Number(appointment.fundedByPayment.amount) / appointment.fundedByPayment.sessionsCount
+    : SESSION_PRICING[resolveTherapyType(appointment.patient?.patientProfile?.onboardingAnswers as { therapyType?: string } | null)].single;
+
+  const commissionPercent = effectiveCommissionPercent(
+    therapistProfile?.commissionPercent ? Number(therapistProfile.commissionPercent) : null,
+    Number(settings?.defaultCommissionPercent ?? 20)
+  );
 
   await prisma.$transaction([
     prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: "completed" },
     }),
-    // Gain figé au tarif du thérapeute au moment de la séance.
+    // Gain figé à la commission en vigueur au moment de la séance.
     prisma.therapistEarning.create({
       data: {
         therapistId: appointment.therapistId,
         appointmentId,
-        amount: therapistProfile?.hourlyRate ?? 0,
+        amount: therapistShare(sessionPrice, commissionPercent),
+        commissionPercent,
       },
     }),
   ]);

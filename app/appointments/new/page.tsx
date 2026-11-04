@@ -41,9 +41,8 @@ export default async function NewAppointmentPage({
   const patientId = Number(session.user.id);
   const therapistId = therapistUserId;
   const therapistName = `${therapistProfile.firstName} ${therapistProfile.lastName}`;
-  // Le prix affiché doit toujours être le tarif plateforme réellement débité
-  // (lib/pricing.ts) — jamais TherapistProfile.hourlyRate, qui n'est plus
-  // collecté à l'inscription et vaut 0 pour tout thérapeute récent.
+  // Le prix affiché est toujours le tarif catalogue plateforme (lib/pricing.ts)
+  // — les thérapeutes n'ont plus de tarif propre, voir lib/commission.ts.
   const answers = patientProfile.onboardingAnswers as { therapyType?: string } | null;
   const rate = amountFor(resolveTherapyType(answers), "single");
 

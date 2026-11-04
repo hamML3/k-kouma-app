@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
+import Link from "next/link";
 import { updateTherapistProfileAction } from "@/lib/actions/profile";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -16,33 +17,26 @@ const SPECIALTIES = [
   "Enfants et adolescents",
 ];
 
-const RATE_PRESETS = [10000, 15000, 20000, 25000, 30000];
-
 type Profile = {
   firstName: string;
   lastName: string;
   bio: string;
   languages: string;
   specialties: string;
-  hourlyRate: number;
 };
 
 export default function ProfileClient({
   userId,
   displayName,
   profile,
+  commissionPercent,
 }: {
   userId: number;
   displayName: string;
   profile: Profile;
+  commissionPercent: number;
 }) {
   const [state, action, pending] = useActionState(updateTherapistProfileAction, {});
-
-  const initialPreset = RATE_PRESETS.includes(profile.hourlyRate) ? profile.hourlyRate : null;
-  const [selectedRate, setSelectedRate] = useState<number | null>(initialPreset);
-  const [customRate, setCustomRate] = useState(initialPreset ? "" : String(profile.hourlyRate || ""));
-
-  const effectiveRate = selectedRate ?? (customRate ? Number(customRate) : null);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -177,62 +171,24 @@ export default function ProfileClient({
             />
           </div>
 
-          {/* Hourly rate */}
+          {/* Commission — lecture seule, voir /conditions-commission pour l'acceptation */}
           <div
             className="rounded-2xl p-5"
             style={{ background: "var(--kk-green-light)", border: "1.5px solid #C2D9BC" }}
           >
             <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-              Tarif par séance
+              Commission K-Kouma
             </p>
-            <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
-              Ce montant est affiché sur votre profil public.
+            <p className="text-xs mb-3" style={{ color: "var(--kk-mid)" }}>
+              Les tarifs sont fixés par K-Kouma (abonnements/packs patients). Vous percevez le prix payé par le
+              patient, moins cette commission, pour chaque séance réalisée.
             </p>
-
-            <input type="hidden" name="hourlyRate" value={effectiveRate ?? ""} />
-
-            <div className="flex flex-wrap gap-2 mb-3">
-              {RATE_PRESETS.map((r) => {
-                const active = selectedRate === r;
-                return (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => { setSelectedRate(active ? null : r); setCustomRate(""); }}
-                    className="px-4 py-2 rounded-full text-sm font-bold transition-all"
-                    style={{
-                      background: active ? "var(--kk-green)" : "#fff",
-                      color: active ? "#fff" : "var(--kk-mid)",
-                      border: active ? "none" : "1.5px solid var(--kk-border-mid)",
-                    }}
-                  >
-                    {r.toLocaleString("fr-FR")} XOF
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                placeholder="Autre montant…"
-                min={0}
-                step={500}
-                value={customRate}
-                onChange={(e) => { setCustomRate(e.target.value); setSelectedRate(null); }}
-                className="kk-input flex-1"
-                style={{ background: "#fff" }}
-              />
-              <span className="text-sm font-semibold shrink-0" style={{ color: "var(--kk-mid)" }}>
-                XOF / séance
-              </span>
-            </div>
-
-            {effectiveRate !== null && effectiveRate > 0 && (
-              <p className="text-xs mt-2 font-semibold" style={{ color: "var(--kk-green)" }}>
-                ✓ Tarif : {effectiveRate.toLocaleString("fr-FR")} XOF / séance
-              </p>
-            )}
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green)" }}>
+              {commissionPercent}%
+            </p>
+            <Link href="/conditions-commission" className="text-xs font-bold underline mt-1 inline-block" style={{ color: "var(--kk-green)" }}>
+              Voir les conditions acceptées →
+            </Link>
           </div>
 
           <button

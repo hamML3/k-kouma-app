@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { createUserSchema } from "@/lib/validators/admin";
 import { logAudit } from "@/lib/audit";
+import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
+import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 
 export type CreateUserState = {
   error?: string;
@@ -22,6 +24,23 @@ async function requireAdmin(): Promise<{ id: number; email: string }> {
   const session = await auth();
   if (session?.user?.role !== "admin" || !session.user.email) {
     throw new Error("Accès refusé : réservé aux administrateurs.");
+  }
+  return { id: Number(session.user.id), email: session.user.email };
+}
+
+/**
+ * Accès admin restreint ("modérateur") : peut agir sur les actions
+ * financières (valider/rejeter un paiement, marquer un reversement) mais
+ * jamais sur les comptes utilisateurs — ces actions-là restent sur
+ * requireAdmin() ci-dessus.
+ */
+async function requireAdminOrModerator(): Promise<{ id: number; email: string }> {
+  const session = await auth();
+  if (
+    (session?.user?.role !== "admin" && session?.user?.role !== "moderator") ||
+    !session.user.email
+  ) {
+    throw new Error("Accès refusé.");
   }
   return { id: Number(session.user.id), email: session.user.email };
 }
@@ -150,11 +169,27 @@ export async function verifyTherapist(formData: FormData): Promise<void> {
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
-  await prisma.therapistProfile.update({
-    where: { userId },
-    data: { isVerified: true, rejectedAt: null },
-  });
+  const [therapist, settings] = await Promise.all([
+    prisma.therapistProfile.update({
+      where: { userId },
+      data: { isVerified: true, rejectedAt: null },
+    }),
+    prisma.platformSettings.findUnique({ where: { id: 1 } }),
+  ]);
   await logAudit({ actor: admin, action: "admin.therapist.verify", targetType: "user", targetId: userId });
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (user) {
+    const effective = effectiveCommissionPercent(
+      therapist.commissionPercent ? Number(therapist.commissionPercent) : null,
+      Number(settings?.defaultCommissionPercent ?? 20)
+    );
+    try {
+      await sendTherapistVerifiedEmail(user.email, therapist.firstName, effective);
+    } catch (err) {
+      console.error("[notify:therapist.verified] envoi échoué:", err);
+    }
+  }
 
   revalidatePath("/admin/therapists");
   redirect("/admin/therapists");
@@ -182,7 +217,7 @@ export async function rejectTherapist(formData: FormData): Promise<void> {
 
 /** Valide une déclaration de paiement Orange Money manuel : crédite les séances et clôt le paiement, ensemble. */
 export async function confirmManualPaymentAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireAdminOrModerator();
   const paymentId = Number(formData.get("paymentId"));
   if (!paymentId) redirect("/admin/finances");
 
@@ -192,7 +227,7 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
   await prisma.$transaction([
     prisma.payment.update({
       where: { id: paymentId },
-      data: { status: "completed", paidAt: new Date() },
+      data: { status: "completed", paidAt: new Date(), sessionsRemaining: payment.sessionsCount },
     }),
     prisma.patientProfile.updateMany({
       where: { userId: payment.patientId },
@@ -214,7 +249,7 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
 
 /** Rejette une déclaration de paiement Orange Money manuel (référence introuvable, montant incorrect…). */
 export async function rejectManualPaymentAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireAdminOrModerator();
   const paymentId = Number(formData.get("paymentId"));
   if (!paymentId) redirect("/admin/finances");
 
@@ -229,9 +264,66 @@ export async function rejectManualPaymentAction(formData: FormData): Promise<voi
   redirect("/admin/finances");
 }
 
+/**
+ * Définit (ou retire, si `percent` est vide) la commission propre à un
+ * thérapeute, qui prévaut alors sur le défaut de la plateforme. S'il doit
+ * à nouveau accepter des conditions suite à ce changement, on le prévient
+ * par email (il verra aussi la demande d'acceptation à sa prochaine connexion).
+ */
+export async function updateTherapistCommissionAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const therapistId = Number(formData.get("therapistId"));
+  if (!therapistId) redirect("/admin/therapists");
+
+  const raw = (formData.get("commissionPercent") as string)?.trim();
+  const percent = raw ? Number(raw) : null;
+  if (raw && (isNaN(percent!) || percent! < 0 || percent! > 100)) {
+    redirect(`/admin/therapists/${therapistId}?error=commission`);
+  }
+
+  const [therapist, settings] = await Promise.all([
+    prisma.therapistProfile.findUnique({
+      where: { userId: therapistId },
+      select: { commissionAcceptedPercent: true },
+    }),
+    prisma.platformSettings.findUnique({ where: { id: 1 } }),
+  ]);
+
+  await prisma.therapistProfile.update({
+    where: { userId: therapistId },
+    data: { commissionPercent: percent },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.therapist.commission_update",
+    targetType: "user",
+    targetId: therapistId,
+    metadata: { commissionPercent: percent },
+  });
+
+  const effective = effectiveCommissionPercent(percent, Number(settings?.defaultCommissionPercent ?? 20));
+  if (needsCommissionAcceptance(effective, therapist?.commissionAcceptedPercent ? Number(therapist.commissionAcceptedPercent) : null)) {
+    const user = await prisma.user.findUnique({
+      where: { id: therapistId },
+      select: { email: true, therapistProfile: { select: { firstName: true } } },
+    });
+    if (user?.therapistProfile) {
+      try {
+        await sendCommissionTermsChangedEmail(user.email, user.therapistProfile.firstName, effective);
+      } catch (err) {
+        console.error("[notify:commission.changed] envoi échoué:", err);
+      }
+    }
+  }
+
+  revalidatePath(`/admin/therapists/${therapistId}`);
+  redirect(`/admin/therapists/${therapistId}`);
+}
+
 /** Marque tous les gains non reversés d'un thérapeute comme payés, en une fois. */
 export async function markTherapistPayoutAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireAdminOrModerator();
   const therapistId = Number(formData.get("therapistId"));
   if (!therapistId) redirect("/admin/finances");
 

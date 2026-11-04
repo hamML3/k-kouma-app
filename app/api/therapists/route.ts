@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
       specialties: true,
       bio: true,
       profilePictureUrl: true,
-      hourlyRate: true,
       languages: true,
     },
     skip,

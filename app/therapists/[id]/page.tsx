@@ -149,24 +149,6 @@ export default async function TherapistProfilePage({
 
           {/* Sidebar */}
           <div className="space-y-4">
-            {/* Price */}
-            <div
-              className="rounded-2xl p-5"
-              style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
-            >
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#8A6530" }}>
-                Tarif
-              </p>
-              <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-                {Number(profile.hourlyRate) > 0
-                  ? `${Number(profile.hourlyRate).toLocaleString("fr-FR")}`
-                  : "—"}
-              </p>
-              {Number(profile.hourlyRate) > 0 && (
-                <p className="text-xs mt-0.5" style={{ color: "#8A6530" }}>XOF / séance (45 min)</p>
-              )}
-            </div>
-
             {/* Languages */}
             {languages.length > 0 && (
               <div

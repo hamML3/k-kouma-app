@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavLink = { href: string; label: string; icon: React.ReactNode };
+type NavLink = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean };
 
 const NAV_LINKS: NavLink[] = [
   {
@@ -61,15 +61,26 @@ const NAV_LINKS: NavLink[] = [
       </svg>
     ),
   },
+  {
+    href: "/admin/settings",
+    label: "Réglages",
+    adminOnly: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M9 2.5v2M9 13.5v2M2.5 9h2M13.5 9h2M4.3 4.3l1.4 1.4M12.3 12.3l1.4 1.4M4.3 13.7l1.4-1.4M12.3 5.7l1.4-1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 /** Nav de la sidebar admin, avec surlignage de la section active. */
-export function AdminNav() {
+export function AdminNav({ role }: { role: string }) {
   const pathname = usePathname();
 
   return (
     <nav className="flex-1 space-y-1">
-      {NAV_LINKS.map((link) => {
+      {NAV_LINKS.filter((link) => !link.adminOnly || role === "admin").map((link) => {
         const active = link.href === "/admin" ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link

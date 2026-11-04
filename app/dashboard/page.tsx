@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ResendVerificationBanner } from "@/components/ResendVerificationBanner";
 import { changeTherapistAction } from "@/lib/actions/assignments";
 import { recommendedArticles } from "@/lib/articles";
+import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -24,7 +25,12 @@ export default async function DashboardPage() {
           select: { nickname: true, onboardingAnswers: true, sessionCredits: true },
         },
         therapistProfile: {
-          select: { firstName: true, isVerified: true },
+          select: {
+            firstName: true,
+            isVerified: true,
+            commissionPercent: true,
+            commissionAcceptedPercent: true,
+          },
         },
       },
     }),
@@ -34,7 +40,7 @@ export default async function DashboardPage() {
         therapist: {
           select: {
             therapistProfile: {
-              select: { id: true, firstName: true, lastName: true, specialties: true, hourlyRate: true, bio: true },
+              select: { id: true, firstName: true, lastName: true, specialties: true, bio: true },
             },
           },
         },
@@ -51,6 +57,18 @@ export default async function DashboardPage() {
   const isVerified = user?.therapistProfile?.isVerified ?? false;
   const needsOnboarding =
     !isTherapist && !user?.patientProfile?.onboardingAnswers;
+
+  if (isTherapist && isVerified) {
+    const settings = await prisma.platformSettings.findUnique({ where: { id: 1 } });
+    const effective = effectiveCommissionPercent(
+      user?.therapistProfile?.commissionPercent ? Number(user.therapistProfile.commissionPercent) : null,
+      Number(settings?.defaultCommissionPercent ?? 20)
+    );
+    const accepted = user?.therapistProfile?.commissionAcceptedPercent
+      ? Number(user.therapistProfile.commissionAcceptedPercent)
+      : null;
+    if (needsCommissionAcceptance(effective, accepted)) redirect("/conditions-commission");
+  }
 
   const assignedTherapist = activeAssignment?.therapist?.therapistProfile ?? null;
 
@@ -272,11 +290,6 @@ export default async function DashboardPage() {
                     {assignedTherapist.specialties.split(",")[0].trim()}
                   </p>
                 )}
-                <p className="text-xs font-semibold mt-1" style={{ color: "var(--kk-mid)" }}>
-                  {Number(assignedTherapist.hourlyRate) > 0
-                    ? `${Number(assignedTherapist.hourlyRate).toLocaleString("fr-FR")} XOF / séance`
-                    : "Tarif à confirmer"}
-                </p>
               </div>
               <Link
                 href={`/therapists/${assignedTherapist.id}`}

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createAppointmentSchema } from "@/lib/validators/appointment";
 import { randomUUID } from "crypto";
+import { claimOldestFundingPayment } from "@/lib/credits";
 
 // GET : liste des rendez-vous du patient ou du thérapeute connecté
 export async function GET() {
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
     });
     if (debited.count === 0) return null;
 
+    const fundedByPaymentId = await claimOldestFundingPayment(tx, patientId);
+
     return tx.appointment.create({
       data: {
         patientId,
@@ -63,6 +66,7 @@ export async function POST(req: NextRequest) {
         durationMinutes,
         type,
         webrtcRoomId: type !== "text" ? randomUUID() : null,
+        fundedByPaymentId,
       },
     });
   });

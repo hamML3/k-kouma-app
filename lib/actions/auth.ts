@@ -185,7 +185,6 @@ export async function registerTherapistAction(
     lastName,
     specialties,
     bio,
-    hourlyRate,
     languages,
   } = parsed.data;
 
@@ -239,7 +238,6 @@ export async function registerTherapistAction(
             lastName,
             specialties,
             bio,
-            hourlyRate,
             languages,
             isVerified: false,
             diplomaUrl,

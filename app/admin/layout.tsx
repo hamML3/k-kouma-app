@@ -12,7 +12,7 @@ export const metadata = {
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "admin") redirect("/dashboard");
+  if (session.user.role !== "admin" && session.user.role !== "moderator") redirect("/dashboard");
 
   return (
     <div className="flex min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -31,11 +31,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             className="block text-xs font-semibold mt-0.5"
             style={{ color: "var(--kk-purple)" }}
           >
-            Administration
+            {session.user.role === "moderator" ? "Administration (modérateur)" : "Administration"}
           </span>
         </Link>
 
-        <AdminNav />
+        <AdminNav role={session.user.role} />
 
         <div className="pt-4" style={{ borderTop: "1px solid var(--kk-border)" }}>
           <p className="text-xs px-3 mb-2 font-semibold truncate" style={{ color: "var(--kk-muted)" }}>

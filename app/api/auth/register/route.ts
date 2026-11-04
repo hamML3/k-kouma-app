@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
       }
 
-      const { email, password, phoneNumber, firstName, lastName, specialties, bio, hourlyRate, languages } = parsed.data;
+      const { email, password, phoneNumber, firstName, lastName, specialties, bio, languages } = parsed.data;
 
       const exists = await prisma.user.findUnique({ where: { email } });
       if (exists) {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
           passwordHash,
           role: "therapist",
           therapistProfile: {
-            create: { firstName, lastName, specialties, bio, hourlyRate, languages },
+            create: { firstName, lastName, specialties, bio, languages },
           },
         },
         select: { id: true, email: true, role: true, createdAt: true },

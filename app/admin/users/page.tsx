@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CreateUserForm } from "./_client";
 import { suspendUserAction, reactivateUserAction } from "@/lib/actions/admin";
@@ -8,6 +9,7 @@ export const metadata = { title: "Utilisateurs — Administration K-Kouma" };
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
   admin: { label: "Admin", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
+  moderator: { label: "Modérateur", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
   therapist: { label: "Psychologue", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
   patient: { label: "Patient", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
 };
@@ -19,13 +21,16 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ role?: string; q?: string; page?: string }>;
 }) {
+  const session = await auth();
+  const isAdmin = session?.user?.role === "admin";
+
   const params = await searchParams;
   const roleFilter = params.role;
   const q = params.q?.trim();
   const page = Math.max(1, Number(params.page) || 1);
 
   const where: Prisma.UserWhereInput = {
-    ...(roleFilter ? { role: roleFilter as "admin" | "therapist" | "patient" } : {}),
+    ...(roleFilter ? { role: roleFilter as "admin" | "therapist" | "patient" | "moderator" } : {}),
     ...(q
       ? {
           OR: [
@@ -63,6 +68,7 @@ export default async function AdminUsersPage({
     { value: undefined, label: "Tous" },
     { value: "patient", label: "Patients" },
     { value: "therapist", label: "Psychologues" },
+    { value: "moderator", label: "Modérateurs" },
     { value: "admin", label: "Admins" },
   ];
 
@@ -86,7 +92,7 @@ export default async function AdminUsersPage({
             {total} compte{total !== 1 ? "s" : ""}
           </p>
         </div>
-        <CreateUserForm />
+        {isAdmin && <CreateUserForm />}
       </div>
 
       <form action="/admin/users" method="get" className="mb-4">
@@ -171,26 +177,28 @@ export default async function AdminUsersPage({
                   </p>
                 </div>
 
-                <form action={suspended ? reactivateUserAction : suspendUserAction} className="shrink-0">
-                  <input type="hidden" name="userId" value={u.id} />
-                  {suspended ? (
-                    <button
-                      type="submit"
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
-                      style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
-                    >
-                      Réactiver
-                    </button>
-                  ) : (
-                    <ConfirmSubmitButton
-                      confirmMessage={`Suspendre le compte de ${name ?? u.email} ? Cette personne ne pourra plus se connecter.`}
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
-                      style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
-                    >
-                      Suspendre
-                    </ConfirmSubmitButton>
-                  )}
-                </form>
+                {isAdmin && (
+                  <form action={suspended ? reactivateUserAction : suspendUserAction} className="shrink-0">
+                    <input type="hidden" name="userId" value={u.id} />
+                    {suspended ? (
+                      <button
+                        type="submit"
+                        className="text-xs font-bold px-3.5 py-2 rounded-full"
+                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                      >
+                        Réactiver
+                      </button>
+                    ) : (
+                      <ConfirmSubmitButton
+                        confirmMessage={`Suspendre le compte de ${name ?? u.email} ? Cette personne ne pourra plus se connecter.`}
+                        className="text-xs font-bold px-3.5 py-2 rounded-full"
+                        style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
+                      >
+                        Suspendre
+                      </ConfirmSubmitButton>
+                    )}
+                  </form>
+                )}
               </div>
             );
           })}

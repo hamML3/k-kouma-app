@@ -29,7 +29,6 @@ type TherapistSeed = {
   bio: string;
   specialties: string;
   languages: string;
-  hourlyRate: number;
   isVerified: boolean;
 };
 
@@ -48,7 +47,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Psychologue clinicienne avec 8 ans d'expérience, spécialisée dans la gestion de l'anxiété et des traumatismes. Formée aux réalités culturelles de l'Afrique de l'Ouest.",
     specialties: "Anxiété et stress,Traumatisme (PTSD)",
     languages: "Français,Bambara",
-    hourlyRate: 15000,
     isVerified: true,
   },
   {
@@ -58,7 +56,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Psychologue clinicien spécialisé dans les troubles de l'humeur et la dépression, avec une approche intégrant les pratiques communautaires locales.",
     specialties: "Dépression,Développement personnel",
     languages: "Français,Bambara,Peulh",
-    hourlyRate: 12000,
     isVerified: true,
   },
   {
@@ -68,7 +65,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Thérapeute de couple et de famille, accompagne les partenaires dans la communication et la résolution de conflits depuis plus de 10 ans.",
     specialties: "Couples,Relations et couple",
     languages: "Français,Malinké,Bambara",
-    hourlyRate: 18000,
     isVerified: true,
   },
   {
@@ -78,7 +74,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Psychologue pour enfants et adolescents, spécialisé dans l'accompagnement scolaire et les troubles du comportement.",
     specialties: "Enfants et adolescents",
     languages: "Français,Peulh,Malinké",
-    hourlyRate: 10000,
     isVerified: true,
   },
   {
@@ -88,7 +83,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Psychologue clinicienne accompagnant le deuil, la perte et les transitions de vie, avec une approche douce et centrée sur la personne.",
     specialties: "Deuil et perte,Développement personnel",
     languages: "Français,Soraï",
-    hourlyRate: 14000,
     isVerified: true,
   },
   {
@@ -98,7 +92,6 @@ const THERAPISTS: TherapistSeed[] = [
     bio: "Psychologue clinicien spécialisé dans les addictions et la prévention des rechutes. Candidature en cours de vérification.",
     specialties: "Addictions,Anxiété et stress",
     languages: "Français,Bambara",
-    hourlyRate: 13000,
     isVerified: false,
   },
 ];
@@ -191,8 +184,14 @@ async function seedTherapist(t: TherapistSeed) {
           bio: t.bio,
           specialties: t.specialties,
           languages: t.languages,
-          hourlyRate: t.hourlyRate,
           isVerified: t.isVerified,
+          // Thérapeutes de démo déjà vérifiés : on les considère comme ayant
+          // accepté la commission par défaut en vigueur, pour ne pas les
+          // bloquer sur /conditions-commission dans les tests manuels.
+          ...(t.isVerified && {
+            commissionAcceptedPercent: 20,
+            commissionAcceptedAt: new Date(),
+          }),
         },
       },
     },

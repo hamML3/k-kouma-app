@@ -4,7 +4,7 @@ export const createUserSchema = z
   .object({
     email: z.string().email("Email invalide"),
     password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
-    role: z.enum(["admin", "therapist", "patient"]),
+    role: z.enum(["admin", "therapist", "patient", "moderator"]),
     nickname: z.string().min(2).max(50).optional(),
     firstName: z.string().min(2).max(100).optional(),
     lastName: z.string().min(2).max(100).optional(),

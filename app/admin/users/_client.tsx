@@ -10,7 +10,7 @@ function FieldError({ messages }: { messages?: string[] }) {
 
 export function CreateUserForm() {
   const [state, action, pending] = useActionState(createUserAction, {});
-  const [role, setRole] = useState<"patient" | "therapist" | "admin">("patient");
+  const [role, setRole] = useState<"patient" | "therapist" | "admin" | "moderator">("patient");
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -56,6 +56,7 @@ export function CreateUserForm() {
           >
             <option value="patient">Patient</option>
             <option value="therapist">Psychologue</option>
+            <option value="moderator">Modérateur (accès restreint)</option>
             <option value="admin">Administrateur</option>
           </select>
         </div>

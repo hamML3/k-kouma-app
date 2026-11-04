@@ -102,6 +102,10 @@ enum UserRole {
   patient
   therapist
   admin
+  // Accès admin restreint : peut consulter utilisateurs/thérapeutes et agir
+  // sur les finances (valider paiements, marquer des reversements), mais ne
+  // peut ni modifier/suspendre un utilisateur ni valider une candidature.
+  moderator
 }
 
 model PatientProfile {
@@ -134,15 +138,32 @@ model TherapistProfile {
   bio               String?   @db.Text
   profilePictureUrl String?   @map("profile_picture_url") @db.VarChar(255)
   isVerified        Boolean   @default(false) @map("is_verified")
-  hourlyRate        Decimal   @default(0.00) @map("hourly_rate") @db.Decimal(10, 2)
   languages         String?   @db.VarChar(255)
   diplomaUrl        String?   @map("diploma_url") @db.VarChar(512)
   documentsJson     Json?     @map("documents_json")
   rejectedAt        DateTime? @map("rejected_at")
+  // Commission K-Kouma sur les séances de ce thérapeute (pourcentage, ex.
+  // 20.00 = 20%). NULL = utilise PlatformSettings.defaultCommissionPercent.
+  commissionPercent         Decimal?  @map("commission_percent") @db.Decimal(5, 2)
+  // Dernier pourcentage explicitement accepté par le thérapeute (couverture
+  // juridique) — comparé au pourcentage effectif à chaque connexion ; un
+  // écart déclenche une nouvelle demande d'acceptation.
+  commissionAcceptedPercent Decimal?  @map("commission_accepted_percent") @db.Decimal(5, 2)
+  commissionAcceptedAt      DateTime? @map("commission_accepted_at")
 
   user User @relation(fields: [userId], references: [id])
 
   @@map("therapist_profiles")
+}
+
+/// Réglages globaux de la plateforme — ligne unique (id=1).
+model PlatformSettings {
+  id                       Int      @id @default(1)
+  defaultCommissionPercent Decimal  @default(20.00) @map("default_commission_percent") @db.Decimal(5, 2)
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  updatedById              Int?     @map("updated_by_id")
+
+  @@map("platform_settings")
 }
 
 // =========================================================================
@@ -204,10 +225,15 @@ model Payment {
   // pour aider l'admin à recouper avec l'historique du compte marchand.
   payerPhone    String?       @map("payer_phone") @db.VarChar(20)
   status        PaymentStatus @default(pending)
+  // Nombre de séances de ce paiement pas encore réclamées par une réservation
+  // — permet de calculer le gain du thérapeute au prorata du prix réel payé
+  // (ex: pack de 3 à 28 000 → 9 333/séance), et non du tarif catalogue.
+  sessionsRemaining Int        @default(0) @map("sessions_remaining")
   createdAt     DateTime      @default(now()) @map("created_at")
   paidAt        DateTime?     @map("paid_at")
 
-  patient User @relation(fields: [patientId], references: [id])
+  patient            User          @relation(fields: [patientId], references: [id])
+  fundedAppointments Appointment[]
 
   @@index([patientId, status])
   @@map("payments")
@@ -229,6 +255,9 @@ model TherapistEarning {
   appointmentId Int       @unique @map("appointment_id")
   amount        Decimal   @db.Decimal(10, 2)
   currency      String    @default("XOF") @db.VarChar(3)
+  // Pourcentage de commission K-Kouma appliqué pour calculer `amount` —
+  // conservé même si le réglage change ensuite, pour la traçabilité.
+  commissionPercent Decimal? @map("commission_percent") @db.Decimal(5, 2)
   // Reversement au thérapeute — distinct du paiement du patient, qui lui a
   // déjà eu lieu au moment de l'achat des séances.
   paidOut       Boolean   @default(false) @map("paid_out")
@@ -276,12 +305,16 @@ model Appointment {
   status          AppointmentStatus @default(pending)
   type            AppointmentType   @default(video)
   webrtcRoomId    String?           @map("webrtc_room_id") @db.VarChar(100)
+  // Paiement qui a fourni le crédit consommé par cette réservation (FIFO) —
+  // permet de retrouver le prix réellement payé pour cette séance précise.
+  fundedByPaymentId Int?            @map("funded_by_payment_id")
   createdAt       DateTime          @default(now()) @map("created_at")
 
-  patient   User @relation("PatientAppointments", fields: [patientId], references: [id])
-  therapist User @relation("TherapistAppointments", fields: [therapistId], references: [id])
-  messages  Message[]
-  earning   TherapistEarning?
+  patient         User     @relation("PatientAppointments", fields: [patientId], references: [id])
+  therapist       User     @relation("TherapistAppointments", fields: [therapistId], references: [id])
+  fundedByPayment Payment? @relation(fields: [fundedByPaymentId], references: [id])
+  messages        Message[]
+  earning         TherapistEarning?
 
   @@index([scheduledAt])
   @@index([therapistId, scheduledAt])

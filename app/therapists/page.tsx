@@ -362,14 +362,8 @@ export default async function TherapistsPage({
                         ))}
                       </div>
 
-                      {/* Price + CTAs */}
-                      <div className="flex items-center justify-between gap-3 mt-4 flex-wrap">
-                        <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
-                          {Number(t.hourlyRate) > 0
-                            ? `${Number(t.hourlyRate).toLocaleString("fr-FR")} XOF / séance`
-                            : "Tarif à confirmer"}
-                        </p>
-
+                      {/* CTAs */}
+                      <div className="flex items-center justify-end gap-3 mt-4 flex-wrap">
                         <div className="flex gap-2 shrink-0">
                           <Link
                             href={`/therapists/${t.id}`}

@@ -147,6 +147,41 @@ export async function sendAppointmentCanceledEmail(
   });
 }
 
+/** Thérapeute : candidature validée, compte actif. */
+export async function sendTherapistVerifiedEmail(to: string, firstName: string, commissionPercent: number) {
+  const html = wrapper(
+    "Votre compte est vérifié !",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${firstName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Votre profil a été vérifié : vous pouvez désormais recevoir des patients sur K-Kouma.</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">K-Kouma prélève une commission de <strong>${commissionPercent}%</strong> sur chaque séance payée par un patient. Connectez-vous pour prendre connaissance de ces conditions et les accepter.</p>
+     ${button(`${APP_URL}/login`, "Me connecter")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: "Votre compte K-Kouma est vérifié",
+    html,
+  });
+}
+
+/** Thérapeute : la commission K-Kouma qui s'applique à lui a changé — doit à nouveau l'accepter. */
+export async function sendCommissionTermsChangedEmail(to: string, firstName: string, newPercent: number) {
+  const html = wrapper(
+    "Nouvelles conditions de commission",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${firstName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">La commission K-Kouma qui s'applique à vos séances a été mise à jour à <strong>${newPercent}%</strong>. Merci de prendre connaissance des nouvelles conditions et de les accepter pour continuer à recevoir des patients.</p>
+     ${button(`${APP_URL}/conditions-commission`, "Voir et accepter")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: "Nouvelles conditions de commission — K-Kouma",
+    html,
+  });
+}
+
 /** Un nouveau message est arrivé sur une séance de messagerie. */
 export async function sendNewMessageEmail(
   to: string,

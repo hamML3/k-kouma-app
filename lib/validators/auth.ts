@@ -56,7 +56,6 @@ export const registerTherapistSchema = z.object({
   lastName: z.string().min(2).max(100),
   specialties: z.string().optional(),
   bio: z.string().max(2000).optional(),
-  hourlyRate: z.number().min(0).default(0),
   languages: z.string().optional(),
 });
 
