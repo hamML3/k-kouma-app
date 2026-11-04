@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { publishMessage } from "@/lib/chatBus";
+import { sendNewMessageEmail } from "@/lib/email";
 
 async function getParticipantAppointment(appointmentId: number, userId: number) {
   const appt = await prisma.appointment.findUnique({
@@ -11,6 +12,40 @@ async function getParticipantAppointment(appointmentId: number, userId: number) 
   if (!appt) return null;
   if (appt.patientId !== userId && appt.therapistId !== userId) return null;
   return appt;
+}
+
+/** Best-effort, hors du chemin critique — ne bloque jamais l'envoi du message côté chat. */
+function notifyNewMessage(appointmentId: number, senderId: number, recipientId: number) {
+  (async () => {
+    try {
+      const [recipient, sender] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: recipientId },
+          select: {
+            email: true,
+            patientProfile: { select: { nickname: true } },
+            therapistProfile: { select: { firstName: true } },
+          },
+        }),
+        prisma.user.findUnique({
+          where: { id: senderId },
+          select: {
+            patientProfile: { select: { nickname: true } },
+            therapistProfile: { select: { firstName: true } },
+          },
+        }),
+      ]);
+      if (!recipient) return;
+      const recipientName = recipient.patientProfile?.nickname ?? recipient.therapistProfile?.firstName ?? "Bonjour";
+      const senderName = sender?.patientProfile?.nickname ?? sender?.therapistProfile?.firstName ?? "Un utilisateur";
+      const url = recipient.therapistProfile
+        ? `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/patients`
+        : `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/appointments/${appointmentId}/chat`;
+      await sendNewMessageEmail(recipient.email, recipientName, senderName, url);
+    } catch (err) {
+      console.error("[notify:new_message] envoi échoué:", err);
+    }
+  })();
 }
 
 // GET /api/messages/[appointmentId]?after=ISO_timestamp
@@ -74,6 +109,9 @@ export async function POST(
   });
 
   publishMessage(id, { ...message, createdAt: message.createdAt.toISOString() });
+
+  const recipientId = appt.patientId === userId ? appt.therapistId : appt.patientId;
+  notifyNewMessage(id, userId, recipientId);
 
   return NextResponse.json(message);
 }

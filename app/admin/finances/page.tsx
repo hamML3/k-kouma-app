@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { BarChart } from "@/components/charts/BarChart";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
-import { confirmManualPaymentAction, rejectManualPaymentAction } from "@/lib/actions/admin";
+import { confirmManualPaymentAction, rejectManualPaymentAction, markTherapistPayoutAction } from "@/lib/actions/admin";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 
 export const metadata = { title: "Finances — Administration K-Kouma" };
 
@@ -39,19 +40,24 @@ export default async function AdminFinancesPage() {
     .filter((p) => p.paidAt && p.paidAt >= startOfMonth)
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // Regroupe les gains par thérapeute
-  const earningsByTherapist = new Map<number, { name: string; total: number; count: number }>();
+  // Regroupe les gains par thérapeute, en distinguant ce qui a déjà été reversé
+  const earningsByTherapist = new Map<
+    number,
+    { therapistId: number; name: string; total: number; count: number; unpaid: number }
+  >();
   for (const t of therapists) {
-    earningsByTherapist.set(t.userId, { name: `${t.firstName} ${t.lastName}`, total: 0, count: 0 });
+    earningsByTherapist.set(t.userId, { therapistId: t.userId, name: `${t.firstName} ${t.lastName}`, total: 0, count: 0, unpaid: 0 });
   }
   for (const e of earnings) {
     const entry = earningsByTherapist.get(e.therapistId);
     if (entry) {
       entry.total += Number(e.amount);
       entry.count += 1;
+      if (!e.paidOut) entry.unpaid += Number(e.amount);
     }
   }
   const therapistRows = Array.from(earningsByTherapist.values()).sort((a, b) => b.total - a.total);
+  const totalUnpaid = therapistRows.reduce((sum, t) => sum + t.unpaid, 0);
 
   const months = lastMonths(6);
   const monthlyRevenue = bucketByMonth(
@@ -65,7 +71,8 @@ export default async function AdminFinancesPage() {
   const STATS = [
     { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green)", bg: "var(--kk-green-light)" },
     { label: "Ce mois-ci", value: revenueThisMonth, color: "var(--kk-purple)", bg: "var(--kk-purple-light)" },
-    { label: "Reversé aux psychologues", value: totalEarnings, color: "var(--kk-gold)", bg: "var(--kk-gold-light)" },
+    { label: "Gagné par les psychologues", value: totalEarnings, color: "var(--kk-gold)", bg: "var(--kk-gold-light)" },
+    { label: "Dont à reverser", value: totalUnpaid, color: "#C0392B", bg: "#FFF1F0" },
     { label: "Marge plateforme", value: margin, color: "#2C342E", bg: "var(--kk-border)" },
   ];
 
@@ -108,13 +115,13 @@ export default async function AdminFinancesPage() {
                 <div className="flex gap-2 shrink-0">
                   <form action={rejectManualPaymentAction}>
                     <input type="hidden" name="paymentId" value={p.id} />
-                    <button
-                      type="submit"
+                    <ConfirmSubmitButton
+                      confirmMessage="Rejeter cette déclaration de paiement ? Aucune séance ne sera créditée."
                       className="text-xs font-bold px-3.5 py-2 rounded-full"
                       style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
                     >
                       Rejeter
-                    </button>
+                    </ConfirmSubmitButton>
                   </form>
                   <form action={confirmManualPaymentAction}>
                     <input type="hidden" name="paymentId" value={p.id} />
@@ -133,7 +140,7 @@ export default async function AdminFinancesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {STATS.map((stat) => (
           <div key={stat.label} className="kk-card p-5">
             <p className="font-bold text-2xl" style={{ color: stat.color, fontFamily: "var(--font-lora)" }}>
@@ -180,19 +187,40 @@ export default async function AdminFinancesPage() {
               <div className="space-y-2">
               {therapistRows.map((t) => (
                 <div
-                  key={t.name}
-                  className="rounded-xl p-4 flex items-center justify-between gap-3"
+                  key={t.therapistId}
+                  className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
                 >
                   <div>
                     <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>{t.name}</p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                      {t.count} séance{t.count !== 1 ? "s" : ""}
+                      {t.count} séance{t.count !== 1 ? "s" : ""} ·{" "}
+                      {t.unpaid > 0 ? (
+                        <span style={{ color: "#C0392B", fontWeight: 700 }}>
+                          {t.unpaid.toLocaleString("fr-FR")} XOF à reverser
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--kk-green)", fontWeight: 700 }}>Tout reversé ✓</span>
+                      )}
                     </p>
                   </div>
-                  <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
-                    {t.total.toLocaleString("fr-FR")} XOF
-                  </p>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
+                      {t.total.toLocaleString("fr-FR")} XOF
+                    </p>
+                    {t.unpaid > 0 && (
+                      <form action={markTherapistPayoutAction}>
+                        <input type="hidden" name="therapistId" value={t.therapistId} />
+                        <ConfirmSubmitButton
+                          confirmMessage={`Marquer ${t.unpaid.toLocaleString("fr-FR")} XOF comme reversés à ${t.name} ?`}
+                          className="text-xs font-bold px-3 py-1.5 rounded-full"
+                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                        >
+                          Marquer reversé
+                        </ConfirmSubmitButton>
+                      </form>
+                    )}
+                  </div>
                 </div>
               ))}
               </div>

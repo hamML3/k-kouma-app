@@ -220,17 +220,22 @@ enum PaymentStatus {
 /// rendez-vous passe à "completed" ; le montant est figé au tarif du
 /// thérapeute à ce moment-là (indépendant d'un changement ultérieur de tarif).
 model TherapistEarning {
-  id            Int      @id @default(autoincrement())
-  therapistId   Int      @map("therapist_id")
-  appointmentId Int      @unique @map("appointment_id")
-  amount        Decimal  @db.Decimal(10, 2)
-  currency      String   @default("XOF") @db.VarChar(3)
-  createdAt     DateTime @default(now()) @map("created_at")
+  id            Int       @id @default(autoincrement())
+  therapistId   Int       @map("therapist_id")
+  appointmentId Int       @unique @map("appointment_id")
+  amount        Decimal   @db.Decimal(10, 2)
+  currency      String    @default("XOF") @db.VarChar(3)
+  // Reversement au thérapeute — distinct du paiement du patient, qui lui a
+  // déjà eu lieu au moment de l'achat des séances.
+  paidOut       Boolean   @default(false) @map("paid_out")
+  paidOutAt     DateTime? @map("paid_out_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   therapist   User        @relation(fields: [therapistId], references: [id])
   appointment Appointment @relation(fields: [appointmentId], references: [id])
 
   @@index([therapistId])
+  @@index([therapistId, paidOut])
   @@map("therapist_earnings")
 }
 

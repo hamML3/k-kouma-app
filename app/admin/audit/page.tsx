@@ -12,6 +12,7 @@ const ACTION_INFO: Record<string, { label: string; bg: string; color: string }> 
   "admin.therapist.reject": { label: "Psychologue rejeté", bg: "#FFF1F0", color: "#C0392B" },
   "admin.payment.confirm": { label: "Paiement manuel validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.payment.reject": { label: "Paiement manuel rejeté", bg: "#FFF1F0", color: "#C0392B" },
+  "admin.payout.mark_paid": { label: "Reversement marqué payé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "auth.login.success": { label: "Connexion réussie", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "auth.login.failed": { label: "Connexion échouée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
   "auth.password_reset.requested": { label: "Réinitialisation demandée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -24,19 +25,46 @@ const CATEGORIES = [
   { value: "auth", label: "Authentification" },
 ];
 
+const SINCE_OPTIONS = [
+  { value: undefined, label: "Tout" },
+  { value: "1", label: "24 h" },
+  { value: "7", label: "7 jours" },
+  { value: "30", label: "30 jours" },
+];
+
 export default async function AdminAuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; since?: string }>;
 }) {
   const params = await searchParams;
   const category = params.category;
+  const q = params.q?.trim();
+  const since = params.since;
+
+  const createdAtFilter = since
+    ? { gte: new Date(new Date().getTime() - Number(since) * 24 * 60 * 60 * 1000) }
+    : undefined;
 
   const entries = await prisma.auditLog.findMany({
-    where: category ? { action: { startsWith: `${category}.` } } : undefined,
+    where: {
+      ...(category ? { action: { startsWith: `${category}.` } } : {}),
+      ...(q ? { actorEmail: { contains: q } } : {}),
+      ...(createdAtFilter ? { createdAt: createdAtFilter } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
+
+  function withParams(overrides: Record<string, string | undefined>) {
+    const sp = new URLSearchParams();
+    const merged = { category, q, since, ...overrides };
+    if (merged.category) sp.set("category", merged.category);
+    if (merged.q) sp.set("q", merged.q);
+    if (merged.since) sp.set("since", merged.since);
+    const qs = sp.toString();
+    return qs ? `/admin/audit?${qs}` : "/admin/audit";
+  }
 
   return (
     <>
@@ -49,14 +77,25 @@ export default async function AdminAuditPage({
         </p>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-6">
+      <form action="/admin/audit" method="get" className="mb-4">
+        {category && <input type="hidden" name="category" value={category} />}
+        {since && <input type="hidden" name="since" value={since} />}
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Rechercher par email de l'auteur…"
+          className="kk-input max-w-sm"
+        />
+      </form>
+
+      <div className="flex gap-2 flex-wrap mb-3">
         {CATEGORIES.map((c) => {
           const active = category === c.value;
-          const href = c.value ? `/admin/audit?category=${c.value}` : "/admin/audit";
           return (
             <a
               key={c.label}
-              href={href}
+              href={withParams({ category: c.value })}
               className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
               style={{
                 background: active ? "var(--kk-green)" : "#fff",
@@ -65,6 +104,26 @@ export default async function AdminAuditPage({
               }}
             >
               {c.label}
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2 flex-wrap mb-6">
+        {SINCE_OPTIONS.map((s) => {
+          const active = since === s.value;
+          return (
+            <a
+              key={s.label}
+              href={withParams({ since: s.value })}
+              className="px-3.5 py-1 rounded-full text-xs font-semibold transition-all"
+              style={{
+                background: active ? "var(--kk-purple)" : "#fff",
+                color: active ? "#fff" : "var(--kk-muted)",
+                border: active ? "none" : "1.5px solid var(--kk-border-mid)",
+              }}
+            >
+              {s.label}
             </a>
           );
         })}

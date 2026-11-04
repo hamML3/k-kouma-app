@@ -75,3 +75,96 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
     html,
   });
 }
+
+function formatDateTime(d: Date): string {
+  return d.toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+}
+
+/** Thérapeute : un patient vient de réserver un créneau — en attente de sa confirmation. */
+export async function sendAppointmentRequestEmail(
+  to: string,
+  therapistName: string,
+  patientName: string,
+  scheduledAt: Date
+) {
+  const html = wrapper(
+    "Nouvelle demande de rendez-vous",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${therapistName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${patientName}</strong> souhaite réserver une séance le <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+     ${button(`${APP_URL}/patients`, "Voir et confirmer")}
+     <p style="font-size:12px;color:#8A9183;margin-top:20px;">Le rendez-vous reste en attente tant que vous ne l'avez pas confirmé.</p>`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: `Nouvelle demande de rendez-vous — ${patientName}`,
+    html,
+  });
+}
+
+/** Patient : le thérapeute a confirmé le rendez-vous. */
+export async function sendAppointmentConfirmedEmail(
+  to: string,
+  patientName: string,
+  therapistName: string,
+  scheduledAt: Date
+) {
+  const html = wrapper(
+    "Rendez-vous confirmé",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${patientName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${therapistName}</strong> a confirmé votre séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+     ${button(`${APP_URL}/appointments`, "Voir mes rendez-vous")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: "Votre rendez-vous est confirmé — K-Kouma",
+    html,
+  });
+}
+
+/** Thérapeute : le patient a annulé un rendez-vous en attente. */
+export async function sendAppointmentCanceledEmail(
+  to: string,
+  therapistName: string,
+  patientName: string,
+  scheduledAt: Date
+) {
+  const html = wrapper(
+    "Rendez-vous annulé",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${therapistName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${patientName}</strong> a annulé la séance du <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+     ${button(`${APP_URL}/patients`, "Voir mon planning")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: `Rendez-vous annulé — ${patientName}`,
+    html,
+  });
+}
+
+/** Un nouveau message est arrivé sur une séance de messagerie. */
+export async function sendNewMessageEmail(
+  to: string,
+  recipientName: string,
+  senderName: string,
+  appointmentUrl: string
+) {
+  const html = wrapper(
+    "Nouveau message",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${recipientName},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous avez reçu un nouveau message de <strong>${senderName}</strong>.</p>
+     ${button(appointmentUrl, "Lire le message")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: `Nouveau message de ${senderName} — K-Kouma`,
+    html,
+  });
+}

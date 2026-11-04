@@ -5,6 +5,20 @@ import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
+import {
+  sendAppointmentRequestEmail,
+  sendAppointmentConfirmedEmail,
+  sendAppointmentCanceledEmail,
+} from "@/lib/email";
+
+/** Best-effort : une notification qui échoue ne doit jamais faire échouer l'action réelle. */
+async function notify(label: string, send: () => Promise<unknown>) {
+  try {
+    await send();
+  } catch (err) {
+    console.error(`[notify:${label}] envoi échoué:`, err);
+  }
+}
 
 export async function createAppointmentAction(formData: FormData): Promise<void> {
   const patientId = Number(formData.get("patientId"));
@@ -80,6 +94,24 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
     redirect("/therapists?error=slot_taken");
   }
 
+  const [therapist, patient] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: therapistId },
+      select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } },
+    }),
+    prisma.user.findUnique({ where: { id: patientId }, select: { patientProfile: { select: { nickname: true } } } }),
+  ]);
+  if (therapist?.therapistProfile) {
+    await notify("appointment.request", () =>
+      sendAppointmentRequestEmail(
+        therapist.email,
+        therapist.therapistProfile!.firstName,
+        patient?.patientProfile?.nickname ?? "Un patient",
+        new Date(scheduledAt)
+      )
+    );
+  }
+
   revalidatePath("/appointments");
   revalidatePath("/dashboard");
   redirect("/appointments");
@@ -91,7 +123,12 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
 
   if (!appointmentId || !patientId) redirect("/appointments");
 
-  await prisma.$transaction(async (tx) => {
+  const existing = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    select: { therapistId: true, scheduledAt: true },
+  });
+
+  const { count } = await prisma.$transaction(async (tx) => {
     const canceled = await tx.appointment.updateMany({
       where: { id: appointmentId, patientId, status: "pending" },
       data: { status: "canceled" },
@@ -104,7 +141,28 @@ export async function cancelAppointmentAction(formData: FormData): Promise<void>
         data: { sessionCredits: { increment: 1 } },
       });
     }
+    return { count: canceled.count };
   });
+
+  if (count > 0 && existing) {
+    const [therapist, patient] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: existing.therapistId },
+        select: { email: true, therapistProfile: { select: { firstName: true } } },
+      }),
+      prisma.user.findUnique({ where: { id: patientId }, select: { patientProfile: { select: { nickname: true } } } }),
+    ]);
+    if (therapist?.therapistProfile) {
+      await notify("appointment.canceled", () =>
+        sendAppointmentCanceledEmail(
+          therapist.email,
+          therapist.therapistProfile!.firstName,
+          patient?.patientProfile?.nickname ?? "Un patient",
+          existing.scheduledAt
+        )
+      );
+    }
+  }
 
   revalidatePath("/appointments");
   redirect("/appointments");
@@ -118,10 +176,10 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
 
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { type: true },
+    select: { type: true, patientId: true, scheduledAt: true },
   });
 
-  await prisma.appointment.updateMany({
+  const updated = await prisma.appointment.updateMany({
     where: { id: appointmentId, therapistId },
     data: {
       status: "confirmed",
@@ -129,6 +187,26 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
       ...(appointment?.type !== "text" ? { webrtcRoomId: randomUUID() } : {}),
     },
   });
+
+  if (updated.count > 0 && appointment) {
+    const [patient, therapist] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: appointment.patientId },
+        select: { email: true, patientProfile: { select: { nickname: true } } },
+      }),
+      prisma.user.findUnique({ where: { id: therapistId }, select: { therapistProfile: { select: { firstName: true } } } }),
+    ]);
+    if (patient?.patientProfile) {
+      await notify("appointment.confirmed", () =>
+        sendAppointmentConfirmedEmail(
+          patient.email,
+          patient.patientProfile!.nickname,
+          therapist?.therapistProfile?.firstName ?? "Votre psychologue",
+          appointment.scheduledAt
+        )
+      );
+    }
+  }
 
   revalidatePath("/patients");
   revalidatePath("/appointments");

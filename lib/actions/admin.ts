@@ -228,3 +228,26 @@ export async function rejectManualPaymentAction(formData: FormData): Promise<voi
   revalidatePath("/admin/finances");
   redirect("/admin/finances");
 }
+
+/** Marque tous les gains non reversés d'un thérapeute comme payés, en une fois. */
+export async function markTherapistPayoutAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const therapistId = Number(formData.get("therapistId"));
+  if (!therapistId) redirect("/admin/finances");
+
+  const result = await prisma.therapistEarning.updateMany({
+    where: { therapistId, paidOut: false },
+    data: { paidOut: true, paidOutAt: new Date() },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.payout.mark_paid",
+    targetType: "user",
+    targetId: therapistId,
+    metadata: { earningsCount: result.count },
+  });
+
+  revalidatePath("/admin/finances");
+  redirect("/admin/finances");
+}

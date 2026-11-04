@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser } from "@/lib/actions/admin";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import Link from "next/link";
 
 type DocEntry = { label: string; url: string };
@@ -154,13 +155,13 @@ export default async function AdminTherapistDetailPage({
             </form>
             <form action={rejectTherapist}>
               <input type="hidden" name="userId" value={String(userId)} />
-              <button
-                type="submit"
+              <ConfirmSubmitButton
+                confirmMessage={`Rejeter la candidature de ${t.firstName} ${t.lastName} ?`}
                 className="kk-btn-outline px-6 py-4 text-base"
                 style={{ borderColor: "#FFCAC8", color: "#C0392B" }}
               >
                 Rejeter
-              </button>
+              </ConfirmSubmitButton>
             </form>
           </div>
         )}
@@ -194,13 +195,13 @@ export default async function AdminTherapistDetailPage({
             ) : (
               <form action={suspendUser}>
                 <input type="hidden" name="userId" value={String(userId)} />
-                <button
-                  type="submit"
+                <ConfirmSubmitButton
+                  confirmMessage={`Suspendre ${t.firstName} ${t.lastName} ? Ce praticien ne pourra plus se connecter ni être visible des patients.`}
                   className="w-full py-3 rounded-xl text-sm font-bold transition-all"
                   style={{ background: "#FFF1F0", color: "#C0392B", border: "1px solid #FFCAC8" }}
                 >
                   Suspendre ce praticien
-                </button>
+                </ConfirmSubmitButton>
               </form>
             )}
             <p className="text-xs mt-2 text-center" style={{ color: "var(--kk-faint)" }}>

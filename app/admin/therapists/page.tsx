@@ -1,34 +1,40 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 
 export default async function AdminTherapistsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const tab = params.tab ?? "pending";
+  const q = params.q?.trim();
+
+  const searchFilter: Prisma.TherapistProfileWhereInput = q
+    ? { OR: [{ firstName: { contains: q } }, { lastName: { contains: q } }, { user: { email: { contains: q } } }] }
+    : {};
 
   const [pending, verified, rejected, suspended] = await Promise.all([
     prisma.therapistProfile.findMany({
-      where: { isVerified: false, rejectedAt: null, user: { status: "active" } },
+      where: { isVerified: false, rejectedAt: null, user: { status: "active" }, ...searchFilter },
       include: { user: { select: { id: true, email: true, createdAt: true, status: true } } },
       orderBy: { user: { createdAt: "asc" } },
     }),
     prisma.therapistProfile.findMany({
-      where: { isVerified: true, user: { status: "active" } },
+      where: { isVerified: true, user: { status: "active" }, ...searchFilter },
       include: { user: { select: { id: true, email: true, createdAt: true, status: true } } },
       orderBy: { user: { createdAt: "desc" } },
       take: 30,
     }),
     prisma.therapistProfile.findMany({
-      where: { rejectedAt: { not: null }, user: { status: { not: "suspended" } } },
+      where: { rejectedAt: { not: null }, user: { status: { not: "suspended" } }, ...searchFilter },
       include: { user: { select: { id: true, email: true, createdAt: true, status: true } } },
       orderBy: { rejectedAt: "desc" },
       take: 30,
     }),
     prisma.therapistProfile.findMany({
-      where: { user: { status: "suspended" } },
+      where: { user: { status: "suspended" }, ...searchFilter },
       include: { user: { select: { id: true, email: true, createdAt: true, status: true } } },
       orderBy: { user: { createdAt: "desc" } },
       take: 30,
@@ -58,12 +64,23 @@ export default async function AdminTherapistsPage({
         </p>
       </div>
 
+      <form action="/admin/therapists" method="get" className="mb-4">
+        <input type="hidden" name="tab" value={tab} />
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Rechercher par nom ou email…"
+          className="kk-input max-w-sm"
+        />
+      </form>
+
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {TABS.map((t) => (
           <Link
             key={t.id}
-            href={`/admin/therapists?tab=${t.id}`}
+            href={`/admin/therapists?tab=${t.id}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
             className="px-4 py-2 rounded-full text-sm font-bold transition-all"
             style={{
               background: tab === t.id ? t.color : "#fff",
