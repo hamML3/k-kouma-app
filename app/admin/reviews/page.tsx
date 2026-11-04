@@ -89,7 +89,7 @@ export default async function AdminReviewsPage({
                     {profile ? `${profile.firstName} ${profile.lastName}` : r.therapist.email}
                   </p>
                   <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }} aria-label={`${r.rating} sur 5`}>
-                    <span aria-hidden style={{ color: "var(--kk-gold)" }}>★</span> {r.rating}/5
+                    <span aria-hidden style={{ color: "var(--kk-gold-text)" }}>★</span> {r.rating}/5
                   </p>
                 </div>
                 <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--kk-mid)" }}>

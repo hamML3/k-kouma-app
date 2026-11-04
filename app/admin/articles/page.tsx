@@ -45,8 +45,8 @@ export default async function AdminArticlesPage({
   ]);
 
   const TABS = [
-    { id: "pending", label: `En attente (${pendingCount})`, color: "var(--kk-gold)" },
-    { id: "published", label: `Publiés (${publishedCount})`, color: "var(--kk-green)" },
+    { id: "pending", label: `En attente (${pendingCount})`, color: "var(--kk-gold-text)" },
+    { id: "published", label: `Publiés (${publishedCount})`, color: "var(--kk-green-text)" },
     { id: "rejected", label: `Rejetés (${rejectedCount})`, color: "#C0392B" },
   ];
 
@@ -107,7 +107,7 @@ export default async function AdminArticlesPage({
                       </p>
                       <span
                         className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                        style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                       >
                         {roleLabel}
                       </span>
@@ -120,7 +120,7 @@ export default async function AdminArticlesPage({
                     </p>
 
                     <details className="mt-3">
-                      <summary className="text-xs font-bold cursor-pointer" style={{ color: "var(--kk-green)" }}>
+                      <summary className="text-xs font-bold cursor-pointer" style={{ color: "var(--kk-green-text)" }}>
                         Lire l&apos;article complet
                       </summary>
                       <div className="mt-3 space-y-2 max-w-2xl">

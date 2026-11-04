@@ -9,10 +9,10 @@ import type { Prisma } from "@prisma/client";
 export const metadata = { title: "Utilisateurs — Administration K-Kouma" };
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
-  admin: { label: "Admin", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
-  moderator: { label: "Modérateur", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
-  therapist: { label: "Psychologue", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
-  patient: { label: "Patient", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  admin: { label: "Admin", bg: "var(--kk-purple-light)", color: "var(--kk-purple-text)" },
+  moderator: { label: "Modérateur", bg: "var(--kk-purple-light)", color: "var(--kk-purple-text)" },
+  therapist: { label: "Psychologue", bg: "var(--kk-gold-light)", color: "var(--kk-gold-text)" },
+  patient: { label: "Patient", bg: "var(--kk-green-light)", color: "var(--kk-green-text)" },
 };
 
 const PAGE_SIZE = 30;
@@ -200,7 +200,7 @@ export default async function AdminUsersPage({
                         </span>
                       )}
                       {u.therapistProfile && !u.therapistProfile.isVerified && (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
                           Non vérifié
                         </span>
                       )}
@@ -218,7 +218,7 @@ export default async function AdminUsersPage({
                         <button
                           type="submit"
                           className="text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green)] hover:text-white"
-                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                         >
                           Réactiver
                         </button>
@@ -243,7 +243,7 @@ export default async function AdminUsersPage({
                     style={{ background: "var(--kk-purple-light)", border: "1px solid var(--kk-border)" }}
                   >
                     <input type="hidden" name="userId" value={u.id} />
-                    <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple)" }}>
+                    <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple-text)" }}>
                       ACCÈS ACCORDÉS À CE MODÉRATEUR
                     </p>
                     <div className="flex flex-wrap gap-4 mb-3">

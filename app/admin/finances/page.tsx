@@ -104,9 +104,9 @@ export default async function AdminFinancesPage() {
   const monthlyPayout = bucketByMonth(chartEarnings, (e) => e.createdAt, (e) => Number(e.amount), months);
 
   const STATS = [
-    { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green)", bg: "var(--kk-green-light)", icon: "💰" },
-    { label: "Ce mois-ci", value: revenueThisMonth, color: "var(--kk-purple)", bg: "var(--kk-purple-light)", icon: "📅" },
-    { label: "Gagné par les psychologues", value: totalEarnings, color: "var(--kk-gold)", bg: "var(--kk-gold-light)", icon: "🩺" },
+    { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green-text)", bg: "var(--kk-green-light)", icon: "💰" },
+    { label: "Ce mois-ci", value: revenueThisMonth, color: "var(--kk-purple-text)", bg: "var(--kk-purple-light)", icon: "📅" },
+    { label: "Gagné par les psychologues", value: totalEarnings, color: "var(--kk-gold-text)", bg: "var(--kk-gold-light)", icon: "🩺" },
     { label: "Dont à reverser", value: totalUnpaid, color: "#C0392B", bg: "#FFF1F0", icon: "⏳" },
     { label: "Marge plateforme", value: margin, color: "#2C342E", bg: "var(--kk-border)", icon: "📊" },
   ];
@@ -136,7 +136,7 @@ export default async function AdminFinancesPage() {
 
       {pendingManualPayments.length > 0 && (
         <div className="mb-8 sm:mb-10">
-          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold)" }}>
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold-text)" }}>
             Paiements Orange Money à vérifier ({pendingManualPayments.length})
           </h2>
           <div className="space-y-2">
@@ -191,7 +191,7 @@ export default async function AdminFinancesPage() {
 
       {pendingPayoutRequests.length > 0 && (
         <div className="mb-8 sm:mb-10">
-          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold)" }}>
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold-text)" }}>
             Demandes de retrait à traiter ({pendingPayoutRequests.length})
           </h2>
           <div className="space-y-2">
@@ -321,12 +321,12 @@ export default async function AdminFinancesPage() {
                           {t.unpaid.toLocaleString("fr-FR")} XOF à reverser
                         </span>
                       ) : (
-                        <span style={{ color: "var(--kk-green)", fontWeight: 700 }}>Tout reversé ✓</span>
+                        <span style={{ color: "var(--kk-green-text)", fontWeight: 700 }}>Tout reversé ✓</span>
                       )}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
+                    <p className="text-sm font-bold" style={{ color: "var(--kk-gold-text)" }}>
                       {t.total.toLocaleString("fr-FR")} XOF
                     </p>
                     {t.unpaid > 0 && canManageFinances && (
@@ -335,7 +335,7 @@ export default async function AdminFinancesPage() {
                         <ConfirmSubmitButton
                           confirmMessage={`Marquer ${t.unpaid.toLocaleString("fr-FR")} XOF comme reversés à ${t.name} ?`}
                           className="text-xs font-bold px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--kk-green)] hover:text-white"
-                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                         >
                           Marquer reversé
                         </ConfirmSubmitButton>
@@ -377,7 +377,7 @@ export default async function AdminFinancesPage() {
                       {p.sessionsCount === 1 ? "1 séance" : `Pack ${p.sessionsCount}`}
                     </p>
                   </div>
-                  <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-green)" }}>
+                  <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-green-text)" }}>
                     {Number(p.amount).toLocaleString("fr-FR")} {p.currency}
                   </p>
                 </div>

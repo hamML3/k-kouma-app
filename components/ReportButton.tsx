@@ -95,7 +95,7 @@ export function ReportButton({ reportedId, reportedName, appointmentId, variant 
             </p>
 
             {state.success ? (
-              <div className="rounded-xl p-4 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+              <div className="rounded-xl p-4 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
                 Signalement envoyé. Notre équipe va l&apos;examiner — merci.
               </div>
             ) : (

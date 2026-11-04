@@ -14,7 +14,7 @@ export default function RegisterPage() {
         <Link
           href="/login"
           className="font-bold"
-          style={{ color: "var(--kk-green)" }}
+          style={{ color: "var(--kk-green-text)" }}
         >
           Se connecter
         </Link>

@@ -39,7 +39,7 @@ export default async function BlogPage() {
 
       <main style={{ background: "var(--kk-bg)" }} className="min-h-screen">
         <div className="max-w-5xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green-text)" }}>
             Blog &amp; ressources
           </p>
           <h1
@@ -64,7 +64,7 @@ export default async function BlogPage() {
                   <Image src={a.image} alt="" fill className="object-cover" />
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
-                  <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple)" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple-text)" }}>
                     {a.number}
                   </p>
                   <h2
@@ -76,7 +76,7 @@ export default async function BlogPage() {
                   <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--kk-muted)" }}>
                     {a.hook}
                   </p>
-                  <p className="text-xs font-bold mt-4" style={{ color: "var(--kk-green)" }}>
+                  <p className="text-xs font-bold mt-4" style={{ color: "var(--kk-green-text)" }}>
                     Lire l&apos;article →
                   </p>
                 </div>
@@ -104,7 +104,7 @@ export default async function BlogPage() {
                     )}
                   </div>
                   <div className="p-5 flex-1 flex flex-col">
-                    <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple)" }}>
+                    <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple-text)" }}>
                       Par {authorName}
                     </p>
                     <h2
@@ -116,7 +116,7 @@ export default async function BlogPage() {
                     <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--kk-muted)" }}>
                       {a.excerpt}
                     </p>
-                    <p className="text-xs font-bold mt-4" style={{ color: "var(--kk-green)" }}>
+                    <p className="text-xs font-bold mt-4" style={{ color: "var(--kk-green-text)" }}>
                       Lire l&apos;article →
                     </p>
                   </div>

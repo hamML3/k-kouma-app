@@ -437,7 +437,7 @@ export default function CguPage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple)" }}>
+          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple-text)" }}>
             Plateforme de consultations médicales en psychologie
           </p>
           <h1

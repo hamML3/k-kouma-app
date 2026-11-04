@@ -5,16 +5,21 @@
   --kk-bg: #F6F2EA;
   --kk-dark: #2C342E;
   --kk-mid: #5C645B;
-  /* Contraste AA (4,5:1) : muted 5,07 et faint 4,57 sur --kk-bg ; blanc sur purple 4,74. */
+  /* Contraste AA (4,5:1) sur tous les fonds de la charte, teintés compris. Les
+     variantes -text servent au texte ; vert, or et violet restent la couleur
+     de marque pour les fonds et les boutons. */
   --kk-muted: #63695E;
-  --kk-faint: #6A7065;
+  --kk-faint: #63695E;
   --kk-green: #557B53;
   --kk-green-hover: #486946;
+  --kk-green-text: #486946;
   --kk-green-light: #E4EDDD;
   --kk-purple: #7A6AA5;
   --kk-purple-hover: #6A5B96;
+  --kk-purple-text: #6A5B96;
   --kk-purple-light: #ECE7F5;
   --kk-gold: #C58A3D;
+  --kk-gold-text: #875A1E;
   --kk-gold-light: #FBEEDD;
   --kk-border: #EDE8DC;
   --kk-border-mid: #D8D2C4;

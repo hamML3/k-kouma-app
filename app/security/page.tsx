@@ -49,7 +49,7 @@ export default function SecurityPage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green-text)" }}>
             Votre confiance, notre responsabilité
           </p>
           <h1
@@ -64,7 +64,7 @@ export default function SecurityPage() {
           </p>
           <p className="text-sm leading-relaxed mb-12" style={{ color: "var(--kk-mid)" }}>
             Pour le détail juridique complet, consultez notre{" "}
-            <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green)" }}>
+            <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green-text)" }}>
               Politique de confidentialité et de protection des données
             </Link>
             .

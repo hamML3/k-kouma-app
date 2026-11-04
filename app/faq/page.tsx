@@ -85,7 +85,7 @@ export default function FaqPage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-purple)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-purple-text)" }}>
             Questions fréquentes
           </p>
           <h1
@@ -96,7 +96,7 @@ export default function FaqPage() {
           </h1>
           <p className="text-base leading-relaxed mb-12" style={{ color: "var(--kk-mid)" }}>
             Vous ne trouvez pas de réponse à votre question ?{" "}
-            <Link href="/contact" className="font-bold" style={{ color: "var(--kk-purple)" }}>
+            <Link href="/contact" className="font-bold" style={{ color: "var(--kk-purple-text)" }}>
               Contactez-nous
             </Link>
             .
@@ -121,7 +121,7 @@ export default function FaqPage() {
                         {item.q}
                         <span
                           className="shrink-0 text-lg leading-none transition-transform group-open:rotate-45"
-                          style={{ color: "var(--kk-purple)" }}
+                          style={{ color: "var(--kk-purple-text)" }}
                         >
                           +
                         </span>

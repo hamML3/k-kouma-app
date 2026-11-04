@@ -113,7 +113,7 @@ export default async function AvailabilityPage({
                             type="submit"
                             aria-label={`Retirer la plage ${d.label} ${minutesToTime(r.startMinute)} à ${minutesToTime(r.endMinute)}`}
                             className="px-3 py-1.5 rounded-full text-sm font-semibold"
-                            style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                            style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                           >
                             {minutesToTime(r.startMinute)} – {minutesToTime(r.endMinute)} ×
                           </button>

@@ -247,7 +247,7 @@ export function AdminNav({ role, permissions, footer, bell }: AdminNavProps) {
           <div className="flex items-center justify-between mb-6 px-2">
             <Link href="/admin" className="flex items-center gap-2" onClick={() => setOpen(false)}>
               <Logo size={22} />
-              <span className="text-xs font-semibold" style={{ color: "var(--kk-purple)" }}>
+              <span className="text-xs font-semibold" style={{ color: "var(--kk-purple-text)" }}>
                 {adminLabel}
               </span>
             </Link>
@@ -280,7 +280,7 @@ export function AdminNav({ role, permissions, footer, bell }: AdminNavProps) {
         <div className="flex items-start justify-between gap-2 mb-8 px-2">
           <Link href="/admin" className="block">
             <Logo size={24} />
-            <span className="block text-xs font-semibold mt-0.5" style={{ color: "var(--kk-purple)" }}>
+            <span className="block text-xs font-semibold mt-0.5" style={{ color: "var(--kk-purple-text)" }}>
               {adminLabel}
             </span>
           </Link>

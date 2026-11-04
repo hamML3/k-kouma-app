@@ -14,9 +14,9 @@ import { getPlatformSettings } from "@/lib/platformSettings";
 export const revalidate = 60;
 
 const PRICING_DISPLAY: Record<TherapyType, { color: string; bg: string }> = {
-  individuelle: { color: "#557B53", bg: "#E4EDDD" },
-  couple: { color: "#8E7CB8", bg: "#ECE7F5" },
-  enfant: { color: "#C58A3D", bg: "#FBEEDD" },
+  individuelle: { color: "var(--kk-green-text)", bg: "#E4EDDD" },
+  couple: { color: "var(--kk-purple-text)", bg: "#ECE7F5" },
+  enfant: { color: "var(--kk-gold-text)", bg: "#FBEEDD" },
 };
 
 function fcfa(amount: number): string {
@@ -33,7 +33,7 @@ function Hero() {
           className="text-4xl sm:text-5xl font-bold leading-tight mb-5"
           style={{ fontFamily: "var(--font-lora)", color: "#1F2E20" }}
         >
-          Prenez soin de votre <span style={{ color: "#557B53" }}>bien-être mental</span>
+          Prenez soin de votre <span style={{ color: "var(--kk-green-text)" }}>bien-être mental</span>
         </h1>
         <p className="text-base leading-relaxed mb-8" style={{ color: "#5C645B" }}>
           K-Kouma vous met en relation avec des psychologues qualifiés pour vous écouter,
@@ -186,17 +186,17 @@ function TherapyTypes({ showLifeCoachCard }: { showLifeCoachCard: boolean }) {
 /* ─── Wellbeing quizzes ──────────────────────────────────────────────────── */
 function WellbeingSection() {
   const topics: { icon: IconName; label: string; key: string; color: string; bg: string }[] = [
-    { icon: "overwhelm", label: "Stress",             key: "stress",     color: "#557B53", bg: "#E4EDDD" },
+    { icon: "overwhelm", label: "Stress",             key: "stress",     color: "var(--kk-green-text)", bg: "#E4EDDD" },
     { icon: "anxiety",   label: "Anxiété",             key: "anxiete",    color: "#4A7C9B", bg: "#E0EEF7" },
     { icon: "journal",   label: "Dépression",          key: "depression", color: "#6B8BA4", bg: "#E8EFF4" },
     { icon: "burnout",   label: "Burn-out",            key: "burnout",    color: "#C0392B", bg: "#FDECEA" },
     { icon: "energy",    label: "TDAH",                key: "tdah",       color: "#E67E22", bg: "#FEF0E3" },
-    { icon: "puzzle",    label: "Autisme",             key: "autisme",    color: "#8E7CB8", bg: "#ECE7F5" },
-    { icon: "self-care", label: "Estime de soi",       key: "estime",     color: "#C58A3D", bg: "#FBEEDD" },
+    { icon: "puzzle",    label: "Autisme",             key: "autisme",    color: "var(--kk-purple-text)", bg: "#ECE7F5" },
+    { icon: "self-care", label: "Estime de soi",       key: "estime",     color: "var(--kk-gold-text)", bg: "#FBEEDD" },
     { icon: "sleep",     label: "Qualité du sommeil",  key: "sommeil",    color: "#3D5A87", bg: "#E3EAF4" },
     { icon: "user",      label: "Solitude",            key: "solitude",   color: "#B85E7C", bg: "#F8E8EE" },
     { icon: "chat-alt",  label: "Émotions",            key: "emotions",   color: "#2E86AB", bg: "#E0F0F7" },
-    { icon: "globe",     label: "Bien-être global",    key: "bienetre",   color: "#557B53", bg: "#E4EDDD" },
+    { icon: "globe",     label: "Bien-être global",    key: "bienetre",   color: "var(--kk-green-text)", bg: "#E4EDDD" },
   ];
 
   return (
@@ -228,7 +228,7 @@ function WellbeingSection() {
                   <Icon name={t.icon} size={19} color={t.color} />
                 </div>
                 <p className="text-xs font-bold leading-tight" style={{ color: "#2C342E" }}>{t.label}</p>
-                <p className="text-[10px] mt-0.5 font-semibold" style={{ color: "#557B53" }}>Quiz gratuit</p>
+                <p className="text-[10px] mt-0.5 font-semibold" style={{ color: "var(--kk-green-text)" }}>Quiz gratuit</p>
               </Link>
             ))}
           </div>
@@ -268,9 +268,9 @@ function WellbeingSection() {
 /* ─── Therapists preview ─────────────────────────────────────────────────── */
 function TherapistsPreview() {
   const therapists = [
-    { name: "Dr. Awa Diakité",    specialty: "Anxiété, Stress",  langs: ["Français", "Bambara", "Soraï"],          consults: 412, rating: 4.9, color: "#557B53" },
-    { name: "Dr. Mamadou Traoré", specialty: "Dépression",       langs: ["Français", "Bambara", "Peulh"],          consults: 538, rating: 4.8, color: "#8E7CB8" },
-    { name: "Dr. Néné Koffi",     specialty: "Couples",          langs: ["Français", "Malinké", "Bambara"],        consults: 367, rating: 4.9, color: "#C58A3D" },
+    { name: "Dr. Awa Diakité",    specialty: "Anxiété, Stress",  langs: ["Français", "Bambara", "Soraï"],          consults: 412, rating: 4.9, color: "var(--kk-green-text)" },
+    { name: "Dr. Mamadou Traoré", specialty: "Dépression",       langs: ["Français", "Bambara", "Peulh"],          consults: 538, rating: 4.8, color: "var(--kk-purple-text)" },
+    { name: "Dr. Néné Koffi",     specialty: "Couples",          langs: ["Français", "Malinké", "Bambara"],        consults: 367, rating: 4.9, color: "var(--kk-gold-text)" },
     { name: "Dr. Idrissa Koné",   specialty: "Enfants",          langs: ["Français", "Peulh", "Malinké"],         consults: 290, rating: 4.7, color: "#4A7C9B" },
   ];
 
@@ -294,7 +294,7 @@ function TherapistsPreview() {
           <Link
             href="/therapists"
             className="text-sm font-bold hidden sm:flex items-center gap-1"
-            style={{ color: "#557B53" }}
+            style={{ color: "var(--kk-green-text)" }}
           >
             Voir tous les psychologues →
           </Link>
@@ -335,7 +335,7 @@ function TherapistsPreview() {
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="#557B53">
                   <path d="M6 1l1.2 2.5L10 4l-2 1.9.5 2.6L6 7.2 3.5 8.5l.5-2.6L2 4l2.8-.5z" />
                 </svg>
-                <span className="text-xs font-bold" style={{ color: "#557B53" }}>Diplôme vérifié</span>
+                <span className="text-xs font-bold" style={{ color: "var(--kk-green-text)" }}>Diplôme vérifié</span>
               </div>
 
               <p className="text-xs mb-2" style={{ color: "var(--kk-muted)" }}>Langues</p>
@@ -344,7 +344,7 @@ function TherapistsPreview() {
                   <span
                     key={l}
                     className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "#E4EDDD", color: "#557B53" }}
+                    style={{ background: "#E4EDDD", color: "var(--kk-green-text)" }}
                   >
                     {l}
                   </span>
@@ -360,7 +360,7 @@ function TherapistsPreview() {
         </div>
 
         <div className="flex justify-center mt-6 sm:hidden">
-          <Link href="/therapists" className="text-sm font-bold" style={{ color: "#557B53" }}>
+          <Link href="/therapists" className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
             Voir tous les psychologues →
           </Link>
         </div>
@@ -377,21 +377,21 @@ function ConsultationModes() {
       title: "Chat",
       desc: "Pour ceux qui sont timides ou veulent réfléchir avant de répondre.",
       bg: "#E4EDDD",
-      color: "#557B53",
+      color: "var(--kk-green-text)",
     },
     {
       icon: "headphones",
       title: "Audio",
       desc: "Pour davantage de confidentialité.",
       bg: "#ECE7F5",
-      color: "#8E7CB8",
+      color: "var(--kk-purple-text)",
     },
     {
       icon: "video",
       title: "Vidéo",
       desc: "Pour une expérience proche du cabinet.",
       bg: "#FBEEDD",
-      color: "#C58A3D",
+      color: "var(--kk-gold-text)",
     },
   ];
 
@@ -435,7 +435,7 @@ function ConsultationModes() {
             >
               Offre de consultation
             </h3>
-            <Link href="/subscription" className="text-sm font-bold" style={{ color: "#557B53" }}>
+            <Link href="/subscription" className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
               Voir tous les tarifs →
             </Link>
           </div>
@@ -510,7 +510,7 @@ function SecuritySection() {
               <p className="text-sm" style={{ color: "#5C645B" }}>
                 Si vous rencontrez un problème avec un psychologue, vous pouvez le signaler en toute confidentialité.
               </p>
-              <Link href="/security" className="text-sm font-bold mt-2 inline-block" style={{ color: "#557B53" }}>
+              <Link href="/security" className="text-sm font-bold mt-2 inline-block" style={{ color: "var(--kk-green-text)" }}>
                 En savoir plus →
               </Link>
             </div>
@@ -554,7 +554,7 @@ function SecuritySection() {
             className="rounded-2xl p-6"
             style={{ background: "var(--kk-bg)", border: "1px solid #EDE8DC" }}
           >
-            <p className="text-2xl mb-2" style={{ color: "#8E7CB8" }}>&ldquo;</p>
+            <p className="text-2xl mb-2" style={{ color: "var(--kk-purple-text)" }}>&ldquo;</p>
             <p className="text-base font-semibold leading-relaxed mb-1" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>
               Parler, c&apos;est déjà se libérer.
             </p>

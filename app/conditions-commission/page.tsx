@@ -48,7 +48,7 @@ export default async function CommissionTermsPage() {
           className="rounded-2xl p-5 mb-6 text-center"
           style={{ background: "var(--kk-green-light)", border: "1.5px solid #C2D9BC" }}
         >
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green-text)" }}>
             Commission applicable
           </p>
           <p className="text-4xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
@@ -70,7 +70,7 @@ export default async function CommissionTermsPage() {
             </form>
           </>
         ) : (
-          <p className="text-sm text-center font-semibold" style={{ color: "var(--kk-green)" }}>
+          <p className="text-sm text-center font-semibold" style={{ color: "var(--kk-green-text)" }}>
             ✓ Conditions acceptées le {new Date(profile.commissionAcceptedAt!).toLocaleDateString("fr-FR")}
           </p>
         )}

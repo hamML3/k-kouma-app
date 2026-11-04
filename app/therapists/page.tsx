@@ -117,7 +117,7 @@ export default async function TherapistsPage({
           >
             <span className="text-xl">✓</span>
             <div>
-              <p className="text-sm font-bold" style={{ color: "var(--kk-green)" }}>
+              <p className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
                 Votre psychologue a été sélectionné !
               </p>
               <p className="text-xs" style={{ color: "var(--kk-mid)" }}>
@@ -134,7 +134,7 @@ export default async function TherapistsPage({
           >
             <span className="text-xl">⏰</span>
             <div>
-              <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
+              <p className="text-sm font-bold" style={{ color: "var(--kk-gold-text)" }}>
                 Ce créneau vient d&apos;être réservé par quelqu&apos;un d&apos;autre.
               </p>
               <p className="text-xs" style={{ color: "#8A6530" }}>
@@ -151,7 +151,7 @@ export default async function TherapistsPage({
           >
             <span className="text-xl">🧭</span>
             <div>
-              <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
+              <p className="text-sm font-bold" style={{ color: "var(--kk-gold-text)" }}>
                 Choisissez d’abord un psychologue pour réserver une séance.
               </p>
               <p className="text-xs" style={{ color: "#8A6530" }}>
@@ -182,7 +182,7 @@ export default async function TherapistsPage({
             style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
           >
             <div>
-              <p className="text-sm font-bold" style={{ color: "var(--kk-purple)" }}>
+              <p className="text-sm font-bold" style={{ color: "var(--kk-purple-text)" }}>
                 Obtenez des recommandations personnalisées
               </p>
               <p className="text-xs mt-0.5" style={{ color: "#6B5B96" }}>
@@ -290,7 +290,7 @@ export default async function TherapistsPage({
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           <span
                             className="text-xs font-bold px-2.5 py-1 rounded-full"
-                            style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                            style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                           >
                             ✓ Vérifié
                           </span>
@@ -326,7 +326,7 @@ export default async function TherapistsPage({
                             <span
                               key={r}
                               className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-                              style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                              style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                             >
                               ✓ {r}
                             </span>
@@ -343,7 +343,7 @@ export default async function TherapistsPage({
                             <span
                               key={s}
                               className="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"
-                              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                             >
                               {icon && <Icon name={icon} size={12} />}
                               {s}
@@ -353,7 +353,7 @@ export default async function TherapistsPage({
                         {specialtiesList.length > 2 && (
                           <span
                             className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                             title={specialtiesList.slice(2).join(", ")}
                           >
                             +{specialtiesList.length - 2}

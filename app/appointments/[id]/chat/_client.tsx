@@ -291,7 +291,7 @@ function ChatTopBar({
           ) : (
             <span
               className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
-              style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+              style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
             >
               Séance en cours
             </span>

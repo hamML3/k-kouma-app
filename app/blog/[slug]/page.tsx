@@ -81,7 +81,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               </div>
             )}
 
-            <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple)" }}>
+            <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple-text)" }}>
               Par {authorName}
             </p>
             <h1
@@ -127,7 +127,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 <span className="text-sm font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
                   Voir tous les articles
                 </span>
-                <span style={{ color: "var(--kk-green)" }}>→</span>
+                <span style={{ color: "var(--kk-green-text)" }}>→</span>
               </Link>
             </div>
           </article>
@@ -166,7 +166,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <Image src={article.image} alt="" fill className="object-cover" priority />
           </div>
 
-          <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple)" }}>
+          <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple-text)" }}>
             {article.number} — Article
           </p>
           <h1
@@ -222,7 +222,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             className="rounded-2xl p-5 mb-6"
             style={{ background: "var(--kk-green-light)", border: "1px solid #C2D9BC" }}
           >
-            <p className="text-sm font-bold mb-2 flex items-center gap-1.5" style={{ color: "var(--kk-green)" }}>
+            <p className="text-sm font-bold mb-2 flex items-center gap-1.5" style={{ color: "var(--kk-green-text)" }}>
               🌿 À retenir
             </p>
             <p className="text-sm font-bold leading-relaxed mb-1.5" style={{ color: "var(--kk-dark)" }}>
@@ -288,7 +288,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               <span className="text-sm font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
                 {next.title}
               </span>
-              <span style={{ color: "var(--kk-green)" }}>→</span>
+              <span style={{ color: "var(--kk-green-text)" }}>→</span>
             </Link>
           </div>
         </article>

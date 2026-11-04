@@ -107,7 +107,7 @@ export default async function TherapistProfilePage({
               </div>
               <span
                 className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-                style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
               >
                 ✓ Vérifié K-Kouma
               </span>
@@ -120,7 +120,7 @@ export default async function TherapistProfilePage({
                   <span
                     key={s}
                     className="text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
-                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                   >
                     {icon && <Icon name={icon} size={13} />}
                     {s}
@@ -225,7 +225,7 @@ export default async function TherapistProfilePage({
               Avis des patients
             </h2>
             <p className="text-sm" style={{ color: "var(--kk-mid)" }}>
-              <span aria-hidden style={{ color: "var(--kk-gold)" }}>★</span>{" "}
+              <span aria-hidden style={{ color: "var(--kk-gold-text)" }}>★</span>{" "}
               {(ratingStats._avg.rating ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 })}/5 sur {reviewCount} avis
             </p>
             {reviews.length > 0 && (

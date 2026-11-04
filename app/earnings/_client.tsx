@@ -35,7 +35,7 @@ export function RequestPayoutSection({
           ⏳
         </span>
         <div>
-          <p className="font-bold text-sm" style={{ color: "var(--kk-gold)" }}>
+          <p className="font-bold text-sm" style={{ color: "var(--kk-gold-text)" }}>
             Demande de retrait en attente
           </p>
           <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>

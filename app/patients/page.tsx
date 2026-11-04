@@ -166,7 +166,7 @@ export default async function PatientsPage() {
                       <Link
                         href={`/patients/${a.patient.id}`}
                         className="text-xs font-semibold px-3 py-1.5 rounded-full"
-                        style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                        style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                       >
                         Voir →
                       </Link>
@@ -214,7 +214,7 @@ export default async function PatientsPage() {
                       <div className="flex items-center gap-3">
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
-                          style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                          style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                         >
                           {(p.patientProfile?.nickname ?? p.email).slice(0, 1).toUpperCase()}
                         </div>
@@ -233,7 +233,7 @@ export default async function PatientsPage() {
                       <Link
                         href={`/patients/${p.id}`}
                         className="text-sm font-semibold px-4 py-2 rounded-full shrink-0"
-                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                       >
                         Voir le profil →
                       </Link>

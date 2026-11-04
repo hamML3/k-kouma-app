@@ -140,7 +140,7 @@ export default async function AdminReportsPage({
                         ({reporter.roleLabel})
                       </span>{" "}
                       a signalé{" "}
-                      <span style={{ color: "var(--kk-purple)" }}>{reported.name}</span>{" "}
+                      <span style={{ color: "var(--kk-purple-text)" }}>{reported.name}</span>{" "}
                       <span className="font-normal" style={{ color: "var(--kk-muted)" }}>
                         ({reported.roleLabel})
                       </span>
@@ -154,9 +154,9 @@ export default async function AdminReportsPage({
                     className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
                     style={
                       r.status === "pending"
-                        ? { background: "var(--kk-gold-light)", color: "var(--kk-gold)" }
+                        ? { background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }
                         : r.status === "reviewed"
-                        ? { background: "var(--kk-green-light)", color: "var(--kk-green)" }
+                        ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" }
                         : { background: "var(--kk-border)", color: "var(--kk-mid)" }
                     }
                   >
@@ -176,7 +176,7 @@ export default async function AdminReportsPage({
                 </div>
 
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <Link href={accountHref} className="text-xs font-semibold" style={{ color: "var(--kk-purple)" }}>
+                  <Link href={accountHref} className="text-xs font-semibold" style={{ color: "var(--kk-purple-text)" }}>
                     Voir le compte signalé →
                   </Link>
 

@@ -20,7 +20,7 @@ export function ReviewForm({ appointmentId }: { appointmentId: number }) {
 
   return (
     <details className="rounded-xl p-3" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
-      <summary className="text-sm font-semibold cursor-pointer" style={{ color: "var(--kk-green)" }}>
+      <summary className="text-sm font-semibold cursor-pointer" style={{ color: "var(--kk-green-text)" }}>
         Donner mon avis sur cette séance
       </summary>
       <form action={action} className="space-y-3 mt-3">

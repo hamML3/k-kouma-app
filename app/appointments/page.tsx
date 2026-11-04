@@ -8,8 +8,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { Icon, type IconName } from "@/components/Icon";
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
-  pending:   { label: "En attente",  bg: "var(--kk-gold-light)",   color: "var(--kk-gold)" },
-  confirmed: { label: "Confirmé",    bg: "var(--kk-green-light)",  color: "var(--kk-green)" },
+  pending:   { label: "En attente",  bg: "var(--kk-gold-light)",   color: "var(--kk-gold-text)" },
+  confirmed: { label: "Confirmé",    bg: "var(--kk-green-light)",  color: "var(--kk-green-text)" },
   canceled:  { label: "Annulé",      bg: "#FFF1F0",                color: "#C0392B" },
   completed: { label: "Terminé",     bg: "var(--kk-border)",       color: "var(--kk-muted)" },
 };

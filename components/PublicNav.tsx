@@ -57,7 +57,7 @@ export function PublicNav() {
             <Link
               href="/login"
               className="hidden sm:block text-sm font-bold px-4 py-2 rounded-full border transition-all"
-              style={{ borderColor: "#557B53", color: "#557B53" }}
+              style={{ borderColor: "#557B53", color: "var(--kk-green-text)" }}
             >
               Se connecter
             </Link>

@@ -285,7 +285,7 @@ export default function RegisterTherapistPage() {
 
         <p className="text-center text-sm" style={{ color: "var(--kk-muted)" }}>
           Déjà un compte ?{" "}
-          <Link href="/login" className="font-bold" style={{ color: "var(--kk-green)" }}>
+          <Link href="/login" className="font-bold" style={{ color: "var(--kk-green-text)" }}>
             Se connecter
           </Link>
         </p>

@@ -79,7 +79,7 @@ export default async function EarningsPage() {
             className="rounded-2xl p-5"
             style={{ background: "#fff", border: "2px solid var(--kk-green)", boxShadow: "0 6px 24px rgba(85,123,83,0.10)" }}
           >
-            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green-text)" }}>
               Ce mois-ci
             </p>
             <p className="font-bold text-3xl" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
@@ -166,7 +166,7 @@ export default async function EarningsPage() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold" style={{ color: "var(--kk-green)" }}>
+                    <p className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
                       +{Number(e.amount).toLocaleString("fr-FR")} {e.currency}
                     </p>
                     <p className="text-xs font-semibold mt-0.5" style={{ color: e.paidOut ? "var(--kk-green)" : "var(--kk-gold)" }}>

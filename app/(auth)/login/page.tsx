@@ -61,7 +61,7 @@ export default function LoginPage() {
             <label htmlFor="password" className="kk-label">
               Mot de passe
             </label>
-            <Link href="/forgot-password" className="text-xs font-semibold" style={{ color: "var(--kk-purple)" }}>
+            <Link href="/forgot-password" className="text-xs font-semibold" style={{ color: "var(--kk-purple-text)" }}>
               Oublié ?
             </Link>
           </div>

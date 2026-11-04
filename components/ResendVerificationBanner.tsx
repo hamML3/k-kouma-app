@@ -12,7 +12,7 @@ export function ResendVerificationBanner() {
       style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
     >
       <div>
-        <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
+        <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold-text)" }}>
           Confirmez votre adresse email
         </p>
         <p className="text-sm" style={{ color: "#8A6530" }}>
@@ -28,7 +28,7 @@ export function ResendVerificationBanner() {
             type="submit"
             disabled={pending}
             className="shrink-0 text-sm font-bold px-5 py-2.5 rounded-full"
-            style={{ background: "var(--kk-gold)", color: "#fff" }}
+            style={{ background: "var(--kk-gold-text)", color: "#fff" }}
           >
             {pending ? "Envoi…" : "Renvoyer l'email"}
           </button>

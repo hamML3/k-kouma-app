@@ -41,12 +41,12 @@ export default async function AdminSettingsPage({
       </div>
 
       {saved === "commission" && (
-        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Enregistré. Les thérapeutes concernés ont été prévenus par email.
         </div>
       )}
       {saved && saved !== "commission" && (
-        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Enregistré.
         </div>
       )}

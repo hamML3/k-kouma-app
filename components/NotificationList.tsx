@@ -24,7 +24,7 @@ export async function NotificationList({ userId }: { userId: number }) {
         </h1>
         {hasUnread && (
           <form action={markAllNotificationsReadAction}>
-            <button type="submit" className="text-sm font-semibold" style={{ color: "var(--kk-green)" }}>
+            <button type="submit" className="text-sm font-semibold" style={{ color: "var(--kk-green-text)" }}>
               Tout marquer comme lu
             </button>
           </form>

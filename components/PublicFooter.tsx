@@ -41,7 +41,7 @@ export function PublicFooter() {
     <>
       <div className="py-4" style={{ background: "#E4EDDD", borderTop: "1px solid #C2D9BC" }}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-center gap-2 flex-wrap">
-          <p className="text-xs font-semibold mr-3" style={{ color: "#557B53" }}>
+          <p className="text-xs font-semibold mr-3" style={{ color: "var(--kk-green-text)" }}>
             Nous sommes présents en Afrique de l&apos;Ouest
           </p>
           {COUNTRIES.map((c) => (

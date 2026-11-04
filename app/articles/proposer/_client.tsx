@@ -19,7 +19,7 @@ export default function ProposeArticleForm({ isAdmin }: { isAdmin: boolean }) {
             <circle cx="10" cy="10" r="9" stroke="#557B53" strokeWidth="1.6" />
             <path d="M6 10l3 3 5-5" stroke="#557B53" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="text-sm font-semibold" style={{ color: "var(--kk-green)" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--kk-green-text)" }}>
             {state.published
               ? "Votre article a été publié."
               : "Votre article a bien été envoyé — il est en attente de validation par un administrateur."}

@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
       {state.message ? (
         <div
           className="rounded-2xl p-4 text-sm"
-          style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+          style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
         >
           {state.message}
         </div>
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
       )}
 
       <p className="text-center text-sm mt-6" style={{ color: "var(--kk-muted)" }}>
-        <Link href="/login" className="font-bold" style={{ color: "var(--kk-green)" }}>
+        <Link href="/login" className="font-bold" style={{ color: "var(--kk-green-text)" }}>
           ← Retour à la connexion
         </Link>
       </p>

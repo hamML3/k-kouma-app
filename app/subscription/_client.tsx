@@ -60,7 +60,7 @@ export function ManualPaymentForm({
     return (
       <div
         className="rounded-2xl p-5 text-sm"
-        style={{ background: "var(--kk-green-light)", color: "var(--kk-green)", border: "1px solid #C2D9BC" }}
+        style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)", border: "1px solid #C2D9BC" }}
       >
         <p className="font-bold mb-1">Déclaration reçue ✓</p>
         <p>

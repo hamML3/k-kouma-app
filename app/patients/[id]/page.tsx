@@ -135,8 +135,8 @@ export default async function PatientDetailPage({
   const nickname = patient.patientProfile?.nickname ?? patient.email;
 
   const STATUS_MAP: Record<string, { label: string; color: string }> = {
-    pending:   { label: "En attente",  color: "var(--kk-gold)" },
-    confirmed: { label: "Confirmé",    color: "var(--kk-green)" },
+    pending:   { label: "En attente",  color: "var(--kk-gold-text)" },
+    confirmed: { label: "Confirmé",    color: "var(--kk-green-text)" },
     canceled:  { label: "Annulé",      color: "#C0392B" },
     completed: { label: "Terminé",     color: "var(--kk-muted)" },
   };
@@ -164,7 +164,7 @@ export default async function PatientDetailPage({
         >
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl shrink-0"
-            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)", fontFamily: "var(--font-lora)" }}
           >
             {nickname.slice(0, 1).toUpperCase()}
           </div>
@@ -216,7 +216,7 @@ export default async function PatientDetailPage({
                         <span
                           key={m}
                           className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                          style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                         >
                           {ANSWER_LABELS.motifs[m] ?? m}
                         </span>

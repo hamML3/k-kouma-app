@@ -143,7 +143,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             <span className="font-bold" style={{ color: "var(--kk-dark)" }}>
               Total payé
             </span>
-            <span className="text-xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green)" }}>
+            <span className="text-xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green-text)" }}>
               {amount}
             </span>
           </div>

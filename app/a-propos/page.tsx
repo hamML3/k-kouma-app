@@ -77,7 +77,7 @@ export default function AboutPage() {
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
           {/* Hero */}
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green-text)" }}>
             À propos de K-Kouma
           </p>
           <h1

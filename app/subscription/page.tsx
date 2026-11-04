@@ -50,8 +50,8 @@ export default async function SubscriptionPage({
   const manualOrangeMoneyEnabled = await isOrangeMoneyManualEnabled();
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
-    pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
-    completed: { label: "Payé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+    pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold-text)" },
+    completed: { label: "Payé", bg: "var(--kk-green-light)", color: "var(--kk-green-text)" },
     failed: { label: "Échoué", bg: "#FFF1F0", color: "#C0392B" },
     canceled: { label: "Annulé", bg: "var(--kk-border)", color: "var(--kk-muted)" },
   };
@@ -69,7 +69,7 @@ export default async function SubscriptionPage({
         </h1>
 
         {params.paid === "1" && (
-          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
             Paiement en cours de confirmation — vos séances seront créditées dans quelques instants.
           </div>
         )}
@@ -90,7 +90,7 @@ export default async function SubscriptionPage({
           style={{ background: "#fff", border: "2px solid var(--kk-green)", boxShadow: "0 6px 24px rgba(85,123,83,0.10)" }}
         >
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green-text)" }}>
               Séances disponibles
             </p>
             <p className="font-bold text-3xl" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
@@ -143,7 +143,7 @@ export default async function SubscriptionPage({
           >
             <span className="text-lg shrink-0">⏸️</span>
             <div>
-              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold-text)" }}>
                 Paiement en ligne temporairement indisponible
               </p>
               <p>
@@ -252,7 +252,7 @@ export default async function SubscriptionPage({
                         {statusInfo.label}
                       </span>
                       {p.invoiceNumber !== null && (
-                        <Link href={`/factures/${p.id}`} className="text-xs font-semibold" style={{ color: "var(--kk-green)" }}>
+                        <Link href={`/factures/${p.id}`} className="text-xs font-semibold" style={{ color: "var(--kk-green-text)" }}>
                           Voir la facture
                         </Link>
                       )}

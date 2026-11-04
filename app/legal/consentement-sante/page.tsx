@@ -39,7 +39,7 @@ export default function ConsentementSantePage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple)" }}>
+          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple-text)" }}>
             K-Kouma (k-kouma.com)
           </p>
           <h1
@@ -52,7 +52,7 @@ export default function ConsentementSantePage() {
             Ce document explique le contenu du consentement demandé à chaque patient lors de la création de son
             compte, avant toute demande de consultation. Pour le cadre général du traitement de vos données,
             consultez aussi notre{" "}
-            <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green)" }}>
+            <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green-text)" }}>
               Politique de confidentialité
             </Link>
             .

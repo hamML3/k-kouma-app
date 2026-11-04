@@ -66,7 +66,7 @@ export default async function AdminTherapistDetailPage({
           <div className="flex items-center gap-4 min-w-0">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)", fontFamily: "var(--font-lora)" }}
               aria-hidden
             >
               {t.firstName.charAt(0).toUpperCase()}
@@ -86,7 +86,7 @@ export default async function AdminTherapistDetailPage({
           </div>
           <div className="flex gap-2 flex-wrap">
             {isVerified && (
-              <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+              <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
                 ✓ Vérifié
               </span>
             )}
@@ -101,7 +101,7 @@ export default async function AdminTherapistDetailPage({
               </span>
             )}
             {isPending && (
-              <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
+              <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
                 En attente
               </span>
             )}
@@ -158,7 +158,7 @@ export default async function AdminTherapistDetailPage({
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold" style={{ color: "var(--kk-purple)" }}>{doc.label}</p>
+                    <p className="text-xs font-bold" style={{ color: "var(--kk-purple-text)" }}>{doc.label}</p>
                     <a
                       href={documentHref(doc.url)}
                       target="_blank"
@@ -235,13 +235,13 @@ export default async function AdminTherapistDetailPage({
           </div>
         )}
         {isPending && !canManageTherapists && (
-          <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
+          <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
             Candidature en attente — seul un administrateur peut la valider ou la rejeter.
           </div>
         )}
 
         {isVerified && (
-          <div className="rounded-2xl p-4 mb-4 text-sm text-center font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+          <div className="rounded-2xl p-4 mb-4 text-sm text-center font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
             ✓ Ce psychologue est vérifié et peut consulter des patients.
           </div>
         )}

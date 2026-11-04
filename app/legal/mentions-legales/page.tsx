@@ -131,7 +131,7 @@ export default function MentionsLegalesPage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple)" }}>
+          <p className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--kk-purple-text)" }}>
             K-Kouma
           </p>
           <h1
@@ -154,7 +154,7 @@ export default function MentionsLegalesPage() {
                   {s.number === "7" ? (
                     <p className="text-sm leading-relaxed" style={{ color: "var(--kk-mid)" }}>
                       Le Site traite certaines données personnelles conformément à la{" "}
-                      <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green)" }}>
+                      <Link href="/legal/confidentialite" className="underline font-semibold" style={{ color: "var(--kk-green-text)" }}>
                         Politique de confidentialité
                       </Link>{" "}
                       accessible sur la Plateforme. Les Utilisateurs peuvent exercer leurs droits auprès de :

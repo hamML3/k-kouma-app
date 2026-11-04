@@ -55,7 +55,7 @@ export default function ProfileClient({
               <circle cx="10" cy="10" r="9" stroke="#557B53" strokeWidth="1.6" />
               <path d="M6 10l3 3 5-5" stroke="#557B53" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-sm font-semibold" style={{ color: "var(--kk-green)" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--kk-green-text)" }}>
               Profil mis à jour avec succès.
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function ProfileClient({
             style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
           >
             <div>
-              <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple-text)", fontFamily: "var(--font-lora)" }}>
                 Proposer un article
               </p>
               <p className="text-xs" style={{ color: "#6B5B96" }}>
@@ -186,10 +186,10 @@ export default function ProfileClient({
               Les tarifs sont fixés par K-Kouma (abonnements/packs patients). Vous percevez le prix payé par le
               patient, moins cette commission, pour chaque séance réalisée.
             </p>
-            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green)" }}>
+            <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green-text)" }}>
               {commissionPercent}%
             </p>
-            <Link href="/conditions-commission" className="text-xs font-bold underline mt-1 inline-block" style={{ color: "var(--kk-green)" }}>
+            <Link href="/conditions-commission" className="text-xs font-bold underline mt-1 inline-block" style={{ color: "var(--kk-green-text)" }}>
               Voir les conditions acceptées →
             </Link>
           </div>

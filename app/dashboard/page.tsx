@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           >
             <span className="text-2xl shrink-0" aria-hidden>⏳</span>
             <div>
-              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold-text)" }}>
                 Compte en attente de vérification
               </p>
               <p className="text-sm" style={{ color: "#8A6530" }}>
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-3 min-w-0">
               <span className="text-2xl shrink-0" aria-hidden>📝</span>
               <div>
-                <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple)" }}>
+                <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple-text)" }}>
                   Complétez votre profil
                 </p>
                 <p className="text-sm" style={{ color: "#6B5B96" }}>
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
 
         {/* Welcome */}
         <div className="mb-7">
-          <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold)" }}>
+          <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold-text)" }}>
             {todayLabel}
           </p>
           <h1
@@ -224,7 +224,7 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="text-2xl shrink-0" aria-hidden>🗂️</span>
                   <div>
-                    <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                    <p className="font-bold" style={{ color: "var(--kk-gold-text)" }}>
                       {pendingRequests} demande{pendingRequests > 1 ? "s" : ""} de rendez-vous en attente
                     </p>
                     <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
@@ -244,7 +244,7 @@ export default async function DashboardPage() {
                   Aujourd&apos;hui ({todaysAppointments.length})
                 </p>
                 {unpaidTotal > 0 && (
-                  <p className="text-xs font-bold" style={{ color: "var(--kk-gold)" }}>
+                  <p className="text-xs font-bold" style={{ color: "var(--kk-gold-text)" }}>
                     {unpaidTotal.toLocaleString("fr-FR")} XOF à reverser
                   </p>
                 )}
@@ -280,7 +280,7 @@ export default async function DashboardPage() {
                 {nextAppointment.type === "video" ? "🎥" : nextAppointment.type === "audio" ? "🎧" : "💬"}
               </span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple)" }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple-text)" }}>
                   {nextAppointment.status === "confirmed" ? "Prochain rendez-vous" : "En attente de confirmation"}
                 </p>
                 <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
@@ -321,7 +321,7 @@ export default async function DashboardPage() {
                 {assignedTherapist.firstName?.[0]}{assignedTherapist.lastName?.[0]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green)" }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green-text)" }}>
                   Votre psychologue
                 </p>
                 <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
@@ -492,7 +492,7 @@ export default async function DashboardPage() {
               <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
                 Articles recommandés pour vous
               </h2>
-              <Link href="/blog" className="text-xs font-bold" style={{ color: "var(--kk-green)" }}>
+              <Link href="/blog" className="text-xs font-bold" style={{ color: "var(--kk-green-text)" }}>
                 Tout le blog →
               </Link>
             </div>

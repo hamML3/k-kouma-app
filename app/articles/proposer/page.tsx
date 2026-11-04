@@ -9,8 +9,8 @@ import ProposeArticleForm from "./_client";
 export const metadata = { title: "Proposer un article — K-Kouma" };
 
 const STATUS_LABEL: Record<string, { label: string; bg: string; color: string }> = {
-  pending: { label: "En attente de validation", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
-  published: { label: "Publié", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  pending: { label: "En attente de validation", bg: "var(--kk-gold-light)", color: "var(--kk-gold-text)" },
+  published: { label: "Publié", bg: "var(--kk-green-light)", color: "var(--kk-green-text)" },
   rejected: { label: "Rejeté", bg: "#FFF1F0", color: "#C0392B" },
 };
 

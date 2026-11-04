@@ -55,7 +55,7 @@ export function CreateUserForm({ isAdmin }: { isAdmin: boolean }) {
 
       {state.error && <div className="kk-error mb-4">{state.error}</div>}
       {state.success && (
-        <div className="rounded-2xl p-4 mb-4 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+        <div className="rounded-2xl p-4 mb-4 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Compte créé avec succès.
         </div>
       )}

@@ -82,7 +82,7 @@ export function PlatformBanner({
             onClick={() => dismissAnnouncement(announcementText)}
             aria-label="Masquer cette annonce"
             className="shrink-0 font-bold"
-            style={{ color: "var(--kk-purple)" }}
+            style={{ color: "var(--kk-purple-text)" }}
           >
             ✕
           </button>

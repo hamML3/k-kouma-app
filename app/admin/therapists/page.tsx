@@ -49,8 +49,8 @@ export default async function AdminTherapistsPage({
   ]);
 
   const TABS = [
-    { id: "pending",   label: `En attente (${pending.length})`,   color: "var(--kk-gold)" },
-    { id: "verified",  label: `Vérifiés (${verified.length})`,    color: "var(--kk-green)" },
+    { id: "pending",   label: `En attente (${pending.length})`,   color: "var(--kk-gold-text)" },
+    { id: "verified",  label: `Vérifiés (${verified.length})`,    color: "var(--kk-green-text)" },
     { id: "rejected",  label: `Rejetés (${rejected.length})`,     color: "#C0392B" },
     { id: "suspended", label: `Suspendus (${suspended.length})`,  color: "var(--kk-muted)" },
   ];
@@ -125,7 +125,7 @@ export default async function AdminTherapistsPage({
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 <div
                   className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+                  style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)", fontFamily: "var(--font-lora)" }}
                   aria-hidden
                 >
                   {t.firstName.charAt(0).toUpperCase()}
@@ -142,7 +142,7 @@ export default async function AdminTherapistsPage({
                     {t.isVerified && (
                       <span
                         className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
                       >
                         ✓ Vérifié
                       </span>
@@ -178,7 +178,7 @@ export default async function AdminTherapistsPage({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors hover:bg-[var(--kk-purple)] hover:text-white"
-                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple-text)" }}
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M2 10L6 2l4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

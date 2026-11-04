@@ -9,7 +9,7 @@ export default function ContactPage() {
       <PublicNav />
       <main style={{ background: "var(--kk-bg)" }}>
         <div className="max-w-2xl mx-auto px-6 py-16 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-green-text)" }}>
             Une question, un problème à signaler ?
           </p>
           <h1
@@ -30,7 +30,7 @@ export default function ContactPage() {
               <a
                 href="mailto:contact@k-kouma.com"
                 className="text-lg font-bold"
-                style={{ color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+                style={{ color: "var(--kk-purple-text)", fontFamily: "var(--font-lora)" }}
               >
                 contact@k-kouma.com
               </a>

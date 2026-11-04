@@ -98,7 +98,7 @@ export default async function AdminStatsPage() {
               Onboarding → premier paiement
             </h2>
             <div className="text-right">
-              <p className="font-bold text-2xl" style={{ color: "var(--kk-green)", fontFamily: "var(--font-lora)" }}>
+              <p className="font-bold text-2xl" style={{ color: "var(--kk-green-text)", fontFamily: "var(--font-lora)" }}>
                 {conversionRate}%
               </p>
               <p className="text-xs font-semibold" style={{ color: "var(--kk-muted)" }}>

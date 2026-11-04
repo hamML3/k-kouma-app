@@ -37,7 +37,7 @@ export default function TherapistPendingPage() {
           border: "1px solid #E9C98A",
         }}
       >
-        <p className="font-bold mb-2" style={{ color: "var(--kk-gold)" }}>
+        <p className="font-bold mb-2" style={{ color: "var(--kk-gold-text)" }}>
           Prochaines étapes
         </p>
         <ol className="space-y-1.5" style={{ color: "#8A6530" }}>
@@ -59,7 +59,7 @@ export default function TherapistPendingPage() {
       <Link
         href="/"
         className="text-sm font-bold"
-        style={{ color: "var(--kk-green)" }}
+        style={{ color: "var(--kk-green-text)" }}
       >
         Retour à l&apos;accueil
       </Link>

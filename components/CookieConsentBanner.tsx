@@ -78,11 +78,11 @@ export function CookieConsentBanner() {
           Nous utilisons des cookies strictement nécessaires au fonctionnement du site, ainsi que des cookies
           optionnels pour améliorer votre expérience. Aucune donnée de santé n&apos;est jamais utilisée à des
           fins publicitaires. Détails dans notre{" "}
-          <a href="/legal/cookies" target="_blank" className="underline font-semibold" style={{ color: "var(--kk-green)" }}>
+          <a href="/legal/cookies" target="_blank" className="underline font-semibold" style={{ color: "var(--kk-green-text)" }}>
             politique de cookies
           </a>{" "}
           et nos{" "}
-          <a href="/legal/mentions-legales" target="_blank" className="underline font-semibold" style={{ color: "var(--kk-green)" }}>
+          <a href="/legal/mentions-legales" target="_blank" className="underline font-semibold" style={{ color: "var(--kk-green-text)" }}>
             mentions légales
           </a>
           .

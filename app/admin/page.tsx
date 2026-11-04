@@ -75,7 +75,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Patients inscrits",
       value: totalPatients,
-      color: "var(--kk-green)",
+      color: "var(--kk-green-text)",
       bg: "var(--kk-green-light)",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -87,7 +87,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Psychologues vérifiés",
       value: totalTherapists,
-      color: "var(--kk-purple)",
+      color: "var(--kk-purple-text)",
       bg: "var(--kk-purple-light)",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -99,7 +99,7 @@ export default async function AdminDashboardPage() {
     {
       label: "En attente de validation",
       value: pendingTherapists,
-      color: "var(--kk-gold)",
+      color: "var(--kk-gold-text)",
       bg: "var(--kk-gold-light)",
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -129,7 +129,7 @@ export default async function AdminDashboardPage() {
   return (
     <>
       <div className="mb-6 sm:mb-8">
-        <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold)" }}>
+        <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold-text)" }}>
           {todayLabel}
         </p>
         <h1
@@ -188,7 +188,7 @@ export default async function AdminDashboardPage() {
                   🗂️
                 </span>
                 <div>
-                  <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                  <p className="font-bold" style={{ color: "var(--kk-gold-text)" }}>
                     {pendingTherapists} candidature{pendingTherapists > 1 ? "s" : ""} en attente de validation
                   </p>
                   <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
@@ -212,7 +212,7 @@ export default async function AdminDashboardPage() {
                   💳
                 </span>
                 <div>
-                  <p className="font-bold" style={{ color: "var(--kk-purple)" }}>
+                  <p className="font-bold" style={{ color: "var(--kk-purple-text)" }}>
                     {pendingManualPaymentsCount} paiement{pendingManualPaymentsCount > 1 ? "s" : ""} Orange Money à vérifier
                   </p>
                   <p className="text-sm mt-0.5" style={{ color: "#6B5B96" }}>
@@ -236,7 +236,7 @@ export default async function AdminDashboardPage() {
                   ⏳
                 </span>
                 <div>
-                  <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                  <p className="font-bold" style={{ color: "var(--kk-gold-text)" }}>
                     {pendingPayoutRequestsCount} demande{pendingPayoutRequestsCount > 1 ? "s" : ""} de retrait à traiter
                   </p>
                   <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
@@ -314,8 +314,8 @@ export default async function AdminDashboardPage() {
                     className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
                     style={
                       a.status === "confirmed"
-                        ? { background: "var(--kk-green-light)", color: "var(--kk-green)" }
-                        : { background: "var(--kk-gold-light)", color: "var(--kk-gold)" }
+                        ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" }
+                        : { background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }
                     }
                   >
                     {a.status === "confirmed" ? "Confirmé" : "En attente"}
