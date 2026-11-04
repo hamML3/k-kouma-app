@@ -58,7 +58,7 @@ export default async function BlogPage() {
               <Link
                 key={a.slug}
                 href={`/blog/${a.slug}`}
-                className="kk-card overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
+                className="kk-card overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
               >
                 <div className="relative w-full h-40 shrink-0">
                   <Image src={a.image} alt="" fill className="object-cover" />
@@ -91,7 +91,7 @@ export default async function BlogPage() {
                 <Link
                   key={a.slug}
                   href={`/blog/${a.slug}`}
-                  className="kk-card overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
+                  className="kk-card overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
                 >
                   <div className="relative w-full h-40 shrink-0" style={{ background: "var(--kk-purple-light)" }}>
                     {a.imageUrl ? (

@@ -250,7 +250,7 @@ export default async function TherapistsPage({
               return (
                 <div
                   key={t.id}
-                  className="rounded-2xl p-5 transition-all hover:scale-[1.01]"
+                  className="rounded-2xl p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
                   style={{
                     background: "#fff",
                     border: isAssigned

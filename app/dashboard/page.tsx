@@ -142,6 +142,12 @@ export default async function DashboardPage() {
     ? "Heureux de vous revoir. Votre psychologue est là pour vous, à votre rythme."
     : "Votre profil est prêt — il ne reste plus qu'à trouver le psychologue qui vous correspond.";
 
+  const todayLabel = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role={user?.role ?? "patient"} displayName={String(displayName)} />
@@ -150,15 +156,18 @@ export default async function DashboardPage() {
         {/* Therapist verification banner */}
         {isTherapist && !isVerified && (
           <div
-            className="rounded-2xl p-5 mb-7"
+            className="rounded-2xl p-5 mb-7 flex items-center gap-3"
             style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
           >
-            <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
-              Compte en attente de vérification
-            </p>
-            <p className="text-sm" style={{ color: "#8A6530" }}>
-              Notre équipe vérifie votre profil. Vous serez notifié par email dans les 48 heures.
-            </p>
+            <span className="text-2xl shrink-0" aria-hidden>⏳</span>
+            <div>
+              <p className="font-bold mb-0.5" style={{ color: "var(--kk-gold)" }}>
+                Compte en attente de vérification
+              </p>
+              <p className="text-sm" style={{ color: "#8A6530" }}>
+                Notre équipe vérifie votre profil. Vous serez notifié par email dans les 48 heures.
+              </p>
+            </div>
           </div>
         )}
 
@@ -168,16 +177,19 @@ export default async function DashboardPage() {
         {/* Onboarding nudge for patients */}
         {needsOnboarding && (
           <div
-            className="rounded-2xl p-5 mb-7 flex items-center justify-between gap-4"
+            className="rounded-2xl p-5 mb-7 flex items-center justify-between gap-4 flex-wrap"
             style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
           >
-            <div>
-              <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple)" }}>
-                Complétez votre profil
-              </p>
-              <p className="text-sm" style={{ color: "#6B5B96" }}>
-                Répondez à quelques questions pour trouver le psychologue idéal.
-              </p>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-2xl shrink-0" aria-hidden>📝</span>
+              <div>
+                <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple)" }}>
+                  Complétez votre profil
+                </p>
+                <p className="text-sm" style={{ color: "#6B5B96" }}>
+                  Répondez à quelques questions pour trouver le psychologue idéal.
+                </p>
+              </div>
             </div>
             <Link href="/onboarding" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
               Commencer →
@@ -187,11 +199,14 @@ export default async function DashboardPage() {
 
         {/* Welcome */}
         <div className="mb-7">
+          <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold)" }}>
+            {todayLabel}
+          </p>
           <h1
-            className="text-3xl font-bold"
+            className="text-2xl sm:text-3xl font-bold mt-0.5"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            Bonjour, {displayName}
+            Bonjour 👋 {displayName}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
             {welcomeMessage}
@@ -206,13 +221,16 @@ export default async function DashboardPage() {
                 className="rounded-2xl p-5 mb-6 flex items-center justify-between gap-4 flex-wrap"
                 style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
               >
-                <div>
-                  <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
-                    {pendingRequests} demande{pendingRequests > 1 ? "s" : ""} de rendez-vous en attente
-                  </p>
-                  <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
-                    Des patients attendent votre confirmation.
-                  </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-2xl shrink-0" aria-hidden>🗂️</span>
+                  <div>
+                    <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                      {pendingRequests} demande{pendingRequests > 1 ? "s" : ""} de rendez-vous en attente
+                    </p>
+                    <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
+                      Des patients attendent votre confirmation.
+                    </p>
+                  </div>
                 </div>
                 <Link href="/patients" className="kk-btn-green shrink-0 text-sm px-5 py-2.5">
                   Examiner →
@@ -257,22 +275,27 @@ export default async function DashboardPage() {
             className="rounded-2xl p-5 mb-6 flex items-center justify-between gap-4 flex-wrap"
             style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
           >
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple)" }}>
-                {nextAppointment.status === "confirmed" ? "Prochain rendez-vous" : "En attente de confirmation"}
-              </p>
-              <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
-                {nextAppointment.scheduledAt.toLocaleString("fr-FR", {
-                  weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
-                })}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--kk-mid)" }}>
-                Avec{" "}
-                {nextAppointment.therapist.therapistProfile
-                  ? `${nextAppointment.therapist.therapistProfile.firstName} ${nextAppointment.therapist.therapistProfile.lastName}`
-                  : "votre psychologue"}{" "}
-                · {nextAppointment.type}
-              </p>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-2xl shrink-0" aria-hidden>
+                {nextAppointment.type === "video" ? "🎥" : nextAppointment.type === "audio" ? "🎧" : "💬"}
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple)" }}>
+                  {nextAppointment.status === "confirmed" ? "Prochain rendez-vous" : "En attente de confirmation"}
+                </p>
+                <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
+                  {nextAppointment.scheduledAt.toLocaleString("fr-FR", {
+                    weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--kk-mid)" }}>
+                  Avec{" "}
+                  {nextAppointment.therapist.therapistProfile
+                    ? `${nextAppointment.therapist.therapistProfile.firstName} ${nextAppointment.therapist.therapistProfile.lastName}`
+                    : "votre psychologue"}{" "}
+                  · {nextAppointment.type}
+                </p>
+              </div>
             </div>
             <Link href="/appointments" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
               Voir →
@@ -467,7 +490,7 @@ export default async function DashboardPage() {
                 <Link
                   key={a.slug}
                   href={`/blog/${a.slug}`}
-                  className="rounded-2xl overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
+                  className="rounded-2xl overflow-hidden flex flex-col transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)", boxShadow: "0 6px 20px rgba(60,70,55,0.05)" }}
                 >
                   <div className="relative w-full h-28 shrink-0" style={{ background: "var(--kk-purple-light)" }}>
@@ -520,7 +543,7 @@ function DashboardCard({
   return (
     <a
       href={href}
-      className="block p-5 rounded-2xl transition-all hover:scale-[1.01]"
+      className="block p-5 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
       style={{
         background: "#fff",
         border: "1px solid var(--kk-border)",

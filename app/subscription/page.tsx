@@ -181,7 +181,7 @@ export default async function SubscriptionPage({
 
         {paymentAvailable && (
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
-            <div className="rounded-2xl p-5 transition-all hover:scale-[1.01]" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
+            <div className="rounded-2xl p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
                 À l&apos;unité
               </p>
@@ -192,7 +192,7 @@ export default async function SubscriptionPage({
             </div>
 
             <div
-              className="rounded-2xl p-5 relative transition-all hover:scale-[1.01]"
+              className="rounded-2xl p-5 relative transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
               style={{ background: "#fff", border: "2px solid var(--kk-purple)", boxShadow: "0 8px 30px rgba(142,124,184,0.12)" }}
             >
               {pricing.pack3Was && (
