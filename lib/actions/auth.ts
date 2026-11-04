@@ -404,7 +404,9 @@ export async function resetPasswordAction(
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   await prisma.user.update({
     where: { id: result.userId },
-    data: { passwordHash },
+    // passwordChangedAt invalide toute session déjà ouverte ailleurs (voir
+    // auth.ts) — un mot de passe réinitialisé doit déconnecter les autres appareils.
+    data: { passwordHash, passwordChangedAt: new Date() },
   });
   await logAudit({ actor: { id: result.userId }, action: "auth.password_reset.completed" });
 

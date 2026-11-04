@@ -26,6 +26,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             passwordHash: true,
             role: true,
             status: true,
+            passwordChangedAt: true,
           },
         });
 
@@ -38,6 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: String(user.id),
           email: user.email,
           role: user.role,
+          pwdChangedAt: user.passwordChangedAt?.getTime() ?? null,
         };
       },
     }),
@@ -47,15 +49,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         // First sign-in: populate from the authorize() result
         token.id = user.id;
-        token.role = (user as { role: string }).role;
-      } else if (token.id) {
-        // Subsequent requests: always re-read role from DB so DB changes are picked up immediately
-        const dbUser = await prisma.user.findUnique({
-          where: { id: Number(token.id) },
-          select: { role: true, status: true },
-        });
-        if (dbUser) token.role = dbUser.role;
+        token.role = user.role;
+        token.pwdChangedAt = user.pwdChangedAt ?? null;
+        return token;
       }
+
+      if (!token.id) return token;
+
+      // Subsequent requests: always re-read from DB so suspensions and
+      // password changes take effect immediately, not just at next sign-in —
+      // a JWT would otherwise stay valid for its full lifetime regardless.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: Number(token.id) },
+        select: { role: true, status: true, passwordChangedAt: true },
+      });
+
+      if (!dbUser || dbUser.status !== "active") return null;
+
+      const dbPwdChangedAt = dbUser.passwordChangedAt?.getTime() ?? null;
+      if (dbPwdChangedAt !== null && dbPwdChangedAt !== token.pwdChangedAt) {
+        // Mot de passe changé depuis l'émission de ce token (reset, ou
+        // changement ailleurs) : la session en cours doit être coupée.
+        return null;
+      }
+
+      token.role = dbUser.role;
       return token;
     },
     session({ session, token }) {

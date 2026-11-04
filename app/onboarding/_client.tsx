@@ -1,9 +1,69 @@
 'use client'
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useSyncExternalStore } from "react";
 import { saveOnboardingAnswers, type OnboardingAnswers } from "@/lib/actions/onboarding";
 import { Logo } from "@/components/Logo";
 import { Icon, type IconName } from "@/components/Icon";
+
+// Brouillon par navigateur, jamais transmis — juste pour survivre à un onglet
+// fermé par erreur. Modélisé comme un store externe (comme CookieConsentBanner)
+// pour que la restauration après hydratation passe par useSyncExternalStore
+// plutôt que par un setState dans un effet.
+type Draft = { step: number; answers: OnboardingAnswers };
+
+const EMPTY_DRAFT: Draft = { step: 0, answers: {} };
+const CHANGE_EVENT = "kk-onboarding-draft-change";
+// Garde la dernière valeur lue pour que getSnapshot renvoie une référence
+// stable quand le contenu n'a pas changé (exigé par useSyncExternalStore).
+const draftCache = new Map<number, Draft>();
+
+function draftKey(userId: number) {
+  return `kk-onboarding-draft-${userId}`;
+}
+
+function subscribeDraft(callback: () => void) {
+  window.addEventListener(CHANGE_EVENT, callback);
+  return () => window.removeEventListener(CHANGE_EVENT, callback);
+}
+
+function getDraft(userId: number): Draft {
+  let draft = draftCache.get(userId);
+  if (!draft) {
+    try {
+      const raw = localStorage.getItem(draftKey(userId));
+      draft = raw ? (JSON.parse(raw) as Draft) : EMPTY_DRAFT;
+    } catch {
+      draft = EMPTY_DRAFT;
+    }
+    draftCache.set(userId, draft);
+  }
+  return draft;
+}
+
+function getServerDraft(): Draft {
+  return EMPTY_DRAFT;
+}
+
+function writeDraft(userId: number, draft: Draft) {
+  draftCache.set(userId, draft);
+  try {
+    localStorage.setItem(draftKey(userId), JSON.stringify(draft));
+  } catch {
+    // stockage indisponible (navigation privée stricte...) — le brouillon
+    // reste en mémoire pour cette session, tant pis pour la persistance
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+function clearDraft(userId: number) {
+  draftCache.delete(userId);
+  try {
+    localStorage.removeItem(draftKey(userId));
+  } catch {
+    // rien à faire
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
 
 type StepType = "single" | "multi" | "scale" | "safety";
 
@@ -153,8 +213,12 @@ const ACCENT_STYLES: Record<string, { bg: string; border: string; text: string; 
 const SCALE_LABELS = ["", "😔", "😕", "😐", "🙂", "😊"];
 
 export default function OnboardingClient({ userId }: { userId: number }) {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<OnboardingAnswers>({});
+  const draft = useSyncExternalStore(
+    subscribeDraft,
+    () => getDraft(userId),
+    getServerDraft
+  );
+  const { step, answers } = draft;
   const [showEmergency, setShowEmergency] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -177,7 +241,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
     } else {
       setShowEmergency(false);
     }
-    setAnswers((prev) => ({ ...prev, [current.id]: value } as OnboardingAnswers));
+    writeDraft(userId, { step, answers: { ...answers, [current.id]: value } as OnboardingAnswers });
   };
 
   const handleMulti = (value: string) => {
@@ -185,14 +249,17 @@ export default function OnboardingClient({ userId }: { userId: number }) {
     const next = prev_vals.includes(value)
       ? prev_vals.filter((v) => v !== value)
       : [...prev_vals, value];
-    setAnswers((prev) => ({ ...prev, [current.id]: next } as OnboardingAnswers));
+    writeDraft(userId, { step, answers: { ...answers, [current.id]: next } as OnboardingAnswers });
   };
 
   const handleNext = () => {
     if (step < total - 1) {
       setShowEmergency(false);
-      setStep((s) => s + 1);
+      writeDraft(userId, { step: step + 1, answers });
     } else {
+      // saveOnboardingAnswers redirige toujours en cas de succès (elle ne
+      // "retourne" donc jamais ici) — on efface le brouillon avant l'appel.
+      clearDraft(userId);
       startTransition(async () => {
         await saveOnboardingAnswers(userId, answers);
       });
@@ -201,7 +268,7 @@ export default function OnboardingClient({ userId }: { userId: number }) {
 
   const handleBack = () => {
     setShowEmergency(false);
-    setStep((s) => s - 1);
+    writeDraft(userId, { step: step - 1, answers });
   };
 
   const isSelected = (value: string) => {

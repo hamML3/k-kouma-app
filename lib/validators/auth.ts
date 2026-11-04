@@ -5,6 +5,15 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
 });
 
+// Appliqué uniquement là où un NOUVEAU mot de passe est choisi (inscription,
+// réinitialisation) — jamais sur loginSchema, pour ne pas rejeter la
+// connexion de comptes existants créés avant cette règle.
+const newPassword = z
+  .string()
+  .min(8, "Mot de passe trop court (8 caractères minimum)")
+  .regex(/[a-zA-Z]/, "Le mot de passe doit contenir au moins une lettre")
+  .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre");
+
 // Case à cocher HTML : présente ("on") si cochée, absente du FormData sinon.
 const checkbox = z
   .string()
@@ -14,7 +23,7 @@ const checkbox = z
 export const registerPatientSchema = z
   .object({
     email: z.string().email("Email invalide"),
-    password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
+    password: newPassword,
     phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
     nickname: z.string().min(2).max(50),
     timezone: z.string().default("UTC"),
@@ -41,7 +50,7 @@ export const registerPatientSchema = z
 
 export const registerTherapistSchema = z.object({
   email: z.string().email("Email invalide"),
-  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
+  password: newPassword,
   phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
   firstName: z.string().min(2).max(100),
   lastName: z.string().min(2).max(100),
@@ -57,7 +66,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
+  password: newPassword,
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

@@ -56,7 +56,7 @@ export default function ResetPasswordClient({ token }: { token: string }) {
         Choisir un nouveau mot de passe
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--kk-muted)" }}>
-        Choisissez un mot de passe d&apos;au moins 8 caractères.
+        Choisissez un mot de passe d&apos;au moins 8 caractères, avec au moins une lettre et un chiffre.
       </p>
 
       <form action={action} className="space-y-4">

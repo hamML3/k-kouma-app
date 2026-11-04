@@ -173,7 +173,7 @@ export default function RegisterTherapistPage() {
 
         <div>
           <label htmlFor="password" className="kk-label">Mot de passe</label>
-          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} className="kk-input" placeholder="8 caractères minimum" />
+          <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} className="kk-input" placeholder="8+ caractères, avec lettres et chiffres" />
           <FieldError messages={state.fieldErrors?.password} />
         </div>
 

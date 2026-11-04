@@ -16,6 +16,10 @@ model User {
   email           String     @unique @db.VarChar(180)
   phoneNumber     String?    @unique @map("phone_number") @db.VarChar(20)
   passwordHash    String     @map("password_hash") @db.VarChar(255)
+  // Horodatage du dernier changement de mot de passe — permet d'invalider
+  // les sessions JWT déjà émises (ex. appareil volé) dès qu'un mot de passe
+  // est réinitialisé, sans avoir à gérer de liste de révocation.
+  passwordChangedAt DateTime? @map("password_changed_at")
   emailVerifiedAt DateTime?  @map("email_verified_at")
   phoneVerifiedAt DateTime?  @map("phone_verified_at")
   status          UserStatus @default(active)

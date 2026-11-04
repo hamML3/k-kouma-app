@@ -143,7 +143,7 @@ export default function RegisterPatientPage() {
             required
             minLength={8}
             className="kk-input"
-            placeholder="8 caractères minimum"
+            placeholder="8+ caractères, avec lettres et chiffres"
           />
           <FieldError messages={state.fieldErrors?.password} />
         </div>
