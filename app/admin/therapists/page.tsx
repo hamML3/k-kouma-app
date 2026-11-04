@@ -54,7 +54,7 @@ export default async function AdminTherapistsPage({
     <>
       <div className="mb-6">
         <h1
-          className="text-3xl font-bold"
+          className="text-2xl sm:text-3xl font-bold"
           style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
         >
           Psychologues
@@ -76,12 +76,12 @@ export default async function AdminTherapistsPage({
       </form>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
         {TABS.map((t) => (
           <Link
             key={t.id}
             href={`/admin/therapists?tab=${t.id}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-            className="px-4 py-2 rounded-full text-sm font-bold transition-all"
+            className="shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all duration-150"
             style={{
               background: tab === t.id ? t.color : "#fff",
               color: tab === t.id ? "#fff" : "var(--kk-mid)",
@@ -99,9 +99,12 @@ export default async function AdminTherapistsPage({
           className="rounded-2xl p-12 text-center"
           style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
         >
-          <p className="text-2xl mb-2">✓</p>
+          <p className="text-3xl mb-2" aria-hidden>🍃</p>
           <p className="font-bold" style={{ color: "var(--kk-dark)" }}>
             Aucune candidature dans cette catégorie
+          </p>
+          <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
+            Revenez un peu plus tard, ou essayez un autre onglet.
           </p>
         </div>
       ) : (
@@ -109,75 +112,86 @@ export default async function AdminTherapistsPage({
           {list.map((t) => (
             <div
               key={t.id}
-              className="kk-card p-5 flex items-center justify-between gap-4"
+              className="kk-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-150 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
             >
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p
-                    className="font-bold"
-                    style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}
-                  >
-                    {t.firstName} {t.lastName}
-                  </p>
-                  {t.isVerified && (
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
-                    >
-                      ✓ Vérifié
-                    </span>
-                  )}
-                  {t.rejectedAt && (
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "#FFF1F0", color: "#C0392B" }}
-                    >
-                      Rejeté
-                    </span>
-                  )}
+              {/* Avatar + info */}
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                  style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+                  aria-hidden
+                >
+                  {t.firstName.charAt(0).toUpperCase()}
+                  {t.lastName.charAt(0).toUpperCase()}
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                  {t.user.email}
-                </p>
-                {t.specialties && (
-                  <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
-                    {t.specialties}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p
+                      className="font-bold"
+                      style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}
+                    >
+                      {t.firstName} {t.lastName}
+                    </p>
+                    {t.isVerified && (
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+                      >
+                        ✓ Vérifié
+                      </span>
+                    )}
+                    {t.rejectedAt && (
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "#FFF1F0", color: "#C0392B" }}
+                      >
+                        Rejeté
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                    {t.user.email}
                   </p>
-                )}
-                <p className="text-xs mt-1" style={{ color: "var(--kk-faint)" }}>
-                  Inscrit le {new Date(t.user.createdAt).toLocaleDateString("fr-FR")}
-                </p>
+                  {t.specialties && (
+                    <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+                      {t.specialties}
+                    </p>
+                  )}
+                  <p className="text-xs mt-1" style={{ color: "var(--kk-faint)" }}>
+                    Inscrit le {new Date(t.user.createdAt).toLocaleDateString("fr-FR")}
+                  </p>
+                </div>
               </div>
 
-              {/* Diploma badge */}
-              {t.diplomaUrl ? (
-                <a
-                  href={t.diplomaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5"
-                  style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 10L6 2l4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M3.5 7h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  Diplôme
-                </a>
-              ) : (
-                <span className="shrink-0 text-xs" style={{ color: "var(--kk-faint)" }}>
-                  Pas de diplôme
-                </span>
-              )}
+              {/* Diploma badge + action */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+                {t.diplomaUrl ? (
+                  <a
+                    href={t.diplomaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors hover:bg-[var(--kk-purple)] hover:text-white"
+                    style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 10L6 2l4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M3.5 7h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    Diplôme
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-xs" style={{ color: "var(--kk-faint)" }}>
+                    Pas de diplôme
+                  </span>
+                )}
 
-              {/* Action */}
-              <Link
-                href={`/admin/therapists/${t.user.id}`}
-                className="shrink-0 kk-btn-outline text-sm px-4 py-2"
-              >
-                Examiner →
-              </Link>
+                <Link
+                  href={`/admin/therapists/${t.user.id}`}
+                  className="shrink-0 kk-btn-outline text-sm px-4 py-2"
+                >
+                  Examiner →
+                </Link>
+              </div>
             </div>
           ))}
         </div>

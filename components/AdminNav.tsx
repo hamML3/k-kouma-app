@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Logo } from "@/components/Logo";
 
 type NavLink = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean };
 
@@ -74,11 +76,41 @@ const NAV_LINKS: NavLink[] = [
   },
 ];
 
-/** Nav de la sidebar admin, avec surlignage de la section active. */
-export function AdminNav({ role }: { role: string }) {
-  const pathname = usePathname();
+type AdminNavProps = {
+  role: string;
+  /** Bloc "compte connecté + déconnexion", fourni par le layout (fermeture de session en Server Action). */
+  footer: React.ReactNode;
+};
 
-  return (
+/**
+ * Nav de la sidebar admin, avec surlignage de la section active.
+ * Sidebar fixe sur grand écran ; tiroir plein écran (hamburger) sur mobile, pour que le
+ * back-office reste utilisable dès 375px de large (une appli mobile dédiée est prévue plus tard).
+ */
+export function AdminNav({ role, footer }: AdminNavProps) {
+  const pathname = usePathname();
+  const adminLabel = role === "moderator" ? "Administration (modérateur)" : "Administration";
+  const [open, setOpen] = useState(false);
+
+  // Ferme le tiroir à chaque changement de page (ajustement pendant le rendu,
+  // pas dans un effet, pour éviter un rendu en cascade).
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
+
+  // Empêche le scroll du contenu derrière le tiroir ouvert.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  const navLinks = (
     <nav className="flex-1 space-y-1">
       {NAV_LINKS.filter((link) => !link.adminOnly || role === "admin").map((link) => {
         const active = link.href === "/admin" ? pathname === link.href : pathname.startsWith(link.href);
@@ -86,17 +118,115 @@ export function AdminNav({ role }: { role: string }) {
           <Link
             key={link.href}
             href={link.href}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+              active ? "" : "hover:bg-[var(--kk-border)] hover:translate-x-0.5"
+            }`}
             style={{
               color: active ? "var(--kk-purple)" : "var(--kk-mid)",
               background: active ? "var(--kk-purple-light)" : "transparent",
             }}
           >
+            {active && (
+              <span
+                aria-hidden
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full"
+                style={{ background: "var(--kk-purple)" }}
+              />
+            )}
             <span style={{ color: active ? "var(--kk-purple)" : "var(--kk-muted)" }}>{link.icon}</span>
             {link.label}
           </Link>
         );
       })}
     </nav>
+  );
+
+  return (
+    <>
+      {/* Barre mobile : logo + bouton hamburger */}
+      <header
+        className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 px-4 py-3"
+        style={{ background: "#fff", borderBottom: "1px solid var(--kk-border)" }}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Ouvrir le menu d'administration"
+          aria-expanded={open}
+          className="w-10 h-10 -ml-1.5 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
+          style={{ color: "var(--kk-dark)" }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <Link href="/admin" className="flex items-center gap-2">
+          <Logo size={22} />
+        </Link>
+        <span className="w-10" aria-hidden />
+      </header>
+
+      {/* Tiroir mobile + fond assombri */}
+      <div
+        className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!open}
+      >
+        <div
+          className="absolute inset-0"
+          style={{ background: "rgba(44,52,46,0.45)" }}
+          onClick={() => setOpen(false)}
+        />
+        <div
+          className={`absolute left-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-4 overflow-y-auto transition-transform duration-200 ease-out ${
+            open ? "translate-x-0" : "-translate-x-full"
+          }`}
+          style={{ background: "#fff", boxShadow: "12px 0 40px rgba(60,70,55,0.18)" }}
+        >
+          <div className="flex items-center justify-between mb-6 px-2">
+            <Link href="/admin" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+              <Logo size={22} />
+              <span className="text-xs font-semibold" style={{ color: "var(--kk-purple)" }}>
+                {adminLabel}
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fermer le menu"
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
+              style={{ color: "var(--kk-muted)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          {navLinks}
+          {footer}
+        </div>
+      </div>
+
+      {/* Sidebar fixe desktop */}
+      <aside
+        className="hidden lg:flex lg:flex-col w-60 py-6 px-4 shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto"
+        style={{
+          background: "#fff",
+          borderRight: "1px solid var(--kk-border)",
+          boxShadow: "2px 0 12px rgba(60,70,55,0.04)",
+        }}
+      >
+        <Link href="/admin" className="block mb-8 px-2">
+          <Logo size={24} />
+          <span className="block text-xs font-semibold mt-0.5" style={{ color: "var(--kk-purple)" }}>
+            {adminLabel}
+          </span>
+        </Link>
+
+        {navLinks}
+        {footer}
+      </aside>
+    </>
   );
 }

@@ -49,7 +49,7 @@ export default async function AdminTherapistDetailPage({
     <>
       <Link
         href="/admin/therapists"
-        className="inline-flex items-center gap-1.5 text-sm font-semibold mb-6"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold mb-6 transition-colors hover:text-[var(--kk-dark)]"
         style={{ color: "var(--kk-muted)" }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -61,16 +61,26 @@ export default async function AdminTherapistDetailPage({
       <div className="max-w-2xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div>
-            <h1
-              className="text-3xl font-bold"
-              style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+          <div className="flex items-center gap-4 min-w-0">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+              style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)", fontFamily: "var(--font-lora)" }}
+              aria-hidden
             >
-              {t.firstName} {t.lastName}
-            </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-              {user.email}
-            </p>
+              {t.firstName.charAt(0).toUpperCase()}
+              {t.lastName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h1
+                className="text-2xl sm:text-3xl font-bold"
+                style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+              >
+                {t.firstName} {t.lastName}
+              </h1>
+              <p className="text-sm mt-1 truncate" style={{ color: "var(--kk-muted)" }}>
+                {user.email}
+              </p>
+            </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             {isVerified && (
@@ -97,7 +107,7 @@ export default async function AdminTherapistDetailPage({
         </div>
 
         {/* Info card */}
-        <div className="rounded-2xl p-6 mb-5 space-y-4" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+        <div className="rounded-2xl p-5 sm:p-6 mb-5 space-y-4" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
           <InfoRow label="Email" value={user.email} />
           <InfoRow label="Téléphone" value={user.phoneNumber ?? "—"} />
           <InfoRow
@@ -198,10 +208,13 @@ export default async function AdminTherapistDetailPage({
 
         {/* Primary actions — pending, réservé à l'admin */}
         {isPending && canManageTherapists && (
-          <div className="flex gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <form action={verifyTherapist} className="flex-1">
               <input type="hidden" name="userId" value={String(userId)} />
-              <button type="submit" className="kk-btn-green w-full py-4 text-base">
+              <button
+                type="submit"
+                className="kk-btn-green w-full py-4 text-base transition-transform duration-150 hover:-translate-y-0.5"
+              >
                 ✓ Valider le compte
               </button>
             </form>
@@ -209,7 +222,7 @@ export default async function AdminTherapistDetailPage({
               <input type="hidden" name="userId" value={String(userId)} />
               <ConfirmSubmitButton
                 confirmMessage={`Rejeter la candidature de ${t.firstName} ${t.lastName} ?`}
-                className="kk-btn-outline px-6 py-4 text-base"
+                className="kk-btn-outline w-full sm:w-auto px-6 py-4 text-base"
                 style={{ borderColor: "#FFCAC8", color: "#C0392B" }}
               >
                 Rejeter
@@ -224,15 +237,18 @@ export default async function AdminTherapistDetailPage({
         )}
 
         {isVerified && (
-          <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
-            Ce psychologue est vérifié et peut consulter des patients.
+          <div className="rounded-2xl p-4 mb-4 text-sm text-center font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}>
+            ✓ Ce psychologue est vérifié et peut consulter des patients.
           </div>
         )}
 
         {isRejected && !isSuspended && canManageTherapists && (
           <form action={verifyTherapist} className="mb-4">
             <input type="hidden" name="userId" value={String(userId)} />
-            <button type="submit" className="kk-btn-green w-full py-3 text-sm">
+            <button
+              type="submit"
+              className="kk-btn-green w-full py-3 text-sm transition-transform duration-150 hover:-translate-y-0.5"
+            >
               Reconsidérer et valider
             </button>
           </form>
@@ -245,7 +261,10 @@ export default async function AdminTherapistDetailPage({
             {isSuspended ? (
               <form action={unsuspendUser}>
                 <input type="hidden" name="userId" value={String(userId)} />
-                <button type="submit" className="kk-btn-green w-full py-3 text-sm">
+                <button
+                  type="submit"
+                  className="kk-btn-green w-full py-3 text-sm transition-transform duration-150 hover:-translate-y-0.5"
+                >
                   Lever la suspension
                 </button>
               </form>
@@ -254,7 +273,7 @@ export default async function AdminTherapistDetailPage({
                 <input type="hidden" name="userId" value={String(userId)} />
                 <ConfirmSubmitButton
                   confirmMessage={`Suspendre ${t.firstName} ${t.lastName} ? Ce praticien ne pourra plus se connecter ni être visible des patients.`}
-                  className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+                  className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-150 hover:bg-[#FFE4E1]"
                   style={{ background: "#FFF1F0", color: "#C0392B", border: "1px solid #FFCAC8" }}
                 >
                   Suspendre ce praticien
