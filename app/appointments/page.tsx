@@ -110,7 +110,7 @@ export default async function PatientAppointmentsPage() {
                 return (
                   <div
                     key={a.id}
-                    className="rounded-2xl p-5"
+                    className="rounded-2xl p-5 transition-all hover:scale-[1.01]"
                     style={{
                       background: "#fff",
                       border: isJoinable ? "2px solid var(--kk-green)" : "1px solid var(--kk-border)",

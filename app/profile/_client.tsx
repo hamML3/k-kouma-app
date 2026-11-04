@@ -43,12 +43,18 @@ export default function ProfileClient({
       <AppHeader role="therapist" displayName={displayName} />
 
       <main className="max-w-2xl mx-auto px-5 py-8">
-        <h1
-          className="text-2xl font-bold mb-6"
-          style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-        >
-          Mon profil
-        </h1>
+        <div className="mb-6">
+          <h1
+            className="text-2xl font-bold"
+            style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+          >
+            Mon profil
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
+            Ces informations sont visibles par vos patients — gardez-les à jour.
+          </p>
+        </div>
+
         {/* Success banner */}
         {state.success && (
           <div
@@ -68,13 +74,6 @@ export default function ProfileClient({
         {state.error && (
           <div className="kk-error mb-5">{state.error}</div>
         )}
-
-        <h1
-          className="text-2xl font-bold mb-6"
-          style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
-        >
-          Modifier mon profil
-        </h1>
 
         <form action={action} className="space-y-5">
           <input type="hidden" name="userId" value={String(userId)} />
