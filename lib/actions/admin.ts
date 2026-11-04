@@ -11,6 +11,7 @@ import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/com
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
 import { markTherapistEarningsPaid } from "@/lib/payouts";
+import { completePendingPayment } from "@/lib/payments";
 import { createNotification } from "@/lib/notifications";
 
 export type CreateUserState = {
@@ -294,16 +295,7 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
   const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
   if (!payment || payment.status !== "pending") redirect("/admin/finances");
 
-  await prisma.$transaction([
-    prisma.payment.update({
-      where: { id: paymentId },
-      data: { status: "completed", paidAt: new Date(), sessionsRemaining: payment.sessionsCount },
-    }),
-    prisma.patientProfile.updateMany({
-      where: { userId: payment.patientId },
-      data: { sessionCredits: { increment: payment.sessionsCount } },
-    }),
-  ]);
+  if (!(await completePendingPayment(payment))) redirect("/admin/finances");
 
   await logAudit({
     actor: admin,

@@ -251,9 +251,9 @@ export default async function SubscriptionPage({
                       >
                         {statusInfo.label}
                       </span>
-                      {p.status === "completed" && (
-                        <Link href={`/recus/${p.id}`} className="text-xs font-semibold" style={{ color: "var(--kk-green)" }}>
-                          Voir le reçu
+                      {p.invoiceNumber !== null && (
+                        <Link href={`/factures/${p.id}`} className="text-xs font-semibold" style={{ color: "var(--kk-green)" }}>
+                          Voir la facture
                         </Link>
                       )}
                     </div>

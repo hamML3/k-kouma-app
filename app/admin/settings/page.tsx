@@ -6,6 +6,7 @@ import {
   updateAnnouncementSettingAction,
   updateMaintenanceModeAction,
   updateFeatureTogglesAction,
+  updateInvoiceSettingsAction,
 } from "@/lib/actions/settings";
 
 export const metadata = { title: "Réglages — Administration K-Kouma" };
@@ -156,6 +157,33 @@ export default async function AdminSettingsPage({
               <input type="checkbox" name="showLifeCoachCard" defaultChecked={showLifeCoachCard} />
               Afficher la carte &laquo; Coach de vie / Conseil &raquo; sur la page d&apos;accueil
             </label>
+            <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
+              Enregistrer
+            </button>
+          </form>
+        </div>
+
+        <div className="kk-card p-6">
+          <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Factures
+          </p>
+          <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
+            Mention fiscale imprimée en bas de chaque facture, à valider avec votre comptable. Laissez vide pour n&apos;en afficher aucune.
+          </p>
+
+          <form action={updateInvoiceSettingsAction} className="space-y-3">
+            <div>
+              <label htmlFor="invoiceTaxNote" className="kk-label">
+                Mention fiscale
+              </label>
+              <input
+                id="invoiceTaxNote"
+                name="invoiceTaxNote"
+                maxLength={255}
+                defaultValue={settings?.invoiceTaxNote ?? ""}
+                className="kk-input"
+              />
+            </div>
             <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
               Enregistrer
             </button>

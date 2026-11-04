@@ -1,3 +1,4 @@
+import { completePendingPayment } from "@/lib/payments";
 import { prisma } from "@/lib/prisma";
 import { confirmInvoice } from "@/lib/paydunya";
 import { NextRequest, NextResponse } from "next/server";
@@ -50,17 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, status: confirmation.status });
   }
 
-  // Transaction : crédite le patient et marque le paiement complété ensemble.
-  await prisma.$transaction([
-    prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: "completed", paidAt: new Date(), sessionsRemaining: payment.sessionsCount },
-    }),
-    prisma.patientProfile.updateMany({
-      where: { userId: payment.patientId },
-      data: { sessionCredits: { increment: payment.sessionsCount } },
-    }),
-  ]);
+  await completePendingPayment(payment);
 
   return NextResponse.json({ ok: true });
 }

@@ -77,7 +77,9 @@ const SECTIONS: Section[] = [
       p("La Plateforme limite autant que possible l'accès direct aux données financières sensibles."),
       sub("E. Données de santé"),
       p("Lorsque cela est nécessaire au Service demandé :"),
-      list(["symptômes ;", "antécédents ;", "traitements ;", "allergies communiquées ;", "résultats d'examens ;", "documents médicaux ;", "informations nécessaires à l'évaluation médicale."]),
+      list(["symptômes ;", "antécédents ;", "traitements ;", "allergies communiquées ;", "résultats d'examens ;", "documents médicaux ;", "informations nécessaires à l'évaluation médicale.", "notes de suivi rédigées par le psychologue."]),
+      sub("F. Avis sur les séances"),
+      p("Après une séance terminée, le Patient peut laisser une note et, s'il le souhaite, un commentaire."),
     ],
   },
   {
@@ -126,6 +128,10 @@ const SECTIONS: Section[] = [
       p("Les données de santé font l'objet d'une protection renforcée."),
       p("L'accès est limité aux personnes habilitées et uniquement lorsque cet accès est nécessaire."),
       p("La communication de données médicales à des tiers non autorisés est interdite."),
+      sub("Notes de suivi"),
+      p("Le psychologue peut rédiger des notes de suivi sur les Patients qu'il accompagne. Ces notes sont chiffrées avant leur enregistrement."),
+      p("Dans la Plateforme, seul le psychologue qui les a rédigées peut les consulter : elles ne sont accessibles ni au Patient, ni aux autres psychologues, ni à l'équipe de K-Kouma."),
+      p("Le Patient peut exercer ses droits sur ces notes selon les modalités prévues à l'article « Vos droits »."),
     ],
   },
   {
@@ -141,6 +147,9 @@ const SECTIONS: Section[] = [
         "aux autorités légalement habilitées.",
       ]),
       p("Tous les destinataires sont soumis à des obligations appropriées de confidentialité et de sécurité."),
+      sub("Avis sur les séances"),
+      p("Avant publication, les avis sont relus par les personnels habilités, qui peuvent refuser ou retirer un avis, notamment s'il contient des informations de santé ou permet d'identifier une personne."),
+      p("Un avis publié apparaît sur le profil du psychologue sans le nom du Patient. Il reste rattaché au Compte du Patient dans la Plateforme."),
     ],
   },
   {
@@ -180,6 +189,7 @@ const SECTIONS: Section[] = [
         "authentification ;",
         "gestion des habilitations ;",
         "sécurisation des communications ;",
+        "chiffrement des notes de suivi ;",
         "sauvegardes ;",
         "limitation des accès aux données sensibles ;",
         "surveillance des incidents ;",
@@ -286,7 +296,7 @@ export default function ConfidentialitePage() {
             Politique de confidentialité et de protection des données à caractère personnel
           </h1>
           <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
-            Version 1.0 — Date d&apos;entrée en vigueur : 07/09/2026
+            Version 1.1 — Mise à jour le 04/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
           <p className="text-sm leading-relaxed mb-10" style={{ color: "var(--kk-mid)" }}>
             Pour une présentation plus accessible de nos engagements au quotidien, consultez aussi notre page{" "}

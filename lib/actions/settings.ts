@@ -119,6 +119,27 @@ export async function updateMaintenanceModeAction(formData: FormData): Promise<v
   redirect("/admin/settings?saved=maintenance");
 }
 
+/** Mention fiscale des factures : à fixer avec le comptable, jamais déduite par l'application. */
+export async function updateInvoiceSettingsAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const invoiceTaxNote = ((formData.get("invoiceTaxNote") as string) ?? "").trim().slice(0, 255) || null;
+
+  await prisma.platformSettings.upsert({
+    where: { id: 1 },
+    create: { id: 1, invoiceTaxNote, updatedById: admin.id },
+    update: { invoiceTaxNote, updatedById: admin.id },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.invoice_update",
+    metadata: { invoiceTaxNote },
+  });
+
+  revalidatePath("/admin/settings");
+  redirect("/admin/settings?saved=invoice");
+}
+
 /**
  * Bascules de fonctionnalités : paiement manuel Orange Money (lib/orangeMoney.ts)
  * et affichage de la carte "Coach de vie" sur la page d'accueil publique.

@@ -206,6 +206,8 @@ model PlatformSettings {
   orangeMoneyManualEnabled Boolean  @default(true) @map("orange_money_manual_enabled")
   // Affiche ou masque la carte "Coach de vie / Conseil" sur la page d'accueil publique.
   showLifeCoachCard        Boolean  @default(true) @map("show_life_coach_card")
+  // Mention fiscale imprimée sur les factures (régime de TVA, exonération…).
+  invoiceTaxNote           String?  @map("invoice_tax_note") @db.VarChar(255)
   updatedAt                DateTime @updatedAt @map("updated_at")
   updatedById              Int?     @map("updated_by_id")
 
@@ -275,6 +277,8 @@ model Payment {
   // — permet de calculer le gain du thérapeute au prorata du prix réel payé
   // (ex: pack de 3 à 28 000 → 9 333/séance), et non du tarif catalogue.
   sessionsRemaining Int           @default(0) @map("sessions_remaining")
+  // Numéro de facture, continu et attribué à l'encaissement (lib/payments.ts).
+  invoiceNumber     Int?          @unique @map("invoice_number")
   createdAt         DateTime      @default(now()) @map("created_at")
   paidAt            DateTime?     @map("paid_at")
 
@@ -613,6 +617,15 @@ model Notification {
   @@index([userId, readAt])
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+/// Compteur des factures, ligne unique (id=1) : incrémenté dans la transaction
+/// d'encaissement, il garantit une numérotation sans trou ni doublon.
+model InvoiceCounter {
+  id         Int @id @default(1)
+  lastNumber Int @default(0) @map("last_number")
+
+  @@map("invoice_counters")
 }
 
 // =========================================================================
