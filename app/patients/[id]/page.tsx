@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ReportButton } from "@/components/ReportButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { addTherapistNoteAction, deleteTherapistNoteAction } from "@/lib/actions/notes";
+import { decryptNote } from "@/lib/noteEncryption";
 
 const ANSWER_LABELS: Record<string, Record<string, string>> = {
   therapyType: {
@@ -61,8 +62,10 @@ const MOOD_EMOJIS: Record<string, string> = {
 
 export default async function PatientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ noteError?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -99,11 +102,21 @@ export default async function PatientDetailPage({
     take: 10,
   });
 
-  const notes = await prisma.therapistNote.findMany({
+  const storedNotes = await prisma.therapistNote.findMany({
     where: { therapistId, patientId: patientUserId },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
+  // Une note illisible ne doit pas priver le psychologue de la fiche entière.
+  const notes = storedNotes.map((note) => {
+    try {
+      return { ...note, text: decryptNote(note.body, { therapistId, patientId: patientUserId }) };
+    } catch (err) {
+      console.error(`[note ${note.id}] déchiffrement impossible:`, err);
+      return { ...note, text: null };
+    }
+  });
+  const { noteError } = await searchParams;
 
   const rawAnswers = patient.patientProfile?.onboardingAnswers as Record<string, unknown> | null;
   const answers = rawAnswers
@@ -294,8 +307,12 @@ export default async function PatientDetailPage({
             Mes notes de suivi
           </h2>
           <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
-            Vous seul pouvez les lire : ni le patient ni l&apos;équipe K-Kouma n&apos;y ont accès depuis la plateforme.
+            Elles sont chiffrées. Vous seul pouvez les lire : ni le patient ni l&apos;équipe K-Kouma n&apos;y ont accès depuis la plateforme.
           </p>
+
+          {noteError && (
+            <p className="kk-error mb-4">Votre note n&apos;a pas été enregistrée : le chiffrement est indisponible. Contactez K-Kouma.</p>
+          )}
 
           <form action={addTherapistNoteAction} className="space-y-3">
             <input type="hidden" name="patientId" value={patientUserId} />
@@ -320,9 +337,15 @@ export default async function PatientDetailPage({
             <ul className="mt-5 space-y-3">
               {notes.map((note) => (
                 <li key={note.id} className="pt-3" style={{ borderTop: "1px solid var(--kk-border)" }}>
-                  <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--kk-dark)" }}>
-                    {note.body}
-                  </p>
+                  {note.text === null ? (
+                    <p className="text-sm italic" style={{ color: "var(--kk-muted)" }}>
+                      Note illisible pour le moment. Contactez K-Kouma si cela persiste.
+                    </p>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--kk-dark)" }}>
+                      {note.text}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between gap-3 mt-1">
                     <p className="text-xs" style={{ color: "var(--kk-muted)" }}>
                       {note.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}

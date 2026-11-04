@@ -621,6 +621,7 @@ model Notification {
 
 /// Notes privées d'un psychologue sur un patient. Seul l'auteur les lit : ni
 /// le patient, ni l'admin, et le journal d'audit n'en garde jamais le contenu.
+/// `body` est chiffré (lib/noteEncryption.ts) : ne jamais y écrire de texte clair.
 model TherapistNote {
   id          Int      @id @default(autoincrement())
   therapistId Int      @map("therapist_id")

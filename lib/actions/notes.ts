@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
+import { encryptNote } from "@/lib/noteEncryption";
 
 const MAX_NOTE_LENGTH = 5000;
 
@@ -28,8 +29,16 @@ export async function addTherapistNoteAction(formData: FormData): Promise<void> 
   });
   if (!relation) return;
 
+  let encrypted: string;
+  try {
+    encrypted = encryptNote(body, { therapistId: therapist.id, patientId });
+  } catch (err) {
+    console.error("[note] chiffrement impossible:", err);
+    redirect(`/patients/${patientId}?noteError=1`);
+  }
+
   const note = await prisma.therapistNote.create({
-    data: { therapistId: therapist.id, patientId, body },
+    data: { therapistId: therapist.id, patientId, body: encrypted },
   });
 
   await logAudit({
