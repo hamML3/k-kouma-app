@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BuyButton, ManualPaymentForm } from "./_client";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
-import { orangeMoneyNumber } from "@/lib/orangeMoney";
+import { orangeMoneyMerchantCode } from "@/lib/orangeMoney";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
@@ -46,7 +46,7 @@ export default async function SubscriptionPage({
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
   const paymentAvailable = isPaydunyaConfigured();
-  const omNumber = orangeMoneyNumber();
+  const merchantCode = orangeMoneyMerchantCode();
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -129,13 +129,13 @@ export default async function SubscriptionPage({
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
             {paymentAvailable
               ? "Paiement par Mobile Money (Orange Money, Wave) via PayDunya."
-              : omNumber
+              : merchantCode
               ? "Paiement par Orange Money, vérifié manuellement par notre équipe."
               : "Paiement en ligne temporairement indisponible."}
           </p>
         </div>
 
-        {!paymentAvailable && !omNumber && (
+        {!paymentAvailable && !merchantCode && (
           <div
             className="rounded-2xl p-4 mb-6 text-sm flex items-start gap-3"
             style={{ background: "var(--kk-gold-light)", color: "#8A6530", border: "1px solid #E9C98A" }}
@@ -154,7 +154,7 @@ export default async function SubscriptionPage({
           </div>
         )}
 
-        {!paymentAvailable && omNumber && (
+        {!paymentAvailable && merchantCode && (
           <div className="mb-8 space-y-4">
             <div
               className="rounded-2xl p-4 text-sm"
@@ -163,8 +163,9 @@ export default async function SubscriptionPage({
               <p className="font-bold mb-2">Paiement par Orange Money</p>
               <ol className="list-decimal list-inside space-y-1" style={{ color: "var(--kk-mid)" }}>
                 <li>
-                  Envoyez le montant exact via l&apos;appli Orange Money ou par USSD au{" "}
-                  <strong style={{ color: "var(--kk-dark)" }}>{omNumber}</strong>.
+                  Dans l&apos;appli Orange Money, utilisez <strong>« Payer marchand »</strong> (ou le menu USSD
+                  Orange Money équivalent) avec le code marchand{" "}
+                  <strong style={{ color: "var(--kk-dark)" }}>{merchantCode}</strong> et le montant exact.
                 </li>
                 <li>Notez la référence de transaction reçue par SMS.</li>
                 <li>Déclarez votre paiement ci-dessous — vos séances sont créditées après vérification.</li>
