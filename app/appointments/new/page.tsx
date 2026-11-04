@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import BookingClient from "./_client";
 import { amountFor, resolveTherapyType } from "@/lib/pricing";
+import { AppHeader } from "@/components/AppHeader";
 
 export default async function NewAppointmentPage({
   searchParams,
@@ -47,12 +48,14 @@ export default async function NewAppointmentPage({
   const rate = amountFor(resolveTherapyType(answers), "single");
 
   return (
-    <BookingClient
-      patientId={patientId}
-      therapistId={therapistId}
-      therapistName={therapistName}
-      rate={rate}
-      displayName={session.user.email ?? "Mon compte"}
-    />
+    <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
+      <AppHeader role="patient" displayName={session.user.email ?? "Mon compte"} />
+      <BookingClient
+        patientId={patientId}
+        therapistId={therapistId}
+        therapistName={therapistName}
+        rate={rate}
+      />
+    </div>
   );
 }

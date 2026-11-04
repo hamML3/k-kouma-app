@@ -2,7 +2,6 @@
 
 import { createAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
-import { AppHeader } from "@/components/AppHeader";
 import { Icon, type IconName } from "@/components/Icon";
 
 const SESSION_TYPES: { value: string; label: string; desc: string; icon: IconName }[] = [
@@ -23,18 +22,14 @@ export default function BookingClient({
   therapistId,
   therapistName,
   rate,
-  displayName,
 }: {
   patientId: number;
   therapistId: number;
   therapistName: string;
   rate: number;
-  displayName: string;
 }) {
   return (
-    <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <AppHeader role="patient" displayName={displayName} />
-
+    <>
       <main className="max-w-xl mx-auto px-5 py-8">
         <Link
           href="/therapists"
@@ -138,6 +133,6 @@ export default function BookingClient({
           </button>
         </form>
       </main>
-    </div>
+    </>
   );
 }
