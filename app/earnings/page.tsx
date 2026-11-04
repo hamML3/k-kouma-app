@@ -30,6 +30,7 @@ export default async function EarningsPage() {
   });
 
   const total = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
+  const unpaidTotal = earnings.filter((e) => !e.paidOut).reduce((sum, e) => sum + Number(e.amount), 0);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -53,7 +54,7 @@ export default async function EarningsPage() {
           Mes gains
         </h1>
 
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
           <div
             className="rounded-2xl p-5"
             style={{ background: "#fff", border: "2px solid var(--kk-green)", boxShadow: "0 6px 24px rgba(85,123,83,0.10)" }}
@@ -77,6 +78,17 @@ export default async function EarningsPage() {
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
               {earnings.length} séance{earnings.length !== 1 ? "s" : ""} réalisée{earnings.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="rounded-2xl p-5" style={{ background: unpaidTotal > 0 ? "#FFF1F0" : "var(--kk-green-light)", border: "1.5px solid var(--kk-border)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: unpaidTotal > 0 ? "#C0392B" : "var(--kk-green)" }}>
+              À reverser
+            </p>
+            <p className="font-bold text-3xl" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+              {unpaidTotal.toLocaleString("fr-FR")} <span className="text-lg">XOF</span>
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+              {unpaidTotal > 0 ? "En attente de reversement" : "Tout a été reversé"}
             </p>
           </div>
         </div>
@@ -124,9 +136,14 @@ export default async function EarningsPage() {
                       {TYPE_LABELS[e.appointment.type] ?? e.appointment.type}
                     </p>
                   </div>
-                  <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-green)" }}>
-                    +{Number(e.amount).toLocaleString("fr-FR")} {e.currency}
-                  </p>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold" style={{ color: "var(--kk-green)" }}>
+                      +{Number(e.amount).toLocaleString("fr-FR")} {e.currency}
+                    </p>
+                    <p className="text-xs font-semibold mt-0.5" style={{ color: e.paidOut ? "var(--kk-green)" : "var(--kk-gold)" }}>
+                      {e.paidOut ? "Reversé ✓" : "En attente"}
+                    </p>
+                  </div>
                 </div>
               );
             })}

@@ -57,6 +57,45 @@ export default async function DashboardPage() {
   const answers = user?.patientProfile?.onboardingAnswers as { motifs?: string[] } | null;
   const articles = !isTherapist ? recommendedArticles(answers?.motifs, 3) : [];
 
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date();
+  dayEnd.setHours(23, 59, 59, 999);
+
+  const [nextAppointment, pendingRequests, todaysAppointments, unpaidEarnings] = await Promise.all([
+    !isTherapist
+      ? prisma.appointment.findFirst({
+          where: { patientId: userId, status: { in: ["pending", "confirmed"] } },
+          orderBy: { scheduledAt: "asc" },
+          select: {
+            scheduledAt: true,
+            status: true,
+            type: true,
+            therapist: { select: { therapistProfile: { select: { firstName: true, lastName: true } } } },
+          },
+        })
+      : null,
+    isTherapist
+      ? prisma.appointment.count({ where: { therapistId: userId, status: "pending" } })
+      : 0,
+    isTherapist
+      ? prisma.appointment.findMany({
+          where: { therapistId: userId, status: "confirmed", scheduledAt: { gte: dayStart, lte: dayEnd } },
+          orderBy: { scheduledAt: "asc" },
+          select: {
+            id: true,
+            scheduledAt: true,
+            type: true,
+            patient: { select: { patientProfile: { select: { nickname: true } } } },
+          },
+        })
+      : [],
+    isTherapist
+      ? prisma.therapistEarning.aggregate({ where: { therapistId: userId, paidOut: false }, _sum: { amount: true } })
+      : null,
+  ]);
+  const unpaidTotal = Number(unpaidEarnings?._sum.amount ?? 0);
+
   // Message de bienvenue personnalisé, adapté à l'étape du parcours du patient.
   const welcomeMessage = isTherapist
     ? "Bienvenue sur votre espace K-Kouma."
@@ -121,6 +160,88 @@ export default async function DashboardPage() {
             {welcomeMessage}
           </p>
         </div>
+
+        {/* Therapist: pending requests + today's schedule + payout summary */}
+        {isTherapist && isVerified && (
+          <>
+            {pendingRequests > 0 && (
+              <div
+                className="rounded-2xl p-5 mb-6 flex items-center justify-between gap-4 flex-wrap"
+                style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
+              >
+                <div>
+                  <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                    {pendingRequests} demande{pendingRequests > 1 ? "s" : ""} de rendez-vous en attente
+                  </p>
+                  <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
+                    Des patients attendent votre confirmation.
+                  </p>
+                </div>
+                <Link href="/patients" className="kk-btn-green shrink-0 text-sm px-5 py-2.5">
+                  Examiner →
+                </Link>
+              </div>
+            )}
+
+            <div className="rounded-2xl p-5 mb-6" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--kk-muted)" }}>
+                  Aujourd&apos;hui ({todaysAppointments.length})
+                </p>
+                {unpaidTotal > 0 && (
+                  <p className="text-xs font-bold" style={{ color: "var(--kk-gold)" }}>
+                    {unpaidTotal.toLocaleString("fr-FR")} XOF à reverser
+                  </p>
+                )}
+              </div>
+              {todaysAppointments.length === 0 ? (
+                <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun rendez-vous confirmé aujourd&apos;hui.</p>
+              ) : (
+                <div className="space-y-2">
+                  {todaysAppointments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between gap-3 py-1.5">
+                      <p className="text-sm" style={{ color: "var(--kk-dark)" }}>
+                        {a.patient.patientProfile?.nickname ?? "Patient"}
+                      </p>
+                      <p className="text-xs font-semibold" style={{ color: "var(--kk-muted)" }}>
+                        {a.scheduledAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Next appointment */}
+        {!isTherapist && nextAppointment && (
+          <div
+            className="rounded-2xl p-5 mb-6 flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple)" }}>
+                {nextAppointment.status === "confirmed" ? "Prochain rendez-vous" : "En attente de confirmation"}
+              </p>
+              <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
+                {nextAppointment.scheduledAt.toLocaleString("fr-FR", {
+                  weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--kk-mid)" }}>
+                Avec{" "}
+                {nextAppointment.therapist.therapistProfile
+                  ? `${nextAppointment.therapist.therapistProfile.firstName} ${nextAppointment.therapist.therapistProfile.lastName}`
+                  : "votre psychologue"}{" "}
+                · {nextAppointment.type}
+              </p>
+            </div>
+            <Link href="/appointments" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
+              Voir →
+            </Link>
+          </div>
+        )}
 
         {/* Assigned therapist card */}
         {!isTherapist && assignedTherapist && (
@@ -258,7 +379,11 @@ export default async function DashboardPage() {
                 }
                 iconBg="var(--kk-green-light)"
                 title="Mes séances"
-                desc="Consultez votre planning du jour"
+                desc={
+                  todaysAppointments.length > 0
+                    ? `${todaysAppointments.length} aujourd'hui`
+                    : "Consultez votre planning"
+                }
               />
               <DashboardCard
                 href="/profile"
