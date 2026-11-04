@@ -51,7 +51,7 @@ function Hero() {
               <span className="text-lg mt-0.5">{b.icon}</span>
               <div>
                 <p className="text-xs font-bold" style={{ color: "#2C342E" }}>{b.title}</p>
-                <p className="text-xs" style={{ color: "#8A9183" }}>{b.desc}</p>
+                <p className="text-xs" style={{ color: "var(--kk-muted)" }}>{b.desc}</p>
               </div>
             </div>
           ))}
@@ -151,7 +151,7 @@ function TherapyTypes({ showLifeCoachCard }: { showLifeCoachCard: boolean }) {
         >
           Comment pouvons-nous vous aider aujourd&apos;hui ?
         </h2>
-        <p className="text-center text-sm mb-10" style={{ color: "#8A9183" }}>
+        <p className="text-center text-sm mb-10" style={{ color: "var(--kk-muted)" }}>
           Choisissez le type de thérapie qui vous correspond
         </p>
 
@@ -173,7 +173,7 @@ function TherapyTypes({ showLifeCoachCard }: { showLifeCoachCard: boolean }) {
           <Link
             href="/register"
             className="font-bold px-8 py-3.5 rounded-full text-sm inline-flex items-center gap-2"
-            style={{ background: "#8E7CB8", color: "#fff" }}
+            style={{ background: "var(--kk-purple)", color: "#fff" }}
           >
             Commencer <span>→</span>
           </Link>
@@ -209,7 +209,7 @@ function WellbeingSection() {
           >
             Mieux se connaître
           </h2>
-          <p className="text-sm mb-8" style={{ color: "#8A9183" }}>
+          <p className="text-sm mb-8" style={{ color: "var(--kk-muted)" }}>
             Explorez votre bien-être émotionnel gratuitement.
           </p>
 
@@ -319,7 +319,7 @@ function TherapistsPreview() {
                   <p className="font-bold text-sm leading-tight truncate" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>
                     {t.name}
                   </p>
-                  <p className="text-xs" style={{ color: "#8A9183" }}>Psychologue clinicien</p>
+                  <p className="text-xs" style={{ color: "var(--kk-muted)" }}>Psychologue clinicien</p>
                 </div>
               </div>
 
@@ -338,7 +338,7 @@ function TherapistsPreview() {
                 <span className="text-xs font-bold" style={{ color: "#557B53" }}>Diplôme vérifié</span>
               </div>
 
-              <p className="text-xs mb-2" style={{ color: "#8A9183" }}>Langues</p>
+              <p className="text-xs mb-2" style={{ color: "var(--kk-muted)" }}>Langues</p>
               <div className="flex flex-wrap gap-1 mb-3">
                 {t.langs.map((l) => (
                   <span
@@ -351,7 +351,7 @@ function TherapistsPreview() {
                 ))}
               </div>
 
-              <div className="flex justify-between text-xs" style={{ color: "#8A9183" }}>
+              <div className="flex justify-between text-xs" style={{ color: "var(--kk-muted)" }}>
                 <span>Consultations <strong style={{ color: "#1F2E20" }}>{t.consults}</strong></span>
                 <span>⭐ {t.rating} / 5</span>
               </div>
@@ -405,7 +405,7 @@ function ConsultationModes() {
           >
             Choisissez votre mode de consultation
           </h2>
-          <p className="text-sm mb-8" style={{ color: "#8A9183" }}>
+          <p className="text-sm mb-8" style={{ color: "var(--kk-muted)" }}>
             Même prix, même durée, même qualité
           </p>
 
@@ -448,7 +448,7 @@ function ConsultationModes() {
                   <div key={type} className="rounded-2xl p-4" style={{ background: bg }}>
                     <div className="flex items-center justify-between mb-2">
                       <p className="font-bold text-sm" style={{ color, fontFamily: "var(--font-lora)" }}>{entry.label}</p>
-                      <span className="text-xs flex items-center gap-1" style={{ color: "#8A9183" }}>
+                      <span className="text-xs flex items-center gap-1" style={{ color: "var(--kk-muted)" }}>
                         <Icon name="chat" size={12} />
                         <Icon name="headphones" size={12} />
                         <Icon name="video" size={12} />
@@ -459,7 +459,7 @@ function ConsultationModes() {
                       {entry.pack3Was ? (
                         <p className="flex items-center gap-1.5 flex-wrap">
                           • 3 séances :
-                          <s style={{ color: "#A8AEA1" }}>{fcfa(entry.pack3Was)}</s>
+                          <s style={{ color: "var(--kk-faint)" }}>{fcfa(entry.pack3Was)}</s>
                           <strong style={{ color }}>{fcfa(entry.pack3)}</strong>
                           <span
                             className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
@@ -522,7 +522,7 @@ function SecuritySection() {
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "#8E7CB8" }}
+              style={{ background: "var(--kk-purple)" }}
             >
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                 <rect x="4" y="9" width="14" height="10" rx="2" stroke="#fff" strokeWidth="1.8" />
@@ -558,7 +558,7 @@ function SecuritySection() {
             <p className="text-base font-semibold leading-relaxed mb-1" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>
               Parler, c&apos;est déjà se libérer.
             </p>
-            <p className="text-sm" style={{ color: "#8A9183" }}>
+            <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
               Nous sommes là pour vous écouter.
             </p>
           </div>

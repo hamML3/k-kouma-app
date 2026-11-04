@@ -1,8 +1,9 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { fileReportAction, type FileReportState } from "@/lib/actions/reports";
 import { REPORT_CATEGORIES, REPORT_CATEGORY_LABELS } from "@/lib/reportCategories";
+import { useModalBehavior } from "@/lib/useModalBehavior";
 
 const initialState: FileReportState = {};
 
@@ -27,6 +28,8 @@ export function ReportButton({ reportedId, reportedName, appointmentId, variant 
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(fileReportAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
+  const panelRef = useModalBehavior(open, setOpen);
+  const titleId = useId();
 
   // Referme automatiquement la modale un court instant après l'envoi — sans
   // jamais recharger ni rediriger (l'appel/la conversation doit continuer).
@@ -64,15 +67,17 @@ export function ReportButton({ reportedId, reportedName, appointmentId, variant 
           style={{ background: "rgba(44,52,46,0.55)" }}
           role="dialog"
           aria-modal="true"
-          aria-label={`Signaler ${reportedName}`}
+          aria-labelledby={titleId}
         >
           <div
-            className="w-full max-w-sm rounded-2xl p-5 max-h-[90vh] overflow-y-auto"
+            ref={panelRef}
+            tabIndex={-1}
+            className="w-full max-w-sm rounded-2xl p-5 max-h-[90vh] overflow-y-auto outline-none"
             style={{ background: "#fff" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-bold text-sm" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+              <h2 id={titleId} className="font-bold text-sm" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
                 Signaler {reportedName}
               </h2>
               <button

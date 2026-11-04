@@ -1,5 +1,6 @@
 import { Logo } from "./Logo";
 import { signOutAction } from "@/lib/actions/auth";
+import { AppMobileMenu } from "./AppMobileMenu";
 import { AppNavLinks, type NavLink } from "./AppNavLinks";
 import { PlatformBanner } from "./PlatformBanner";
 import { getPlatformSettings } from "@/lib/platformSettings";
@@ -34,6 +35,14 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
   const links = role === "therapist" ? THERAPIST_LINKS : PATIENT_LINKS;
   const settings = await getPlatformSettings();
 
+  const signOut = (
+    <form action={signOutAction}>
+      <button type="submit" className="text-sm font-semibold" style={{ color: "var(--kk-muted)" }}>
+        Déconnexion
+      </button>
+    </form>
+  );
+
   return (
     <>
       <PlatformBanner
@@ -52,19 +61,28 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between gap-4">
             <Logo href="/dashboard" size={26} />
-            <div className="flex items-center gap-4 shrink-0">
-              <span className="hidden sm:inline text-sm font-semibold truncate max-w-[160px]" style={{ color: "var(--kk-mid)" }}>
+            <div className="hidden md:flex items-center gap-4 shrink-0">
+              <span className="text-sm font-semibold truncate max-w-[160px]" style={{ color: "var(--kk-mid)" }}>
                 {displayName}
               </span>
-              <form action={signOutAction}>
-                <button type="submit" className="text-sm font-semibold" style={{ color: "var(--kk-muted)" }}>
-                  Déconnexion
-                </button>
-              </form>
+              {signOut}
             </div>
+            <AppMobileMenu
+              links={links}
+              footer={
+                <>
+                  <p className="text-xs font-semibold truncate mb-2" style={{ color: "var(--kk-muted)" }}>
+                    {displayName}
+                  </p>
+                  {signOut}
+                </>
+              }
+            />
           </div>
 
-          <AppNavLinks links={links} />
+          <div className="hidden md:block">
+            <AppNavLinks links={links} />
+          </div>
         </div>
       </header>
     </>

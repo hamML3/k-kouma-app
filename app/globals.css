@@ -5,13 +5,14 @@
   --kk-bg: #F6F2EA;
   --kk-dark: #2C342E;
   --kk-mid: #5C645B;
-  --kk-muted: #8A9183;
-  --kk-faint: #A8AEA1;
+  /* Contraste AA (4,5:1) : muted 5,07 et faint 4,57 sur --kk-bg ; blanc sur purple 4,74. */
+  --kk-muted: #63695E;
+  --kk-faint: #6A7065;
   --kk-green: #557B53;
   --kk-green-hover: #486946;
   --kk-green-light: #E4EDDD;
-  --kk-purple: #8E7CB8;
-  --kk-purple-hover: #7A6AA5;
+  --kk-purple: #7A6AA5;
+  --kk-purple-hover: #6A5B96;
   --kk-purple-light: #ECE7F5;
   --kk-gold: #C58A3D;
   --kk-gold-light: #FBEEDD;
@@ -54,6 +55,13 @@ body {
 
 ::selection {
   background: var(--kk-selection);
+}
+
+/* Anneau de focus clavier ; le liseré blanc le garde visible sur les boutons colorés. */
+:where(a, button, input, select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--kk-purple);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 /* Reusable K-Kouma component styles */

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Logo } from "@/components/Logo";
 import { hasPermission, type Permission } from "@/lib/permissions";
+import { useModalBehavior } from "@/lib/useModalBehavior";
 
 type NavLink = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean; requiresPermission?: Permission };
 
@@ -139,6 +140,7 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
   const pathname = usePathname();
   const adminLabel = role === "moderator" ? "Administration (modérateur)" : "Administration";
   const [open, setOpen] = useState(false);
+  const panelRef = useModalBehavior(open, setOpen);
 
   // Ferme le tiroir à chaque changement de page (ajustement pendant le rendu,
   // pas dans un effet, pour éviter un rendu en cascade).
@@ -147,16 +149,6 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
     setPrevPathname(pathname);
     setOpen(false);
   }
-
-  // Empêche le scroll du contenu derrière le tiroir ouvert.
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [open]);
 
   const navLinks = (
     <nav className="flex-1 space-y-1">
@@ -223,7 +215,7 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
         className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-200 ${
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
-        aria-hidden={!open}
+        inert={!open}
       >
         <div
           className="absolute inset-0"
@@ -231,7 +223,12 @@ export function AdminNav({ role, permissions, footer }: AdminNavProps) {
           onClick={() => setOpen(false)}
         />
         <div
-          className={`absolute left-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-4 overflow-y-auto transition-transform duration-200 ease-out ${
+          ref={panelRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu d'administration"
+          className={`absolute left-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-4 overflow-y-auto outline-none transition-transform duration-200 ease-out ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
           style={{ background: "#fff", boxShadow: "12px 0 40px rgba(60,70,55,0.18)" }}

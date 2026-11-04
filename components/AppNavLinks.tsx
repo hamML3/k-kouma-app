@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export type NavLink = { href: string; label: string };
 
 /** Un lien de nav est actif sur sa propre page et ses sous-pages (ex: /therapists/12). */
-function isActive(pathname: string, href: string) {
+export function isActive(pathname: string, href: string) {
   return href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 }
 

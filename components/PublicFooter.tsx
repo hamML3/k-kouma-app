@@ -58,7 +58,7 @@ export function PublicFooter() {
             <div className="mb-3">
               <Logo tone="white" size={28} />
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: "#8A9183" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#A8AEA1" }}>
               Votre bien-être mental, notre priorité. Plateforme de téléconsultation psychologique pour l&apos;Afrique de l&apos;Ouest.
             </p>
             <div className="flex gap-3 mt-4">
@@ -77,7 +77,7 @@ export function PublicFooter() {
 
           {LINK_COLUMNS.map((col) => (
             <div key={col.title}>
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#8A9183" }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#A8AEA1" }}>
                 {col.title}
               </p>
               <ul className="space-y-2">
@@ -93,7 +93,7 @@ export function PublicFooter() {
           ))}
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#8A9183" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "#A8AEA1" }}>
               Commencer
             </p>
             <Link
@@ -117,7 +117,7 @@ export function PublicFooter() {
           className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap"
           style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <p className="text-xs" style={{ color: "#8A9183" }}>
+          <p className="text-xs" style={{ color: "#A8AEA1" }}>
             © 2026 K-Kouma. Tous droits réservés.
           </p>
         </div>

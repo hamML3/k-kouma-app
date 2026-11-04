@@ -17,7 +17,7 @@ export function SlotPicker({ slots, onChange }: { slots: SlotOption[]; onChange:
   return (
     <div>
       <p className="kk-label">Jour</p>
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
+      <div className="flex gap-2 overflow-x-auto pb-1 mb-3 [scrollbar-width:none]">
         {days.map(([key, label]) => {
           const active = key === dayKey;
           return (

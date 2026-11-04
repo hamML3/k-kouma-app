@@ -285,7 +285,7 @@ function TopicPicker({ onSelect }: { onSelect: (key: string) => void }) {
         <Link href="/" className="flex items-center gap-2">
           <Logo size={26} />
         </Link>
-        <Link href="/" className="text-sm font-semibold" style={{ color: "#8A9183" }}>← Accueil</Link>
+        <Link href="/" className="text-sm font-semibold" style={{ color: "var(--kk-muted)" }}>← Accueil</Link>
       </header>
 
       <main className="max-w-3xl mx-auto px-5 py-10">
@@ -293,7 +293,7 @@ function TopicPicker({ onSelect }: { onSelect: (key: string) => void }) {
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: "var(--font-lora)", color: "#1F2E20" }}>
             Mieux se connaître
           </h1>
-          <p className="text-sm" style={{ color: "#8A9183" }}>
+          <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
             Choisissez un thème pour commencer votre quiz gratuit · 10 questions · 3 minutes
           </p>
         </div>
@@ -374,7 +374,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
           <>
             {/* Progress */}
             <div className="mb-8">
-              <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: "#8A9183" }}>
+              <div className="flex justify-between text-xs font-semibold mb-2" style={{ color: "var(--kk-muted)" }}>
                 <span>Question {current + 1} / {totalQuestions}</span>
                 <span>{Math.round(progress)}%</span>
               </div>
@@ -441,7 +441,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
               <button
                 onClick={handleBack}
                 className="mt-5 text-sm font-semibold flex items-center gap-1"
-                style={{ color: "#8A9183" }}
+                style={{ color: "var(--kk-muted)" }}
               >
                 ← Question précédente
               </button>
@@ -462,7 +462,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
                 Résultat — {quiz.label}
               </p>
               <p className="text-5xl font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "#1F2E20" }}>
-                {totalScore}<span className="text-xl font-semibold" style={{ color: "#8A9183" }}> / 30</span>
+                {totalScore}<span className="text-xl font-semibold" style={{ color: "var(--kk-muted)" }}> / 30</span>
               </p>
               <div
                 className="inline-block px-4 py-1.5 rounded-full text-sm font-bold mt-2"
@@ -481,7 +481,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
                   style={{ width: `${result.pct}%`, background: result.color }}
                 />
               </div>
-              <div className="flex justify-between text-xs" style={{ color: "#8A9183" }}>
+              <div className="flex justify-between text-xs" style={{ color: "var(--kk-muted)" }}>
                 <span>0 — Stable</span>
                 <span>30 — Élevé</span>
               </div>
@@ -507,7 +507,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
             </div>
 
             {/* Note importante */}
-            <p className="text-xs text-center mb-6" style={{ color: "#A8AEA1" }}>
+            <p className="text-xs text-center mb-6" style={{ color: "var(--kk-faint)" }}>
               ⚠️ Ce quiz est un outil d&apos;auto-évaluation informatif et ne remplace pas un diagnostic clinique.
             </p>
 
@@ -535,7 +535,7 @@ function QuizFlow({ quiz, onRestart }: { quiz: Quiz; onRestart: () => void }) {
               <button
                 onClick={onRestart}
                 className="block w-full text-center py-3 text-sm font-semibold"
-                style={{ color: "#8A9183" }}
+                style={{ color: "var(--kk-muted)" }}
               >
                 Choisir un autre thème
               </button>

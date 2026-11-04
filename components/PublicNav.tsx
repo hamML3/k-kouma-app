@@ -25,7 +25,7 @@ export function PublicNav() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
           <Link href="/" className="flex items-center gap-3 shrink-0">
             <Logo size={30} />
-            <p className="text-[10px] leading-tight hidden sm:block" style={{ color: "#8A9183" }}>
+            <p className="text-[10px] leading-tight hidden sm:block" style={{ color: "var(--kk-muted)" }}>
               Votre bien-être,
               <br />
               notre mission
@@ -50,7 +50,7 @@ export function PublicNav() {
             <Link
               href="/login"
               className="sm:hidden text-sm font-bold px-5 py-2 rounded-full"
-              style={{ background: "#8E7CB8", color: "#fff" }}
+              style={{ background: "var(--kk-purple)", color: "#fff" }}
             >
               Commencer
             </Link>
@@ -64,7 +64,7 @@ export function PublicNav() {
             <Link
               href="/register"
               className="hidden sm:block text-sm font-bold px-5 py-2 rounded-full"
-              style={{ background: "#8E7CB8", color: "#fff" }}
+              style={{ background: "var(--kk-purple)", color: "#fff" }}
             >
               S&apos;inscrire
             </Link>
