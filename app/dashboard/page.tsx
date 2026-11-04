@@ -456,7 +456,19 @@ export default async function DashboardPage() {
                 }
                 iconBg="var(--kk-purple-light)"
                 title="Mon profil"
-                desc="Mettez à jour vos informations et disponibilités"
+                desc="Mettez à jour vos informations"
+              />
+              <DashboardCard
+                href="/disponibilites"
+                icon={
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <rect x="3" y="5" width="16" height="14" rx="3" stroke="#4A7C9B" strokeWidth="1.8" />
+                    <path d="M3 9h16M8 3v4M14 3v4M8 14l2 2 4-4" stroke="#4A7C9B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                }
+                iconBg="#E0EEF7"
+                title="Mes disponibilités"
+                desc="Indiquez quand vos patients peuvent réserver"
               />
               <DashboardCard
                 href="/patients"

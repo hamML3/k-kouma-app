@@ -59,6 +59,9 @@ model User {
   reportsReceived Report[] @relation("ReportsReceived")
   reportsReviewed Report[] @relation("ReportsReviewed")
 
+  therapistAvailabilities   TherapistAvailability[]
+  therapistUnavailabilities TherapistUnavailability[]
+
   @@index([status, role])
   @@map("users")
 }
@@ -165,6 +168,11 @@ model TherapistProfile {
   // écart déclenche une nouvelle demande d'acceptation.
   commissionAcceptedPercent Decimal?  @map("commission_accepted_percent") @db.Decimal(5, 2)
   commissionAcceptedAt      DateTime? @map("commission_accepted_at")
+  // Fuseau horaire IANA dans lequel le thérapeute saisit ses disponibilités
+  // hebdomadaires (TherapistAvailability) — les créneaux sont recalculés en
+  // UTC à partir de ces heures "murales", puis affichés au patient dans son
+  // propre fuseau (PatientProfile.timezone). Voir lib/availability.ts.
+  timezone                  String    @default("Africa/Bamako") @db.VarChar(50)
 
   user User @relation(fields: [userId], references: [id])
 
@@ -380,6 +388,42 @@ model Appointment {
   @@index([scheduledAt])
   @@index([therapistId, scheduledAt])
   @@map("appointments")
+}
+
+/// Plage de disponibilité hebdomadaire récurrente d'un thérapeute, exprimée
+/// en heures "murales" dans son propre fuseau (TherapistProfile.timezone) —
+/// ex. weekday=1, startMinute=540, endMinute=720 : chaque lundi de 9h à 12h.
+/// Les créneaux réservables en sont dérivés par lib/availability.ts.
+model TherapistAvailability {
+  id          Int      @id @default(autoincrement())
+  therapistId Int      @map("therapist_id")
+  // 0 = dimanche … 6 = samedi (même convention que Date.getUTCDay()).
+  weekday     Int
+  // Minutes depuis minuit (0–1440), heure locale du thérapeute.
+  startMinute Int      @map("start_minute")
+  endMinute   Int      @map("end_minute")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  therapist User @relation(fields: [therapistId], references: [id])
+
+  @@index([therapistId, weekday])
+  @@map("therapist_availabilities")
+}
+
+/// Période d'indisponibilité ponctuelle (congés, formation…) qui masque les
+/// créneaux hebdomadaires qu'elle recouvre. Bornes stockées en UTC.
+model TherapistUnavailability {
+  id          Int      @id @default(autoincrement())
+  therapistId Int      @map("therapist_id")
+  startsAt    DateTime @map("starts_at")
+  endsAt      DateTime @map("ends_at")
+  reason      String?  @db.VarChar(200)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  therapist User @relation(fields: [therapistId], references: [id])
+
+  @@index([therapistId, endsAt])
+  @@map("therapist_unavailabilities")
 }
 
 enum AppointmentStatus {

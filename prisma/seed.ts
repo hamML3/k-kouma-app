@@ -220,6 +220,15 @@ async function seedTherapist(t: TherapistSeed) {
           }),
         },
       },
+      // Lundi à vendredi, 9 h-12 h et 14 h-17 h.
+      ...(t.isVerified && {
+        therapistAvailabilities: {
+          create: [1, 2, 3, 4, 5].flatMap((weekday) => [
+            { weekday, startMinute: 540, endMinute: 720 },
+            { weekday, startMinute: 840, endMinute: 1020 },
+          ]),
+        },
+      }),
     },
   });
   console.log(`✅ Thérapeute créé     → ${t.email} ${t.isVerified ? "" : "(en attente)"}`);

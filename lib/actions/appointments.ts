@@ -14,6 +14,7 @@ import {
 import { claimOldestFundingPayment, releaseFundingPayment } from "@/lib/credits";
 import { effectiveCommissionPercent, therapistShare } from "@/lib/commission";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
+import { isSlotBookable } from "@/lib/therapistSlots";
 
 /** Best-effort : une notification qui échoue ne doit jamais faire échouer l'action réelle. */
 async function notify(label: string, send: () => Promise<unknown>) {
@@ -56,6 +57,10 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
 
   if (!assignment) {
     redirect("/therapists?error=assign");
+  }
+
+  if (!(await isSlotBookable(therapistId, new Date(scheduledAt)))) {
+    redirect("/therapists?error=slot_taken");
   }
 
   // Transaction sérialisable : le contrôle de créneau (lecture) et la

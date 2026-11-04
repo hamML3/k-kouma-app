@@ -4,6 +4,8 @@ import { redirect, notFound } from "next/navigation";
 import BookingClient from "./_client";
 import { amountFor, resolveTherapyType } from "@/lib/pricing";
 import { AppHeader } from "@/components/AppHeader";
+import { safeTimeZone, toSlotOptions } from "@/lib/availability";
+import { getBookableSlots } from "@/lib/therapistSlots";
 
 export default async function NewAppointmentPage({
   searchParams,
@@ -27,7 +29,7 @@ export default async function NewAppointmentPage({
     }),
     prisma.patientProfile.findUnique({
       where: { userId: Number(session.user.id) },
-      select: { id: true, sessionCredits: true, onboardingAnswers: true },
+      select: { id: true, sessionCredits: true, onboardingAnswers: true, timezone: true },
     }),
     prisma.patientTherapistAssignment.findFirst({
       where: { patientId: Number(session.user.id), therapistId: therapistUserId, status: "active" },
@@ -46,6 +48,8 @@ export default async function NewAppointmentPage({
   const answers = patientProfile.onboardingAnswers as { therapyType?: string } | null;
   const rate = amountFor(resolveTherapyType(answers), "single");
 
+  const { configured, slots } = await getBookableSlots(therapistId);
+
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role="patient" displayName={session.user.email ?? "Mon compte"} />
@@ -53,6 +57,8 @@ export default async function NewAppointmentPage({
         therapistId={therapistId}
         therapistName={therapistName}
         rate={rate}
+        configured={configured}
+        slots={toSlotOptions(slots, safeTimeZone(patientProfile.timezone))}
       />
     </div>
   );

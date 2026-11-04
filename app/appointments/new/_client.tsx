@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from "react";
 import { createAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/Icon";
+import type { SlotOption } from "@/lib/availability";
+import { SlotPicker } from "./_slotPicker";
 
 const SESSION_TYPES: { value: string; label: string; desc: string; icon: IconName }[] = [
   { value: "video", label: "Vidéo", desc: "L'expérience la plus proche d'une consultation en cabinet.", icon: "video" },
@@ -10,22 +13,31 @@ const SESSION_TYPES: { value: string; label: string; desc: string; icon: IconNam
   { value: "text", label: "Messagerie", desc: "Échangez par messages écrits à votre rythme.", icon: "chat" },
 ];
 
-function tomorrow9am(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  d.setHours(9, 0, 0, 0);
-  return d.toISOString().slice(0, 16);
+/** Heure locale du navigateur convertie en UTC : le serveur ne connaît pas le fuseau du patient. */
+function localToIso(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
 export default function BookingClient({
   therapistId,
   therapistName,
   rate,
+  configured,
+  slots,
 }: {
   therapistId: number;
   therapistName: string;
   rate: number;
+  configured: boolean;
+  slots: SlotOption[];
 }) {
+  const [slotPicked, setSlotPicked] = useState(false);
+  const [freeTime, setFreeTime] = useState("");
+  const freeTimeIso = localToIso(freeTime);
+  const noSlots = configured && slots.length === 0;
+  const ready = configured ? slotPicked : Boolean(freeTimeIso);
+
   return (
     <>
       <main className="max-w-xl mx-auto px-5 py-8">
@@ -68,24 +80,39 @@ export default function BookingClient({
                 Séance avec {therapistName}
               </p>
               <p className="text-xs" style={{ color: "var(--kk-mid)" }}>
-                {rate > 0 ? `${rate.toLocaleString("fr-FR")} XOF · 45 min` : "Tarif à confirmer · 45 min"}
+                {rate.toLocaleString("fr-FR")} XOF · 45 min
               </p>
             </div>
           </div>
 
           {/* Date & time */}
-          <div>
-            <label className="kk-label">Date et heure souhaitées</label>
-            <input
-              type="datetime-local"
-              name="scheduledAt"
-              required
-              defaultValue={tomorrow9am()}
-              min={new Date().toISOString().slice(0, 16)}
-              className="kk-input"
-              style={{ cursor: "pointer" }}
-            />
-          </div>
+          {noSlots ? (
+            <div className="rounded-2xl p-6 text-center" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+              <p className="text-2xl mb-1" aria-hidden>🗓️</p>
+              <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>
+                Aucun créneau libre pour le moment
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+                {therapistName} n&apos;a plus de disponibilité sur les 2 prochaines semaines. Revenez bientôt.
+              </p>
+            </div>
+          ) : configured ? (
+            <SlotPicker slots={slots} onChange={setSlotPicked} />
+          ) : (
+            <div>
+              <label htmlFor="freeTime" className="kk-label">Date et heure souhaitées</label>
+              <input
+                id="freeTime"
+                type="datetime-local"
+                required
+                value={freeTime}
+                onChange={(e) => setFreeTime(e.target.value)}
+                className="kk-input"
+                style={{ cursor: "pointer" }}
+              />
+              <input type="hidden" name="scheduledAt" value={freeTimeIso} />
+            </div>
+          )}
 
           {/* Session type */}
           <div>
@@ -125,8 +152,8 @@ export default function BookingClient({
             La séance dure <strong>45 minutes</strong>. Le psychologue confirmera votre créneau par email sous 24h.
           </div>
 
-          <button type="submit" className="kk-btn-purple w-full">
-            Confirmer ma réservation →
+          <button type="submit" disabled={!ready} className="kk-btn-purple w-full">
+            {ready ? "Confirmer ma réservation →" : "Choisissez un créneau"}
           </button>
         </form>
       </main>
