@@ -14,16 +14,43 @@ export default async function AdminFinancesPage() {
   const session = await auth();
   const canManageFinances = hasPermission(session?.user?.role, session?.user?.permissions, "manage_finances");
 
-  const [payments, earnings, therapists, pendingManualPayments, pendingPayoutRequests] = await Promise.all([
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const months = lastMonths(6);
+
+  // Totaux calculés par la base : seules la liste récente et les 6 mois des
+  // graphiques sont chargés, pour que la page tienne avec le volume.
+  const [
+    payments,
+    revenue,
+    monthRevenue,
+    chartPayments,
+    earningGroups,
+    chartEarnings,
+    therapists,
+    pendingManualPayments,
+    pendingPayoutRequests,
+  ] = await Promise.all([
     prisma.payment.findMany({
       where: { status: "completed" },
       orderBy: { paidAt: "desc" },
+      take: 15,
       include: { patient: { select: { patientProfile: { select: { nickname: true } }, email: true } } },
     }),
+    prisma.payment.aggregate({ where: { status: "completed" }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { status: "completed", paidAt: { gte: startOfMonth } }, _sum: { amount: true } }),
+    prisma.payment.findMany({
+      where: { status: "completed", paidAt: { gte: months[0].start } },
+      select: { paidAt: true, amount: true },
+    }),
+    prisma.therapistEarning.groupBy({
+      by: ["therapistId", "paidOut"],
+      _sum: { amount: true },
+      _count: { _all: true },
+    }),
     prisma.therapistEarning.findMany({
-      include: {
-        therapist: { select: { therapistProfile: { select: { firstName: true, lastName: true } }, email: true } },
-      },
+      where: { createdAt: { gte: months[0].start } },
+      select: { createdAt: true, amount: true },
     }),
     prisma.therapistProfile.findMany({
       where: { isVerified: true },
@@ -43,15 +70,10 @@ export default async function AdminFinancesPage() {
     }),
   ]);
 
-  const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-  const totalEarnings = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalRevenue = Number(revenue._sum.amount ?? 0);
+  const totalEarnings = earningGroups.reduce((sum, g) => sum + Number(g._sum.amount ?? 0), 0);
   const margin = totalRevenue - totalEarnings;
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const revenueThisMonth = payments
-    .filter((p) => p.paidAt && p.paidAt >= startOfMonth)
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const revenueThisMonth = Number(monthRevenue._sum.amount ?? 0);
 
   // Regroupe les gains par thérapeute, en distinguant ce qui a déjà été reversé
   const earningsByTherapist = new Map<
@@ -61,25 +83,25 @@ export default async function AdminFinancesPage() {
   for (const t of therapists) {
     earningsByTherapist.set(t.userId, { therapistId: t.userId, name: `${t.firstName} ${t.lastName}`, total: 0, count: 0, unpaid: 0 });
   }
-  for (const e of earnings) {
-    const entry = earningsByTherapist.get(e.therapistId);
+  for (const g of earningGroups) {
+    const entry = earningsByTherapist.get(g.therapistId);
     if (entry) {
-      entry.total += Number(e.amount);
-      entry.count += 1;
-      if (!e.paidOut) entry.unpaid += Number(e.amount);
+      const amount = Number(g._sum.amount ?? 0);
+      entry.total += amount;
+      entry.count += g._count._all;
+      if (!g.paidOut) entry.unpaid += amount;
     }
   }
   const therapistRows = Array.from(earningsByTherapist.values()).sort((a, b) => b.total - a.total);
   const totalUnpaid = therapistRows.reduce((sum, t) => sum + t.unpaid, 0);
 
-  const months = lastMonths(6);
   const monthlyRevenue = bucketByMonth(
-    payments.filter((p) => p.paidAt),
+    chartPayments,
     (p) => p.paidAt as Date,
     (p) => Number(p.amount),
     months
   );
-  const monthlyPayout = bucketByMonth(earnings, (e) => e.createdAt, (e) => Number(e.amount), months);
+  const monthlyPayout = bucketByMonth(chartEarnings, (e) => e.createdAt, (e) => Number(e.amount), months);
 
   const STATS = [
     { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green)", bg: "var(--kk-green-light)", icon: "💰" },
@@ -339,7 +361,7 @@ export default async function AdminFinancesPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {payments.slice(0, 15).map((p) => (
+              {payments.map((p) => (
                 <div
                   key={p.id}
                   className="rounded-xl p-4 flex items-center justify-between gap-3"

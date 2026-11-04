@@ -5,18 +5,27 @@ import Link from "next/link";
 import { completeAppointmentAction } from "@/lib/actions/appointments";
 import { ReportButton } from "@/components/ReportButton";
 
+// Serveur TURN (relais) — indispensable quand les deux participants sont sur
+// des réseaux différents (ex: wifi vs données mobiles) et que la connexion
+// directe échoue. Sans TURN, l'appel reste bloqué sur "en attente". Le relais
+// public gratuit n'est qu'un repli tant qu'aucun TURN dédié n'est configuré
+// (voir docs/exploitation.md).
+const TURN_SERVERS = process.env.NEXT_PUBLIC_TURN_URL
+  ? process.env.NEXT_PUBLIC_TURN_URL.split(",").map((urls) => ({
+      urls: urls.trim(),
+      username: process.env.NEXT_PUBLIC_TURN_USERNAME,
+      credential: process.env.NEXT_PUBLIC_TURN_CREDENTIAL,
+    }))
+  : [
+      { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+      { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+    ];
+
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  // Serveur TURN (relais) — indispensable quand les deux participants sont sur
-  // des réseaux différents (ex: wifi vs données mobiles) et que la connexion
-  // directe échoue. Sans TURN, l'appel reste bloqué sur "en attente".
-  // Ceux-ci sont un service public gratuit (Open Relay Project), utile pour
-  // valider que c'est bien la cause — à remplacer par un TURN dédié
-  // (coturn auto-hébergé sur le VPS, ou un service payant) avant la mise en prod.
-  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+  ...TURN_SERVERS,
 ];
 
 type ConnectionState = "requesting" | "waiting" | "connecting" | "connected" | "failed" | "ended";

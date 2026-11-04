@@ -15,7 +15,11 @@ export default async function EarningsPage() {
 
   const therapistId = Number(session.user.id);
 
-  const [earnings, pendingPayoutRequest] = await Promise.all([
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const months = lastMonths(6);
+
+  const [earnings, pendingPayoutRequest, allTime, unpaid, thisMonth, chartRows] = await Promise.all([
     prisma.therapistEarning.findMany({
       where: { therapistId },
       orderBy: { createdAt: "desc" },
@@ -34,20 +38,29 @@ export default async function EarningsPage() {
       where: { therapistId, status: "pending" },
       orderBy: { createdAt: "desc" },
     }),
+    // Totaux calculés par la base : la liste ci-dessus est limitée à l'affichage.
+    prisma.therapistEarning.aggregate({ where: { therapistId }, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.therapistEarning.aggregate({ where: { therapistId, paidOut: false }, _sum: { amount: true } }),
+    prisma.therapistEarning.aggregate({
+      where: { therapistId, createdAt: { gte: startOfMonth } },
+      _sum: { amount: true },
+      _count: { _all: true },
+    }),
+    prisma.therapistEarning.findMany({
+      where: { therapistId, createdAt: { gte: months[0].start } },
+      select: { createdAt: true, amount: true },
+    }),
   ]);
 
-  const total = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
-  const unpaidTotal = earnings.filter((e) => !e.paidOut).reduce((sum, e) => sum + Number(e.amount), 0);
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonth = earnings.filter((e) => e.createdAt >= startOfMonth);
-  const thisMonthTotal = thisMonth.reduce((sum, e) => sum + Number(e.amount), 0);
+  const total = Number(allTime._sum.amount ?? 0);
+  const totalCount = allTime._count._all;
+  const unpaidTotal = Number(unpaid._sum.amount ?? 0);
+  const thisMonthTotal = Number(thisMonth._sum.amount ?? 0);
+  const thisMonthCount = thisMonth._count._all;
 
   const TYPE_LABELS: Record<string, string> = { video: "Vidéo", audio: "Audio", text: "Messagerie" };
 
-  const months = lastMonths(6);
-  const monthlyTotals = bucketByMonth(earnings, (e) => e.createdAt, (e) => Number(e.amount), months);
+  const monthlyTotals = bucketByMonth(chartRows, (e) => e.createdAt, (e) => Number(e.amount), months);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -73,7 +86,7 @@ export default async function EarningsPage() {
               {thisMonthTotal.toLocaleString("fr-FR")} <span className="text-lg">XOF</span>
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
-              {thisMonth.length} séance{thisMonth.length !== 1 ? "s" : ""}
+              {thisMonthCount} séance{thisMonthCount !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
@@ -84,7 +97,7 @@ export default async function EarningsPage() {
               {total.toLocaleString("fr-FR")} <span className="text-lg">XOF</span>
             </p>
             <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
-              {earnings.length} séance{earnings.length !== 1 ? "s" : ""} réalisée{earnings.length !== 1 ? "s" : ""}
+              {totalCount} séance{totalCount !== 1 ? "s" : ""} réalisée{totalCount !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="rounded-2xl p-5" style={{ background: unpaidTotal > 0 ? "#FFF1F0" : "var(--kk-green-light)", border: "1.5px solid var(--kk-border)" }}>

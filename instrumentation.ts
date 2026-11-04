@@ -1,9 +1,10 @@
+import type { Instrumentation } from "next";
+
 /**
  * Capture d'erreurs serveur (Sentry) — n'est actif que si SENTRY_DSN est
  * défini dans l'environnement. Sans cette variable, ce fichier ne fait rien :
  * aucun compte Sentry n'est requis pour que l'app tourne normalement.
- * Pour l'activer : créer un projet sur sentry.io (gratuit) et ajouter
- * SENTRY_DSN="https://...@...ingest.sentry.io/..." dans .env.
+ * Activation : voir docs/exploitation.md.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs" && process.env.SENTRY_DSN) {
@@ -15,8 +16,8 @@ export async function register() {
   }
 }
 
-export async function onRequestError(error: unknown) {
+export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {
   if (!process.env.SENTRY_DSN) return;
   const Sentry = await import("@sentry/nextjs");
-  Sentry.captureException(error);
-}
+  Sentry.captureRequestError(error, request, context);
+};
