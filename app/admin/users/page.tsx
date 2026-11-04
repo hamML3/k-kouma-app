@@ -79,11 +79,11 @@ export default async function AdminUsersPage({
     <>
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
             Utilisateurs
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-            {total} compte{total !== 1 ? "s" : ""}
+            {total} compte{total !== 1 ? "s" : ""} sur la plateforme
           </p>
         </div>
         <CreateUserForm />
@@ -112,7 +112,7 @@ export default async function AdminUsersPage({
             <a
               key={f.label}
               href={href}
-              className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
+              className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
               style={{
                 background: active ? "var(--kk-green)" : "#fff",
                 color: active ? "#fff" : "var(--kk-mid)",
@@ -127,7 +127,9 @@ export default async function AdminUsersPage({
 
       {users.length === 0 ? (
         <div className="rounded-2xl p-12 text-center" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
-          <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun compte ne correspond à cette recherche.</p>
+          <p className="text-2xl mb-2" aria-hidden>🔍</p>
+          <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>Aucun compte ne correspond à cette recherche.</p>
+          <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>Essayez un autre email, un autre nom, ou changez de filtre.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -137,46 +139,56 @@ export default async function AdminUsersPage({
               u.patientProfile?.nickname ??
               (u.therapistProfile ? `${u.therapistProfile.firstName} ${u.therapistProfile.lastName}` : null);
             const suspended = u.status === "suspended";
+            const initial = (name ?? u.email).trim().charAt(0).toUpperCase();
 
             return (
               <div
                 key={u.id}
-                className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 transition-colors hover:bg-[var(--kk-bg)]"
                 style={{ background: "#fff", border: "1px solid var(--kk-border)", opacity: suspended ? 0.65 : 1 }}
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
-                      {name ?? u.email}
-                    </p>
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
-                      style={{ background: roleInfo.bg, color: roleInfo.color }}
-                    >
-                      {roleInfo.label}
-                    </span>
-                    {suspended && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "#FFF1F0", color: "#C0392B" }}>
-                        Suspendu
-                      </span>
-                    )}
-                    {u.therapistProfile && !u.therapistProfile.isVerified && (
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
-                        Non vérifié
-                      </span>
-                    )}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                    style={{ background: roleInfo.bg, color: roleInfo.color }}
+                    aria-hidden
+                  >
+                    {initial}
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                    {u.email} · Inscrit le {u.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                  </p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
+                        {name ?? u.email}
+                      </p>
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                        style={{ background: roleInfo.bg, color: roleInfo.color }}
+                      >
+                        {roleInfo.label}
+                      </span>
+                      {suspended && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "#FFF1F0", color: "#C0392B" }}>
+                          Suspendu
+                        </span>
+                      )}
+                      {u.therapistProfile && !u.therapistProfile.isVerified && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
+                          Non vérifié
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--kk-muted)" }}>
+                      {u.email} · Inscrit le {u.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
                 </div>
 
-                <form action={suspended ? reactivateUserAction : suspendUserAction} className="shrink-0">
+                <form action={suspended ? reactivateUserAction : suspendUserAction} className="shrink-0 self-start sm:self-auto">
                   <input type="hidden" name="userId" value={u.id} />
                   {suspended ? (
                     <button
                       type="submit"
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      className="text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green)] hover:text-white"
                       style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
                     >
                       Réactiver
@@ -184,7 +196,7 @@ export default async function AdminUsersPage({
                   ) : (
                     <ConfirmSubmitButton
                       confirmMessage={`Suspendre le compte de ${name ?? u.email} ? Cette personne ne pourra plus se connecter.`}
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      className="text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"
                       style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
                     >
                       Suspendre

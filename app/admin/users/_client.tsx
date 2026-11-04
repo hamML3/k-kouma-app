@@ -20,19 +20,35 @@ export function CreateUserForm() {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="kk-btn-purple text-sm px-5 py-2.5">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="kk-btn-purple text-sm px-5 py-2.5 w-full sm:w-auto transition-transform duration-150 hover:-translate-y-0.5"
+      >
         + Créer un utilisateur
       </button>
     );
   }
 
   return (
-    <div className="kk-card p-5 mb-2">
+    <div className="kk-card p-5 mb-2 w-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+        <h3 className="font-bold flex items-center gap-2" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+          <span
+            className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+            style={{ background: "var(--kk-purple-light)" }}
+            aria-hidden
+          >
+            ✨
+          </span>
           Nouvel utilisateur
         </h3>
-        <button type="button" onClick={() => setOpen(false)} className="text-sm font-semibold" style={{ color: "var(--kk-muted)" }}>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-sm font-semibold transition-colors hover:text-[var(--kk-dark)]"
+          style={{ color: "var(--kk-muted)" }}
+        >
           Fermer
         </button>
       </div>

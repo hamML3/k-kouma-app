@@ -69,17 +69,17 @@ export default async function AdminFinancesPage() {
   const monthlyPayout = bucketByMonth(earnings, (e) => e.createdAt, (e) => Number(e.amount), months);
 
   const STATS = [
-    { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green)", bg: "var(--kk-green-light)" },
-    { label: "Ce mois-ci", value: revenueThisMonth, color: "var(--kk-purple)", bg: "var(--kk-purple-light)" },
-    { label: "Gagné par les psychologues", value: totalEarnings, color: "var(--kk-gold)", bg: "var(--kk-gold-light)" },
-    { label: "Dont à reverser", value: totalUnpaid, color: "#C0392B", bg: "#FFF1F0" },
-    { label: "Marge plateforme", value: margin, color: "#2C342E", bg: "var(--kk-border)" },
+    { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green)", bg: "var(--kk-green-light)", icon: "💰" },
+    { label: "Ce mois-ci", value: revenueThisMonth, color: "var(--kk-purple)", bg: "var(--kk-purple-light)", icon: "📅" },
+    { label: "Gagné par les psychologues", value: totalEarnings, color: "var(--kk-gold)", bg: "var(--kk-gold-light)", icon: "🩺" },
+    { label: "Dont à reverser", value: totalUnpaid, color: "#C0392B", bg: "#FFF1F0", icon: "⏳" },
+    { label: "Marge plateforme", value: margin, color: "#2C342E", bg: "var(--kk-border)", icon: "📊" },
   ];
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
           Finances
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
@@ -88,7 +88,7 @@ export default async function AdminFinancesPage() {
       </div>
 
       {pendingManualPayments.length > 0 && (
-        <div className="mb-10">
+        <div className="mb-8 sm:mb-10">
           <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold)" }}>
             Paiements Orange Money à vérifier ({pendingManualPayments.length})
           </h2>
@@ -96,7 +96,7 @@ export default async function AdminFinancesPage() {
             {pendingManualPayments.map((p) => (
               <div
                 key={p.id}
-                className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                 style={{ background: "#fff", border: "1.5px solid #E9C98A" }}
               >
                 <div className="min-w-0">
@@ -113,21 +113,21 @@ export default async function AdminFinancesPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <form action={rejectManualPaymentAction}>
+                  <form action={rejectManualPaymentAction} className="flex-1 sm:flex-none">
                     <input type="hidden" name="paymentId" value={p.id} />
                     <ConfirmSubmitButton
                       confirmMessage="Rejeter cette déclaration de paiement ? Aucune séance ne sera créditée."
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"
                       style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
                     >
                       Rejeter
                     </ConfirmSubmitButton>
                   </form>
-                  <form action={confirmManualPaymentAction}>
+                  <form action={confirmManualPaymentAction} className="flex-1 sm:flex-none">
                     <input type="hidden" name="paymentId" value={p.id} />
                     <button
                       type="submit"
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
+                      className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green-hover)]"
                       style={{ background: "var(--kk-green)", color: "#fff" }}
                     >
                       Valider et créditer
@@ -140,10 +140,20 @@ export default async function AdminFinancesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8 sm:mb-10">
         {STATS.map((stat) => (
-          <div key={stat.label} className="kk-card p-5">
-            <p className="font-bold text-2xl" style={{ color: stat.color, fontFamily: "var(--font-lora)" }}>
+          <div
+            key={stat.label}
+            className="kk-card p-4 sm:p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]"
+          >
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-base mb-2"
+              style={{ background: stat.bg }}
+              aria-hidden
+            >
+              {stat.icon}
+            </div>
+            <p className="font-bold text-xl sm:text-2xl" style={{ color: stat.color, fontFamily: "var(--font-lora)" }}>
               {stat.value.toLocaleString("fr-FR")} <span className="text-sm">XOF</span>
             </p>
             <p className="text-xs font-semibold mt-1" style={{ color: "var(--kk-muted)" }}>
@@ -153,7 +163,7 @@ export default async function AdminFinancesPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl p-5 mb-8" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+      <div className="rounded-2xl p-5 mb-8 overflow-x-auto" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
         <h2 className="text-sm font-bold mb-4" style={{ color: "var(--kk-dark)" }}>
           Revenu vs reversé aux psychologues — 6 derniers mois
         </h2>
@@ -167,17 +177,20 @@ export default async function AdminFinancesPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Per-therapist breakdown */}
         <div>
           <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-muted)" }}>
             Gains par psychologue
           </h2>
           {therapistRows.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun gain enregistré.</p>
+            <div className="kk-card p-6 text-center">
+              <p className="text-2xl mb-1" aria-hidden>🌱</p>
+              <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun gain enregistré pour l&apos;instant.</p>
+            </div>
           ) : (
             <>
-              <div className="rounded-2xl p-4 mb-4" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
+              <div className="rounded-2xl p-4 mb-4 overflow-x-auto" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
                 <HorizontalBarChart
                   items={therapistRows.map((t) => ({ label: t.name, value: t.total }))}
                   color="#C58A3D"
@@ -188,7 +201,7 @@ export default async function AdminFinancesPage() {
               {therapistRows.map((t) => (
                 <div
                   key={t.therapistId}
-                  className="rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                  className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
                 >
                   <div>
@@ -213,7 +226,7 @@ export default async function AdminFinancesPage() {
                         <input type="hidden" name="therapistId" value={t.therapistId} />
                         <ConfirmSubmitButton
                           confirmMessage={`Marquer ${t.unpaid.toLocaleString("fr-FR")} XOF comme reversés à ${t.name} ?`}
-                          className="text-xs font-bold px-3 py-1.5 rounded-full"
+                          className="text-xs font-bold px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--kk-green)] hover:text-white"
                           style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
                         >
                           Marquer reversé
@@ -234,7 +247,10 @@ export default async function AdminFinancesPage() {
             Paiements récents
           </h2>
           {payments.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun paiement pour l&apos;instant.</p>
+            <div className="kk-card p-6 text-center">
+              <p className="text-2xl mb-1" aria-hidden>🌱</p>
+              <p className="text-sm" style={{ color: "var(--kk-muted)" }}>Aucun paiement pour l&apos;instant.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {payments.slice(0, 15).map((p) => (
@@ -243,8 +259,8 @@ export default async function AdminFinancesPage() {
                   className="rounded-xl p-4 flex items-center justify-between gap-3"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
                 >
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--kk-dark)" }}>
                       {p.patient.patientProfile?.nickname ?? p.patient.email}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
@@ -253,7 +269,7 @@ export default async function AdminFinancesPage() {
                       {p.sessionsCount === 1 ? "1 séance" : `Pack ${p.sessionsCount}`}
                     </p>
                   </div>
-                  <p className="text-sm font-bold" style={{ color: "var(--kk-green)" }}>
+                  <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-green)" }}>
                     {Number(p.amount).toLocaleString("fr-FR")} {p.currency}
                   </p>
                 </div>

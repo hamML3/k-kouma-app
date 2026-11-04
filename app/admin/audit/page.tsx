@@ -69,7 +69,7 @@ export default async function AdminAuditPage({
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+        <h1 className="text-2xl sm:text-3xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
           Journal d&apos;audit
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
@@ -96,7 +96,7 @@ export default async function AdminAuditPage({
             <a
               key={c.label}
               href={withParams({ category: c.value })}
-              className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
+              className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
               style={{
                 background: active ? "var(--kk-green)" : "#fff",
                 color: active ? "#fff" : "var(--kk-mid)",
@@ -116,7 +116,7 @@ export default async function AdminAuditPage({
             <a
               key={s.label}
               href={withParams({ since: s.value })}
-              className="px-3.5 py-1 rounded-full text-xs font-semibold transition-all"
+              className="px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-150"
               style={{
                 background: active ? "var(--kk-purple)" : "#fff",
                 color: active ? "#fff" : "var(--kk-muted)",
@@ -131,15 +131,21 @@ export default async function AdminAuditPage({
 
       <div className="rounded-xl overflow-hidden" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
         {entries.length === 0 ? (
-          <p className="text-sm p-6 text-center" style={{ color: "var(--kk-muted)" }}>
-            Aucune action enregistrée pour le moment.
-          </p>
+          <div className="p-10 text-center">
+            <p className="text-2xl mb-2" aria-hidden>📜</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>Aucune action enregistrée pour le moment.</p>
+            <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>Les actions admin et les connexions apparaîtront ici.</p>
+          </div>
         ) : (
           <div className="divide-y" style={{ borderColor: "var(--kk-border)" }}>
             {entries.map((e) => {
               const info = ACTION_INFO[e.action] ?? { label: e.action, bg: "var(--kk-border)", color: "var(--kk-mid)" };
               return (
-                <div key={e.id} className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div
+                  key={e.id}
+                  className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-l-4 transition-colors hover:bg-[var(--kk-bg)]"
+                  style={{ borderLeftColor: info.color }}
+                >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span
@@ -154,7 +160,7 @@ export default async function AdminAuditPage({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs" style={{ color: "var(--kk-muted)" }}>
+                    <p className="text-xs truncate" style={{ color: "var(--kk-muted)" }}>
                       {e.actorEmail ?? "Système / anonyme"}
                       {e.ip ? ` · ${e.ip}` : ""}
                     </p>
