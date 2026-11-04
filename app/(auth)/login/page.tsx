@@ -18,14 +18,7 @@ export default function LoginPage() {
         Connexion
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--kk-muted)" }}>
-        Pas encore de compte ?{" "}
-        <Link
-          href="/register"
-          className="font-bold"
-          style={{ color: "var(--kk-green)" }}
-        >
-          Créer un compte
-        </Link>
+        Heureux de vous revoir. Connectez-vous pour retrouver votre espace.
       </p>
 
       {state.error && (
@@ -71,6 +64,16 @@ export default function LoginPage() {
           {pending ? "Connexion en cours…" : "Se connecter"}
         </button>
       </form>
+
+      <div className="flex items-center gap-3 my-6" aria-hidden>
+        <div className="flex-1 h-px" style={{ background: "var(--kk-border)" }} />
+        <span className="text-xs font-semibold" style={{ color: "var(--kk-faint)" }}>Nouveau sur K-Kouma ?</span>
+        <div className="flex-1 h-px" style={{ background: "var(--kk-border)" }} />
+      </div>
+
+      <Link href="/register" className="kk-btn-outline w-full text-center block">
+        Créer un compte
+      </Link>
 
       <p className="text-center text-xs mt-5" style={{ color: "var(--kk-muted)" }}>
         En cas d&apos;urgence psychologique, composez le{" "}

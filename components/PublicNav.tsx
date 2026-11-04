@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { PlatformBannerLive } from "@/components/PlatformBannerLive";
+import { PublicMobileMenu } from "@/components/PublicMobileMenu";
 
 const NAV_ITEMS = [
   { label: "Accueil", href: "/" },
@@ -44,7 +45,15 @@ export function PublicNav() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Mobile : un seul bouton d'entrée, la page de connexion propose ensuite l'inscription */}
+            <Link
+              href="/login"
+              className="sm:hidden text-sm font-bold px-5 py-2 rounded-full"
+              style={{ background: "#8E7CB8", color: "#fff" }}
+            >
+              Commencer
+            </Link>
             <Link
               href="/login"
               className="hidden sm:block text-sm font-bold px-4 py-2 rounded-full border transition-all"
@@ -54,11 +63,12 @@ export function PublicNav() {
             </Link>
             <Link
               href="/register"
-              className="text-sm font-bold px-5 py-2 rounded-full"
+              className="hidden sm:block text-sm font-bold px-5 py-2 rounded-full"
               style={{ background: "#8E7CB8", color: "#fff" }}
             >
               S&apos;inscrire
             </Link>
+            <PublicMobileMenu items={NAV_ITEMS} />
           </div>
         </div>
       </header>

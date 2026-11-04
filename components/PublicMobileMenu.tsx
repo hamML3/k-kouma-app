@@ -1,0 +1,105 @@
+'use client'
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Logo } from "@/components/Logo";
+
+type NavItem = { label: string; href: string };
+
+/**
+ * Menu du site public sur mobile : bouton hamburger + tiroir, même schéma
+ * que la navigation admin (components/AdminNav.tsx), pour que les liens du
+ * site restent accessibles sous 768px de large au lieu d'être simplement masqués.
+ */
+export function PublicMobileMenu({ items }: { items: NavItem[] }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Ferme le tiroir à chaque changement de page (ajustement pendant le rendu,
+  // pas dans un effet, pour éviter un rendu en cascade).
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Ouvrir le menu"
+        aria-expanded={open}
+        className="md:hidden w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
+        style={{ color: "var(--kk-dark)" }}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      <div
+        className={`md:hidden fixed inset-0 z-[60] transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!open}
+      >
+        <div className="absolute inset-0" style={{ background: "rgba(44,52,46,0.45)" }} onClick={() => setOpen(false)} />
+        <div
+          className={`absolute right-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-5 overflow-y-auto transition-transform duration-200 ease-out ${
+            open ? "translate-x-0" : "translate-x-full"
+          }`}
+          style={{ background: "#fff", boxShadow: "-12px 0 40px rgba(60,70,55,0.18)" }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <Logo size={24} />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Fermer le menu"
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
+              style={{ color: "var(--kk-muted)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <nav className="flex-1 space-y-1">
+            {items.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="block px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[var(--kk-border)]"
+                style={{ color: "var(--kk-mid)" }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="pt-4 mt-4 space-y-2" style={{ borderTop: "1px solid var(--kk-border)" }}>
+            <Link href="/login" className="kk-btn-outline w-full text-center block text-sm py-2.5">
+              Se connecter
+            </Link>
+            <Link href="/register" className="kk-btn-purple w-full text-center block text-sm py-2.5">
+              Créer un compte
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
