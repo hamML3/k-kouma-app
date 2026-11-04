@@ -10,6 +10,7 @@ const ACTION_INFO: Record<string, { label: string; bg: string; color: string }> 
   "admin.therapist.suspend": { label: "Psychologue suspendu", bg: "#FFF1F0", color: "#C0392B" },
   "admin.therapist.unsuspend": { label: "Psychologue réactivé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.therapist.verify": { label: "Psychologue validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  "admin.therapist.document_view": { label: "Document candidat consulté", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "admin.therapist.reject": { label: "Psychologue rejeté", bg: "#FFF1F0", color: "#C0392B" },
   "admin.payment.confirm": { label: "Paiement manuel validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.payment.reject": { label: "Paiement manuel rejeté", bg: "#FFF1F0", color: "#C0392B" },

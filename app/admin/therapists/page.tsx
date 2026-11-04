@@ -1,13 +1,19 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import { hasPermission } from "@/lib/permissions";
 import { splitSpecialties } from "@/lib/specialties";
+import { documentHref } from "@/lib/therapistDocuments";
 
 export default async function AdminTherapistsPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string; q?: string }>;
 }) {
+  const session = await auth();
+  const canManageTherapists = hasPermission(session?.user?.role, session?.user?.permissions, "manage_therapists");
+
   const params = await searchParams;
   const tab = params.tab ?? "pending";
   const q = params.q?.trim();
@@ -166,9 +172,9 @@ export default async function AdminTherapistsPage({
 
               {/* Diploma badge + action */}
               <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
-                {t.diplomaUrl ? (
+                {!canManageTherapists ? null : t.diplomaUrl ? (
                   <a
-                    href={t.diplomaUrl}
+                    href={documentHref(t.diplomaUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors hover:bg-[var(--kk-purple)] hover:text-white"

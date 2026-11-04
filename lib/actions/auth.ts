@@ -22,6 +22,7 @@ import {
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
 import { logAudit } from "@/lib/audit";
+import { DOCUMENTS_DIR, MAX_DOCUMENT_BYTES, detectDocumentType, documentUrl } from "@/lib/therapistDocuments";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
 async function dispatchVerificationEmail(userId: number, email: string, name: string) {
@@ -193,33 +194,33 @@ export async function registerTherapistAction(
     return { error: "Un compte avec cet email existe déjà" };
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "diplomas");
-  await mkdir(uploadDir, { recursive: true });
+  const submittedDocs = [
+    { label: "Diplôme", file: formData.get("diploma") as File | null },
+    { label: "Pièce d'identité", file: formData.get("idCard") as File | null },
+    { label: "Document complémentaire", file: formData.get("document2") as File | null },
+  ].filter((doc): doc is { label: string; file: File } => Boolean(doc.file && doc.file.size > 0));
 
-  const allowed = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+  const documents = await Promise.all(
+    submittedDocs.map(async ({ label, file }) => {
+      const bytes = Buffer.from(await file.arrayBuffer());
+      return { label, bytes, type: file.size <= MAX_DOCUMENT_BYTES ? detectDocumentType(bytes) : null };
+    })
+  );
 
-  async function saveFile(file: File | null, label: string): Promise<{ label: string; url: string } | null> {
-    if (!file || file.size === 0) return null;
-    if (file.size > 5 * 1024 * 1024) return null;
-    if (!allowed.includes(file.type)) return null;
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "pdf";
-    const filename = `${randomUUID()}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(uploadDir, filename), buffer);
-    return { label, url: `/uploads/diplomas/${filename}` };
+  const rejectedDoc = documents.find((doc) => !doc.type);
+  if (rejectedDoc) {
+    return { error: `${rejectedDoc.label} : fichier refusé. Envoyez un PDF, JPG ou PNG de 5 Mo maximum.` };
   }
 
-  const diplomaFile = formData.get("diploma") as File | null;
-  const idCardFile = formData.get("idCard") as File | null;
-  const document2File = formData.get("document2") as File | null;
+  await mkdir(DOCUMENTS_DIR, { recursive: true });
+  const savedDocs = await Promise.all(
+    documents.map(async ({ label, bytes, type }) => {
+      const filename = `${randomUUID()}.${type!.ext}`;
+      await writeFile(path.join(DOCUMENTS_DIR, filename), bytes);
+      return { label, url: documentUrl(filename) };
+    })
+  );
 
-  const uploadResults = await Promise.all([
-    saveFile(diplomaFile, "Diplôme"),
-    saveFile(idCardFile, "Pièce d'identité"),
-    saveFile(document2File, "Document complémentaire"),
-  ]);
-
-  const savedDocs = uploadResults.filter(Boolean) as { label: string; url: string }[];
   const diplomaUrl = savedDocs[0]?.url ?? undefined;
   const documentsJson = savedDocs.length > 0 ? savedDocs : undefined;
 

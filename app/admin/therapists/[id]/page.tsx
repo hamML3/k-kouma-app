@@ -5,6 +5,7 @@ import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser, updateThe
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { hasPermission } from "@/lib/permissions";
 import { splitSpecialties } from "@/lib/specialties";
+import { documentHref } from "@/lib/therapistDocuments";
 import Link from "next/link";
 
 type DocEntry = { label: string; url: string };
@@ -146,7 +147,7 @@ export default async function AdminTherapistDetailPage({
         {/* Documents */}
         <div className="rounded-2xl p-5 mb-6" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
           <p className="text-xs font-bold mb-3" style={{ color: "var(--kk-muted)" }}>DOSSIER JOINT</p>
-          {docs.length > 0 ? (
+          {docs.length > 0 && canManageTherapists ? (
             <div className="space-y-2">
               {docs.map((doc, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--kk-purple-light)" }}>
@@ -159,7 +160,7 @@ export default async function AdminTherapistDetailPage({
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold" style={{ color: "var(--kk-purple)" }}>{doc.label}</p>
                     <a
-                      href={doc.url}
+                      href={documentHref(doc.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-semibold underline"
@@ -173,7 +174,9 @@ export default async function AdminTherapistDetailPage({
             </div>
           ) : (
             <p className="text-sm text-center py-3 rounded-xl" style={{ background: "var(--kk-border)", color: "var(--kk-muted)" }}>
-              Aucun document fourni lors de l&apos;inscription
+              {docs.length > 0
+                ? "Documents réservés aux comptes habilités à examiner les candidatures"
+                : "Aucun document fourni lors de l'inscription"}
             </p>
           )}
         </div>

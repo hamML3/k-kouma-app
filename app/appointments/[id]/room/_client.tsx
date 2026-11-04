@@ -73,26 +73,26 @@ export default function RoomClient({
         await fetch(`/api/webrtc/${roomId}/signal`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fromRole: role, payload }),
+          body: JSON.stringify({ payload }),
         });
       } catch {
         // network error; continue
       }
     },
-    [roomId, role]
+    [roomId]
   );
 
   const fetchSignals = useCallback(async (): Promise<SignalRow[]> => {
     try {
       const res = await fetch(
-        `/api/webrtc/${roomId}/signal?excludeRole=${role}&after=${encodeURIComponent(lastSignalAt.current)}`
+        `/api/webrtc/${roomId}/signal?after=${encodeURIComponent(lastSignalAt.current)}`
       );
       if (!res.ok) return [];
       return res.json() as Promise<SignalRow[]>;
     } catch {
       return [];
     }
-  }, [roomId, role]);
+  }, [roomId]);
 
   // ── Peer connection factory ──────────────────────────────────────────────
   const makePc = useCallback(
