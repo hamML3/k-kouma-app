@@ -50,6 +50,8 @@ model User {
   payments           Payment[]
   therapistEarnings  TherapistEarning[]
   auditLogs          AuditLog[]
+  submittedArticles  SubmittedArticle[] @relation("ArticleAuthor")
+  reviewedArticles   SubmittedArticle[] @relation("ArticleReviewer")
 
   @@index([status, role])
   @@map("users")
@@ -398,4 +400,41 @@ model AuditLog {
   @@index([targetType, targetId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// =========================================================================
+// MODULE 6 : ARTICLES PROPOSÉS (thérapeutes / modérateurs / admins)
+// =========================================================================
+
+/// Article proposé par un thérapeute, un modérateur ou un admin — distinct du
+/// contenu éditorial figé de lib/articles.ts (type `Article`), dont le
+/// gabarit riche (symptômes, exemple, "à retenir"...) ne convient pas à une
+/// contribution libre. Volontairement plus simple : titre, accroche, corps en
+/// texte libre. Passe par une file de relecture (`pending`) avant publication
+/// — jamais de publication directe, même pour un admin, par cohérence.
+model SubmittedArticle {
+  id           Int           @id @default(autoincrement())
+  authorId     Int           @map("author_id")
+  slug         String        @unique @db.VarChar(100)
+  title        String        @db.VarChar(200)
+  excerpt      String        @db.VarChar(300)
+  body         String        @db.Text
+  imageUrl     String?       @map("image_url") @db.VarChar(512)
+  status       ArticleStatus @default(pending)
+  reviewedById Int?          @map("reviewed_by_id")
+  reviewedAt   DateTime?     @map("reviewed_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  author     User  @relation("ArticleAuthor", fields: [authorId], references: [id])
+  reviewedBy User? @relation("ArticleReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([authorId])
+  @@map("submitted_articles")
+}
+
+enum ArticleStatus {
+  pending
+  published
+  rejected
 }

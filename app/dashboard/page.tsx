@@ -73,14 +73,14 @@ export default async function DashboardPage() {
   const assignedTherapist = activeAssignment?.therapist?.therapistProfile ?? null;
 
   const answers = user?.patientProfile?.onboardingAnswers as { motifs?: string[] } | null;
-  const articles = !isTherapist ? recommendedArticles(answers?.motifs, 3) : [];
+  const editorialArticles = !isTherapist ? recommendedArticles(answers?.motifs, 3) : [];
 
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date();
   dayEnd.setHours(23, 59, 59, 999);
 
-  const [nextAppointment, pendingRequests, todaysAppointments, unpaidEarnings] = await Promise.all([
+  const [nextAppointment, pendingRequests, todaysAppointments, unpaidEarnings, recentSubmittedArticles] = await Promise.all([
     !isTherapist
       ? prisma.appointment.findFirst({
           where: { patientId: userId, status: { in: ["pending", "confirmed"] } },
@@ -111,8 +111,26 @@ export default async function DashboardPage() {
     isTherapist
       ? prisma.therapistEarning.aggregate({ where: { therapistId: userId, paidOut: false }, _sum: { amount: true } })
       : null,
+    // Articles proposés (thérapeutes/modérateurs/admins) et validés par un
+    // admin — mélangés aux articles éditoriaux ci-dessous, sans logique de
+    // correspondance par motif (simples derniers articles publiés).
+    !isTherapist
+      ? prisma.submittedArticle.findMany({
+          where: { status: "published" },
+          orderBy: { createdAt: "desc" },
+          take: 2,
+          select: { slug: true, title: true, excerpt: true, imageUrl: true },
+        })
+      : [],
   ]);
   const unpaidTotal = Number(unpaidEarnings?._sum.amount ?? 0);
+
+  // Cartes "Articles recommandés" : contenu éditorial figé + derniers
+  // articles proposés publiés, unifiés sous une forme commune pour l'affichage.
+  const articles: { slug: string; title: string; hook: string; image: string | null }[] = [
+    ...editorialArticles.map((a) => ({ slug: a.slug, title: a.title, hook: a.hook, image: a.image as string | null })),
+    ...recentSubmittedArticles.map((a) => ({ slug: a.slug, title: a.title, hook: a.excerpt, image: a.imageUrl })),
+  ];
 
   // Message de bienvenue personnalisé, adapté à l'étape du parcours du patient.
   const welcomeMessage = isTherapist
@@ -444,8 +462,21 @@ export default async function DashboardPage() {
                   className="rounded-2xl overflow-hidden flex flex-col transition-all hover:scale-[1.01]"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)", boxShadow: "0 6px 20px rgba(60,70,55,0.05)" }}
                 >
-                  <div className="relative w-full h-28 shrink-0">
-                    <Image src={a.image} alt="" fill className="object-cover" />
+                  <div className="relative w-full h-28 shrink-0" style={{ background: "var(--kk-purple-light)" }}>
+                    {a.image ? (
+                      a.image.startsWith("/") ? (
+                        <Image src={a.image} alt="" fill className="object-cover" />
+                      ) : (
+                        // URL externe fournie par l'auteur (article proposé) — pas de domaine distant
+                        // autorisé dans next.config, donc <img> plutôt que next/image.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      )
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-2xl" aria-hidden>
+                        🌿
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-bold text-sm mb-1" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
