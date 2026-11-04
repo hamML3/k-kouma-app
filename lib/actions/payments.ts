@@ -7,6 +7,11 @@ import { revalidatePath } from "next/cache";
 import { createInvoice, isPaydunyaConfigured } from "@/lib/paydunya";
 import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, resolveTherapyType } from "@/lib/pricing";
 import { declareManualPaymentSchema } from "@/lib/validators/payments";
+import { isMaintenanceModeEnabled } from "@/lib/platformSettings";
+import { isOrangeMoneyManualEnabled } from "@/lib/orangeMoney";
+
+const MAINTENANCE_ERROR =
+  "La plateforme est actuellement en maintenance. Les achats de séances sont temporairement suspendus — réessayez dans quelques instants.";
 
 export type BuySessionsState = { error?: string };
 
@@ -22,6 +27,10 @@ export async function buySessionsAction(
   const pack = formData.get("pack") as "single" | "pack3";
   if (pack !== "single" && pack !== "pack3") {
     return { error: "Sélection invalide." };
+  }
+
+  if (await isMaintenanceModeEnabled()) {
+    return { error: MAINTENANCE_ERROR };
   }
 
   if (!isPaydunyaConfigured()) {
@@ -107,6 +116,14 @@ export async function declareManualPaymentAction(
 ): Promise<DeclareManualPaymentState> {
   const session = await auth();
   if (!session?.user || session.user.role !== "patient") redirect("/login");
+
+  if (await isMaintenanceModeEnabled()) {
+    return { error: MAINTENANCE_ERROR };
+  }
+
+  if (!(await isOrangeMoneyManualEnabled())) {
+    return { error: "Le paiement manuel par Orange Money n'est pas disponible pour le moment." };
+  }
 
   const parsed = declareManualPaymentSchema.safeParse({
     pack: formData.get("pack"),

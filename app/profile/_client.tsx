@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { updateTherapistProfileAction } from "@/lib/actions/profile";
-import { AppHeader } from "@/components/AppHeader";
 
 const SPECIALTIES = [
   "Anxiété et stress",
@@ -27,21 +26,17 @@ type Profile = {
 
 export default function ProfileClient({
   userId,
-  displayName,
   profile,
   commissionPercent,
 }: {
   userId: number;
-  displayName: string;
   profile: Profile;
   commissionPercent: number;
 }) {
   const [state, action, pending] = useActionState(updateTherapistProfileAction, {});
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <AppHeader role="therapist" displayName={displayName} />
-
+    <>
       <main className="max-w-2xl mx-auto px-5 py-8">
         <div className="mb-6">
           <h1
@@ -199,6 +194,6 @@ export default function ProfileClient({
           </button>
         </form>
       </main>
-    </div>
+    </>
   );
 }

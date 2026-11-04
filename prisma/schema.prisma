@@ -167,6 +167,21 @@ model TherapistProfile {
 model PlatformSettings {
   id                       Int      @id @default(1)
   defaultCommissionPercent Decimal  @default(20.00) @map("default_commission_percent") @db.Decimal(5, 2)
+  // Bannière globale affichée en haut du site (espace public et connecté) —
+  // announcementActive=false ou texte vide : aucune bannière affichée. Le
+  // texte est rendu tel quel (pas de mise en forme), dismissible par visiteur.
+  announcementText   String? @map("announcement_text") @db.Text
+  announcementActive Boolean @default(false) @map("announcement_active")
+  // Mode maintenance : affiche un bandeau d'avertissement sur tout le site et
+  // bloque les nouveaux achats de séances (lib/actions/payments.ts) — ne
+  // touche jamais /admin, pour pouvoir le désactiver soi-même sans y être
+  // bloqué.
+  maintenanceModeEnabled Boolean @default(false) @map("maintenance_mode_enabled")
+  // Active/désactive le pont de paiement manuel Orange Money (lib/orangeMoney.ts)
+  // sans retirer la variable d'environnement ni redéployer.
+  orangeMoneyManualEnabled Boolean @default(true) @map("orange_money_manual_enabled")
+  // Affiche ou masque la carte "Coach de vie / Conseil" sur la page d'accueil publique.
+  showLifeCoachCard Boolean @default(true) @map("show_life_coach_card")
   updatedAt                DateTime @updatedAt @map("updated_at")
   updatedById              Int?     @map("updated_by_id")
 

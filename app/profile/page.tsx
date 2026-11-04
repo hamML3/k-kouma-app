@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileClient from "./_client";
+import { AppHeader } from "@/components/AppHeader";
 
 export const metadata = { title: "Mon profil — K-Kouma" };
 
@@ -35,17 +36,19 @@ export default async function ProfilePage() {
       : Number(settings?.defaultCommissionPercent ?? 20);
 
   return (
-    <ProfileClient
-      userId={userId}
-      displayName={session.user.email ?? "Mon compte"}
-      profile={{
-        firstName:  profile.firstName,
-        lastName:   profile.lastName,
-        bio:        profile.bio        ?? "",
-        languages:  profile.languages  ?? "",
-        specialties: profile.specialties ?? "",
-      }}
-      commissionPercent={commissionPercent}
-    />
+    <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
+      <AppHeader role="therapist" displayName={session.user.email ?? "Mon compte"} />
+      <ProfileClient
+        userId={userId}
+        profile={{
+          firstName:  profile.firstName,
+          lastName:   profile.lastName,
+          bio:        profile.bio        ?? "",
+          languages:  profile.languages  ?? "",
+          specialties: profile.specialties ?? "",
+        }}
+        commissionPercent={commissionPercent}
+      />
+    </div>
   );
 }

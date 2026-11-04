@@ -62,5 +62,88 @@ export async function updatePlatformSettingsAction(formData: FormData): Promise<
   );
 
   revalidatePath("/admin/settings");
-  redirect("/admin/settings?saved=1");
+  redirect("/admin/settings?saved=commission");
+}
+
+/**
+ * Bannière globale (annonce) affichée en haut du site, public et espace
+ * connecté — voir components/PlatformBanner.tsx. Lue à chaque requête (aucun
+ * cache à invalider) : l'effet est immédiat.
+ */
+export async function updateAnnouncementSettingAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const active = formData.get("announcementActive") === "on";
+  const rawText = (formData.get("announcementText") as string | null)?.trim() ?? "";
+  const announcementText = rawText.length > 0 ? rawText : null;
+
+  await prisma.platformSettings.upsert({
+    where: { id: 1 },
+    create: { id: 1, announcementActive: active, announcementText, updatedById: admin.id },
+    update: { announcementActive: active, announcementText, updatedById: admin.id },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.announcement_update",
+    metadata: { announcementActive: active, announcementText },
+  });
+
+  revalidatePath("/admin/settings");
+  redirect("/admin/settings?saved=announcement");
+}
+
+/**
+ * Mode maintenance : affiche un bandeau d'avertissement sur tout le site et
+ * bloque les nouveaux achats de séances (lib/actions/payments.ts). Ne touche
+ * jamais /admin — un admin peut toujours revenir ici pour le désactiver.
+ */
+export async function updateMaintenanceModeAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const maintenanceModeEnabled = formData.get("maintenanceModeEnabled") === "on";
+
+  await prisma.platformSettings.upsert({
+    where: { id: 1 },
+    create: { id: 1, maintenanceModeEnabled, updatedById: admin.id },
+    update: { maintenanceModeEnabled, updatedById: admin.id },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.maintenance_mode_update",
+    metadata: { maintenanceModeEnabled },
+  });
+
+  revalidatePath("/admin/settings");
+  redirect("/admin/settings?saved=maintenance");
+}
+
+/**
+ * Bascules de fonctionnalités : paiement manuel Orange Money (lib/orangeMoney.ts)
+ * et affichage de la carte "Coach de vie" sur la page d'accueil publique.
+ */
+export async function updateFeatureTogglesAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const orangeMoneyManualEnabled = formData.get("orangeMoneyManualEnabled") === "on";
+  const showLifeCoachCard = formData.get("showLifeCoachCard") === "on";
+
+  await prisma.platformSettings.upsert({
+    where: { id: 1 },
+    create: { id: 1, orangeMoneyManualEnabled, showLifeCoachCard, updatedById: admin.id },
+    update: { orangeMoneyManualEnabled, showLifeCoachCard, updatedById: admin.id },
+  });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.feature_toggles_update",
+    metadata: { orangeMoneyManualEnabled, showLifeCoachCard },
+  });
+
+  revalidatePath("/admin/settings");
+  // La page d'accueil publique est en ISR (revalidate=60) — on force la mise
+  // à jour immédiate de la carte "Coach de vie" plutôt que d'attendre.
+  revalidatePath("/");
+  redirect("/admin/settings?saved=features");
 }

@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BuyButton, ManualPaymentForm } from "./_client";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
-import { orangeMoneyMerchantCode } from "@/lib/orangeMoney";
+import { orangeMoneyMerchantCode, isOrangeMoneyManualEnabled } from "@/lib/orangeMoney";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
@@ -47,6 +47,7 @@ export default async function SubscriptionPage({
   const credits = profile?.sessionCredits ?? 0;
   const paymentAvailable = isPaydunyaConfigured();
   const merchantCode = orangeMoneyMerchantCode();
+  const manualOrangeMoneyEnabled = await isOrangeMoneyManualEnabled();
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -129,13 +130,13 @@ export default async function SubscriptionPage({
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
             {paymentAvailable
               ? "Paiement par Mobile Money (Orange Money, Wave) via PayDunya."
-              : merchantCode
+              : manualOrangeMoneyEnabled
               ? "Paiement par Orange Money, vérifié manuellement par notre équipe."
               : "Paiement en ligne temporairement indisponible."}
           </p>
         </div>
 
-        {!paymentAvailable && !merchantCode && (
+        {!paymentAvailable && !manualOrangeMoneyEnabled && (
           <div
             className="rounded-2xl p-4 mb-6 text-sm flex items-start gap-3"
             style={{ background: "var(--kk-gold-light)", color: "#8A6530", border: "1px solid #E9C98A" }}
@@ -154,7 +155,7 @@ export default async function SubscriptionPage({
           </div>
         )}
 
-        {!paymentAvailable && merchantCode && (
+        {!paymentAvailable && manualOrangeMoneyEnabled && merchantCode && (
           <div className="mb-8 space-y-4">
             <div
               className="rounded-2xl p-4 text-sm"

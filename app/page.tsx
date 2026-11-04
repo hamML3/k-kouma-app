@@ -5,6 +5,13 @@ import { getSpecialtyIcon } from "@/lib/icons";
 import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import { SESSION_PRICING, type TherapyType } from "@/lib/pricing";
+import { getPlatformSettings } from "@/lib/platformSettings";
+
+// Page statique régénérée au plus toutes les 60s (ISR) : assez réactif pour
+// un réglage admin (ex. showLifeCoachCard), sans rendre la page d'accueil
+// entièrement dynamique. Un changement depuis /admin/settings force en plus
+// une revalidation immédiate (revalidatePath("/")).
+export const revalidate = 60;
 
 const PRICING_DISPLAY: Record<TherapyType, { color: string; bg: string }> = {
   individuelle: { color: "#557B53", bg: "#E4EDDD" },
@@ -83,8 +90,8 @@ function Hero() {
 }
 
 /* ─── Therapy types ──────────────────────────────────────────────────────── */
-function TherapyTypes() {
-  const types = [
+function TherapyTypes({ showLifeCoachCard }: { showLifeCoachCard: boolean }) {
+  const allTypes = [
     {
       icon: (
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -94,6 +101,7 @@ function TherapyTypes() {
       ),
       bg: "#E4EDDD",
       title: "Thérapie individuelle",
+      lifeCoach: false,
     },
     {
       icon: (
@@ -105,6 +113,7 @@ function TherapyTypes() {
       ),
       bg: "#ECE7F5",
       title: "Thérapie de couple",
+      lifeCoach: false,
     },
     {
       icon: (
@@ -116,6 +125,7 @@ function TherapyTypes() {
       ),
       bg: "#FBEEDD",
       title: "Adolescent / enfant",
+      lifeCoach: false,
     },
     {
       icon: (
@@ -127,8 +137,10 @@ function TherapyTypes() {
       ),
       bg: "#E0EEF7",
       title: "Coach de vie / Conseil",
+      lifeCoach: true,
     },
   ];
+  const types = showLifeCoachCard ? allTypes : allTypes.filter((t) => !t.lifeCoach);
 
   return (
     <section id="mission" style={{ background: "#fff", scrollMarginTop: "5rem" }}>
@@ -557,13 +569,24 @@ function SecuritySection() {
 }
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Page statique/ISR : une panne de connexion DB au moment de la (re)génération
+  // ne doit jamais faire échouer la page d'accueil — on retombe sur l'affichage
+  // par défaut (carte "Coach de vie" visible) plutôt que de bloquer le build.
+  let showLifeCoachCard = true;
+  try {
+    const settings = await getPlatformSettings();
+    showLifeCoachCard = settings?.showLifeCoachCard ?? true;
+  } catch (err) {
+    console.error("[platform-settings] lecture échouée pour la page d'accueil:", err);
+  }
+
   return (
     <>
       <PublicNav />
       <main>
         <Hero />
-        <TherapyTypes />
+        <TherapyTypes showLifeCoachCard={showLifeCoachCard} />
         <WellbeingSection />
         <TherapistsPreview />
         <ConsultationModes />
