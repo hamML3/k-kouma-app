@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "./Logo";
 import { signOutAction } from "@/lib/actions/auth";
 import { AppMobileMenu } from "./AppMobileMenu";
@@ -64,9 +65,13 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
             <Logo href="/dashboard" size={26} />
             <div className="flex items-center gap-1 md:gap-4 shrink-0">
               <NotificationBell />
-              <span className="hidden md:block text-sm font-semibold truncate max-w-[160px]" style={{ color: "var(--kk-mid)" }}>
+              <Link
+                href="/compte"
+                className="hidden md:block text-sm font-semibold truncate max-w-[160px]"
+                style={{ color: "var(--kk-mid)" }}
+              >
                 {displayName}
-              </span>
+              </Link>
               <div className="hidden md:block">{signOut}</div>
               <AppMobileMenu
                 links={links}
@@ -75,6 +80,9 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
                     <p className="text-xs font-semibold truncate mb-2" style={{ color: "var(--kk-muted)" }}>
                       {displayName}
                     </p>
+                    <Link href="/compte" className="block text-sm font-semibold mb-2" style={{ color: "var(--kk-muted)" }}>
+                      Mon compte
+                    </Link>
                     {signOut}
                   </>
                 }

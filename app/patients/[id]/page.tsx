@@ -4,6 +4,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { ReportButton } from "@/components/ReportButton";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { addTherapistNoteAction, deleteTherapistNoteAction } from "@/lib/actions/notes";
 
 const ANSWER_LABELS: Record<string, Record<string, string>> = {
   therapyType: {
@@ -95,6 +97,12 @@ export default async function PatientDetailPage({
     where: { therapistId, patientId: patientUserId },
     orderBy: { scheduledAt: "desc" },
     take: 10,
+  });
+
+  const notes = await prisma.therapistNote.findMany({
+    where: { therapistId, patientId: patientUserId },
+    orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   const rawAnswers = patient.patientProfile?.onboardingAnswers as Record<string, unknown> | null;
@@ -280,6 +288,61 @@ export default async function PatientDetailPage({
             )}
           </div>
         </div>
+
+        <section className="kk-card p-6 mt-5">
+          <h2 className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Mes notes de suivi
+          </h2>
+          <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
+            Vous seul pouvez les lire : ni le patient ni l&apos;équipe K-Kouma n&apos;y ont accès depuis la plateforme.
+          </p>
+
+          <form action={addTherapistNoteAction} className="space-y-3">
+            <input type="hidden" name="patientId" value={patientUserId} />
+            <label htmlFor="note-body" className="sr-only">
+              Nouvelle note
+            </label>
+            <textarea
+              id="note-body"
+              name="body"
+              rows={3}
+              required
+              maxLength={5000}
+              className="kk-input resize-y"
+              placeholder="Ajouter une note…"
+            />
+            <button type="submit" className="kk-btn-green">
+              Enregistrer la note
+            </button>
+          </form>
+
+          {notes.length > 0 && (
+            <ul className="mt-5 space-y-3">
+              {notes.map((note) => (
+                <li key={note.id} className="pt-3" style={{ borderTop: "1px solid var(--kk-border)" }}>
+                  <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--kk-dark)" }}>
+                    {note.body}
+                  </p>
+                  <div className="flex items-center justify-between gap-3 mt-1">
+                    <p className="text-xs" style={{ color: "var(--kk-muted)" }}>
+                      {note.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    <form action={deleteTherapistNoteAction}>
+                      <input type="hidden" name="noteId" value={note.id} />
+                      <ConfirmSubmitButton
+                        confirmMessage="Supprimer définitivement cette note ?"
+                        className="text-xs font-semibold"
+                        style={{ color: "#C0392B" }}
+                      >
+                        Supprimer
+                      </ConfirmSubmitButton>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );

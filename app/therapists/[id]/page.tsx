@@ -50,6 +50,21 @@ export default async function TherapistProfilePage({
     currentAssignment?.therapistId && currentAssignment.therapistId === profile.user.id
   );
 
+  const [ratingStats, reviews] = await Promise.all([
+    prisma.sessionReview.aggregate({
+      where: { therapistId: profile.user.id, status: "published" },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    prisma.sessionReview.findMany({
+      where: { therapistId: profile.user.id, status: "published", comment: { not: null } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, rating: true, comment: true, createdAt: true },
+    }),
+  ]);
+  const reviewCount = ratingStats._count._all;
+
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role={session.user.role} displayName={session.user.email ?? "Mon compte"} />
@@ -202,6 +217,32 @@ export default async function TherapistProfilePage({
               </Link>
             </div>
           </div>
+        )}
+
+        {reviewCount > 0 && (
+          <section className="kk-card p-6 mt-5">
+            <h2 className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+              Avis des patients
+            </h2>
+            <p className="text-sm" style={{ color: "var(--kk-mid)" }}>
+              <span aria-hidden style={{ color: "var(--kk-gold)" }}>★</span>{" "}
+              {(ratingStats._avg.rating ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 1 })}/5 sur {reviewCount} avis
+            </p>
+            {reviews.length > 0 && (
+              <ul className="mt-4 space-y-3">
+                {reviews.map((r) => (
+                  <li key={r.id} className="pt-3" style={{ borderTop: "1px solid var(--kk-border)" }}>
+                    <p className="text-sm whitespace-pre-wrap break-words" style={{ color: "var(--kk-mid)" }}>
+                      {r.comment}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+                      {r.rating}/5, {r.createdAt.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         )}
       </main>
     </div>

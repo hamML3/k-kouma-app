@@ -88,4 +88,19 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterPatientInput = z.infer<typeof registerPatientSchema>;
 export type RegisterTherapistInput = z.infer<typeof registerTherapistSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    password: newPassword,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Les deux mots de passe ne correspondent pas",
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    message: "Le nouveau mot de passe doit être différent de l'actuel",
+    path: ["password"],
+  });
+
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

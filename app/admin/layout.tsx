@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/AdminNav";
 import { NotificationBell } from "@/components/NotificationBell";
 import { signOutAction } from "@/lib/actions/auth";
+import Link from "next/link";
 
 export const metadata = {
   title: "Administration — K-Kouma",
@@ -18,6 +19,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <p className="text-xs px-3 mb-2 font-semibold truncate" style={{ color: "var(--kk-muted)" }}>
         {session.user.email}
       </p>
+      <Link
+        href="/admin/compte"
+        className="flex items-center px-3 py-2 text-sm font-semibold rounded-lg transition-colors hover:bg-[var(--kk-border)]"
+        style={{ color: "var(--kk-muted)" }}
+      >
+        Mon compte
+      </Link>
       <form action={signOutAction}>
         <button
           type="submit"

@@ -12,7 +12,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
-      <AppHeader role={session.user.role} displayName={session.user.name ?? session.user.email ?? ""} />
+      <AppHeader role={session.user.role} displayName={session.user.email ?? "Mon compte"} />
       <main className="max-w-2xl mx-auto px-5 py-8">
         <NotificationList userId={Number(session.user.id)} />
       </main>

@@ -69,6 +69,16 @@ const NAV_LINKS: NavLink[] = [
     ),
   },
   {
+    href: "/admin/reviews",
+    label: "Avis",
+    requiresPermission: "manage_reports",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2l2.2 4.5 4.8.7-3.5 3.4.8 4.9L9 13.2l-4.3 2.3.8-4.9L2 7.2l4.8-.7L9 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/stats",
     label: "Statistiques",
     icon: (

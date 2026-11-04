@@ -12,27 +12,27 @@ datasource db {
 // =========================================================================
 
 model User {
-  id              Int        @id @default(autoincrement())
-  email           String     @unique @db.VarChar(180)
-  phoneNumber     String?    @unique @map("phone_number") @db.VarChar(20)
-  passwordHash    String     @map("password_hash") @db.VarChar(255)
+  id                Int        @id @default(autoincrement())
+  email             String     @unique @db.VarChar(180)
+  phoneNumber       String?    @unique @map("phone_number") @db.VarChar(20)
+  passwordHash      String     @map("password_hash") @db.VarChar(255)
   // Horodatage du dernier changement de mot de passe — permet d'invalider
   // les sessions JWT déjà émises (ex. appareil volé) dès qu'un mot de passe
   // est réinitialisé, sans avoir à gérer de liste de révocation.
-  passwordChangedAt DateTime? @map("password_changed_at")
-  emailVerifiedAt DateTime?  @map("email_verified_at")
-  phoneVerifiedAt DateTime?  @map("phone_verified_at")
-  status          UserStatus @default(active)
-  role            UserRole   @default(patient)
+  passwordChangedAt DateTime?  @map("password_changed_at")
+  emailVerifiedAt   DateTime?  @map("email_verified_at")
+  phoneVerifiedAt   DateTime?  @map("phone_verified_at")
+  status            UserStatus @default(active)
+  role              UserRole   @default(patient)
   // Permissions accordées à un compte "modérateur" (ignoré pour les autres
   // rôles) — tableau de clés Permission (lib/permissions.ts), ex.
   // ["manage_finances"]. NULL = aucune permission accordée. Remplace le jeu
   // de capacités fixe des modérateurs par un ensemble configurable par
   // compte (voir prisma/backfill-moderator-permissions.ts pour les comptes
   // modérateurs créés avant cette colonne).
-  permissions     Json?
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+  permissions       Json?
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
 
   patientProfile      PatientProfile?
   therapistProfile    TherapistProfile?
@@ -63,6 +63,12 @@ model User {
   therapistUnavailabilities TherapistUnavailability[]
 
   notifications Notification[]
+
+  notesWritten     TherapistNote[] @relation("TherapistNoteAuthor")
+  notesAbout       TherapistNote[] @relation("TherapistNotePatient")
+  reviewsWritten   SessionReview[] @relation("ReviewAuthor")
+  reviewsReceived  SessionReview[] @relation("ReviewTherapist")
+  reviewsModerated SessionReview[] @relation("ReviewModerator")
 
   @@index([status, role])
   @@map("users")
@@ -129,16 +135,16 @@ enum UserRole {
 }
 
 model PatientProfile {
-  id                Int     @id @default(autoincrement())
-  userId            Int     @unique @map("user_id")
-  nickname          String  @db.VarChar(50)
-  avatarUrl         String? @map("avatar_url") @db.VarChar(255)
-  onboardingAnswers Json?   @map("onboarding_answers")
-  timezone          String  @default("UTC") @db.VarChar(50)
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @unique @map("user_id")
+  nickname            String    @db.VarChar(50)
+  avatarUrl           String?   @map("avatar_url") @db.VarChar(255)
+  onboardingAnswers   Json?     @map("onboarding_answers")
+  timezone            String    @default("UTC") @db.VarChar(50)
   // Nombre de séances payées et non encore consommées. Incrémenté quand un
   // paiement passe à "completed", décrémenté à chaque réservation confirmée
   // (et recrédité si le patient annule un rendez-vous en attente).
-  sessionCredits    Int     @default(0) @map("session_credits")
+  sessionCredits      Int       @default(0) @map("session_credits")
   // Horodatage du consentement au traitement des données de santé, donné à
   // l'inscription (les 5 cases du document "Consentement au traitement des
   // données relatives à la santé" étant toutes requises avant validation).
@@ -150,18 +156,18 @@ model PatientProfile {
 }
 
 model TherapistProfile {
-  id                Int       @id @default(autoincrement())
-  userId            Int       @unique @map("user_id")
-  firstName         String    @map("first_name") @db.VarChar(100)
-  lastName          String    @map("last_name") @db.VarChar(100)
-  specialties       String?   @db.Text
-  bio               String?   @db.Text
-  profilePictureUrl String?   @map("profile_picture_url") @db.VarChar(255)
-  isVerified        Boolean   @default(false) @map("is_verified")
-  languages         String?   @db.VarChar(255)
-  diplomaUrl        String?   @map("diploma_url") @db.VarChar(512)
-  documentsJson     Json?     @map("documents_json")
-  rejectedAt        DateTime? @map("rejected_at")
+  id                        Int       @id @default(autoincrement())
+  userId                    Int       @unique @map("user_id")
+  firstName                 String    @map("first_name") @db.VarChar(100)
+  lastName                  String    @map("last_name") @db.VarChar(100)
+  specialties               String?   @db.Text
+  bio                       String?   @db.Text
+  profilePictureUrl         String?   @map("profile_picture_url") @db.VarChar(255)
+  isVerified                Boolean   @default(false) @map("is_verified")
+  languages                 String?   @db.VarChar(255)
+  diplomaUrl                String?   @map("diploma_url") @db.VarChar(512)
+  documentsJson             Json?     @map("documents_json")
+  rejectedAt                DateTime? @map("rejected_at")
   // Commission K-Kouma sur les séances de ce thérapeute (pourcentage, ex.
   // 20.00 = 20%). NULL = utilise PlatformSettings.defaultCommissionPercent.
   commissionPercent         Decimal?  @map("commission_percent") @db.Decimal(5, 2)
@@ -188,18 +194,18 @@ model PlatformSettings {
   // Bannière globale affichée en haut du site (espace public et connecté) —
   // announcementActive=false ou texte vide : aucune bannière affichée. Le
   // texte est rendu tel quel (pas de mise en forme), dismissible par visiteur.
-  announcementText   String? @map("announcement_text") @db.Text
-  announcementActive Boolean @default(false) @map("announcement_active")
+  announcementText         String?  @map("announcement_text") @db.Text
+  announcementActive       Boolean  @default(false) @map("announcement_active")
   // Mode maintenance : affiche un bandeau d'avertissement sur tout le site et
   // bloque les nouveaux achats de séances (lib/actions/payments.ts) — ne
   // touche jamais /admin, pour pouvoir le désactiver soi-même sans y être
   // bloqué.
-  maintenanceModeEnabled Boolean @default(false) @map("maintenance_mode_enabled")
+  maintenanceModeEnabled   Boolean  @default(false) @map("maintenance_mode_enabled")
   // Active/désactive le pont de paiement manuel Orange Money (lib/orangeMoney.ts)
   // sans retirer la variable d'environnement ni redéployer.
-  orangeMoneyManualEnabled Boolean @default(true) @map("orange_money_manual_enabled")
+  orangeMoneyManualEnabled Boolean  @default(true) @map("orange_money_manual_enabled")
   // Affiche ou masque la carte "Coach de vie / Conseil" sur la page d'accueil publique.
-  showLifeCoachCard Boolean @default(true) @map("show_life_coach_card")
+  showLifeCoachCard        Boolean  @default(true) @map("show_life_coach_card")
   updatedAt                DateTime @updatedAt @map("updated_at")
   updatedById              Int?     @map("updated_by_id")
 
@@ -252,25 +258,25 @@ enum SubscriptionStatus {
 /// abonnement mensuel). Une fois `completed`, `sessionsCount` est ajouté à
 /// `PatientProfile.sessionCredits`.
 model Payment {
-  id            Int           @id @default(autoincrement())
-  patientId     Int           @map("patient_id")
-  therapyType   String        @map("therapy_type") @db.VarChar(20) // individuelle | couple | enfant
-  sessionsCount Int           @map("sessions_count") // 1 (séance seule) ou 4 (pack)
-  amount        Decimal       @db.Decimal(10, 2)
-  currency      String        @default("XOF") @db.VarChar(3)
-  provider      String        @default("paydunya") @db.VarChar(30)
-  providerRef   String?       @unique @map("provider_ref") @db.VarChar(255)
+  id                Int           @id @default(autoincrement())
+  patientId         Int           @map("patient_id")
+  therapyType       String        @map("therapy_type") @db.VarChar(20) // individuelle | couple | enfant
+  sessionsCount     Int           @map("sessions_count") // 1 (séance seule) ou 4 (pack)
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("XOF") @db.VarChar(3)
+  provider          String        @default("paydunya") @db.VarChar(30)
+  providerRef       String?       @unique @map("provider_ref") @db.VarChar(255)
   // Numéro depuis lequel le patient dit avoir envoyé l'argent — utilisé
   // uniquement pour les paiements déclarés manuellement (Orange Money),
   // pour aider l'admin à recouper avec l'historique du compte marchand.
-  payerPhone    String?       @map("payer_phone") @db.VarChar(20)
-  status        PaymentStatus @default(pending)
+  payerPhone        String?       @map("payer_phone") @db.VarChar(20)
+  status            PaymentStatus @default(pending)
   // Nombre de séances de ce paiement pas encore réclamées par une réservation
   // — permet de calculer le gain du thérapeute au prorata du prix réel payé
   // (ex: pack de 3 à 28 000 → 9 333/séance), et non du tarif catalogue.
-  sessionsRemaining Int        @default(0) @map("sessions_remaining")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  paidAt        DateTime?     @map("paid_at")
+  sessionsRemaining Int           @default(0) @map("sessions_remaining")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  paidAt            DateTime?     @map("paid_at")
 
   patient            User          @relation(fields: [patientId], references: [id])
   fundedAppointments Appointment[]
@@ -290,19 +296,19 @@ enum PaymentStatus {
 /// rendez-vous passe à "completed" ; le montant est figé au tarif du
 /// thérapeute à ce moment-là (indépendant d'un changement ultérieur de tarif).
 model TherapistEarning {
-  id            Int       @id @default(autoincrement())
-  therapistId   Int       @map("therapist_id")
-  appointmentId Int       @unique @map("appointment_id")
-  amount        Decimal   @db.Decimal(10, 2)
-  currency      String    @default("XOF") @db.VarChar(3)
+  id                Int       @id @default(autoincrement())
+  therapistId       Int       @map("therapist_id")
+  appointmentId     Int       @unique @map("appointment_id")
+  amount            Decimal   @db.Decimal(10, 2)
+  currency          String    @default("XOF") @db.VarChar(3)
   // Pourcentage de commission K-Kouma appliqué pour calculer `amount` —
   // conservé même si le réglage change ensuite, pour la traçabilité.
-  commissionPercent Decimal? @map("commission_percent") @db.Decimal(5, 2)
+  commissionPercent Decimal?  @map("commission_percent") @db.Decimal(5, 2)
   // Reversement au thérapeute — distinct du paiement du patient, qui lui a
   // déjà eu lieu au moment de l'achat des séances.
-  paidOut       Boolean   @default(false) @map("paid_out")
-  paidOutAt     DateTime? @map("paid_out_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  paidOut           Boolean   @default(false) @map("paid_out")
+  paidOutAt         DateTime? @map("paid_out_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   therapist   User        @relation(fields: [therapistId], references: [id])
   appointment Appointment @relation(fields: [appointmentId], references: [id])
@@ -367,27 +373,28 @@ enum AssignmentStatus {
 }
 
 model Appointment {
-  id              Int               @id @default(autoincrement())
-  patientId       Int               @map("patient_id")
-  therapistId     Int               @map("therapist_id")
-  scheduledAt     DateTime          @map("scheduled_at")
-  durationMinutes Int               @default(45) @map("duration_minutes")
-  status          AppointmentStatus @default(pending)
-  type            AppointmentType   @default(video)
-  webrtcRoomId    String?           @map("webrtc_room_id") @db.VarChar(100)
+  id                Int               @id @default(autoincrement())
+  patientId         Int               @map("patient_id")
+  therapistId       Int               @map("therapist_id")
+  scheduledAt       DateTime          @map("scheduled_at")
+  durationMinutes   Int               @default(45) @map("duration_minutes")
+  status            AppointmentStatus @default(pending)
+  type              AppointmentType   @default(video)
+  webrtcRoomId      String?           @map("webrtc_room_id") @db.VarChar(100)
   // Paiement qui a fourni le crédit consommé par cette réservation (FIFO) —
   // permet de retrouver le prix réellement payé pour cette séance précise.
-  fundedByPaymentId Int?            @map("funded_by_payment_id")
+  fundedByPaymentId Int?              @map("funded_by_payment_id")
   // Horodatage de l'envoi du rappel "séance dans ~24h" (email + notification
   // in-app, voir app/api/cron/session-reminders/route.ts). Posé *avant*
   // l'envoi : un rendez-vous déjà traité n'est jamais rappelé deux fois,
   // même si le cron plante en plein lot ou si deux exécutions se chevauchent.
-  reminderSentAt  DateTime?         @map("reminder_sent_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
+  reminderSentAt    DateTime?         @map("reminder_sent_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
 
-  patient         User     @relation("PatientAppointments", fields: [patientId], references: [id])
-  therapist       User     @relation("TherapistAppointments", fields: [therapistId], references: [id])
-  fundedByPayment Payment? @relation(fields: [fundedByPaymentId], references: [id])
+  patient         User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  therapist       User              @relation("TherapistAppointments", fields: [therapistId], references: [id])
+  review          SessionReview?
+  fundedByPayment Payment?          @relation(fields: [fundedByPaymentId], references: [id])
   messages        Message[]
   earning         TherapistEarning?
   reports         Report[]
@@ -606,4 +613,58 @@ model Notification {
   @@index([userId, readAt])
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+// =========================================================================
+// MODULE 9 : NOTES DE SUIVI ET AVIS
+// =========================================================================
+
+/// Notes privées d'un psychologue sur un patient. Seul l'auteur les lit : ni
+/// le patient, ni l'admin, et le journal d'audit n'en garde jamais le contenu.
+model TherapistNote {
+  id          Int      @id @default(autoincrement())
+  therapistId Int      @map("therapist_id")
+  patientId   Int      @map("patient_id")
+  body        String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  therapist User @relation("TherapistNoteAuthor", fields: [therapistId], references: [id])
+  patient   User @relation("TherapistNotePatient", fields: [patientId], references: [id])
+
+  @@index([therapistId, patientId, createdAt])
+  @@index([patientId])
+  @@map("therapist_notes")
+}
+
+/// Avis d'un patient sur une séance terminée, un seul par séance. Il reste
+/// invisible tant qu'un modérateur ne l'a pas publié : un commentaire peut
+/// contenir des détails de santé ou identifier le patient.
+model SessionReview {
+  id            Int          @id @default(autoincrement())
+  appointmentId Int          @unique @map("appointment_id")
+  patientId     Int          @map("patient_id")
+  therapistId   Int          @map("therapist_id")
+  rating        Int          @db.TinyInt
+  comment       String?      @db.Text
+  status        ReviewStatus @default(pending)
+  moderatedById Int?         @map("moderated_by_id")
+  moderatedAt   DateTime?    @map("moderated_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  patient     User        @relation("ReviewAuthor", fields: [patientId], references: [id])
+  therapist   User        @relation("ReviewTherapist", fields: [therapistId], references: [id])
+  moderatedBy User?       @relation("ReviewModerator", fields: [moderatedById], references: [id])
+
+  @@index([therapistId, status])
+  @@index([status, createdAt])
+  @@index([patientId])
+  @@index([moderatedById])
+  @@map("session_reviews")
+}
+
+enum ReviewStatus {
+  pending
+  published
+  hidden
 }

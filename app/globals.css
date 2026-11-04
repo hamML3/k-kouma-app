@@ -221,3 +221,24 @@ body {
 .kk-spin {
   animation: kk-spin 0.9s linear infinite;
 }
+
+/* Notation : les étoiles sont en ordre inversé pour que ~ colore celles de gauche. */
+.kk-star {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--kk-border-mid);
+  transition: color 0.1s;
+}
+
+.kk-star:has(input:checked),
+.kk-star:has(input:checked) ~ .kk-star,
+.kk-star:hover,
+.kk-star:hover ~ .kk-star {
+  color: var(--kk-gold);
+}
+
+.kk-star:has(input:focus-visible) {
+  outline: 2px solid var(--kk-purple);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

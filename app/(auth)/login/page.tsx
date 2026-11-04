@@ -1,10 +1,21 @@
 'use client'
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { loginAction } from "@/lib/actions/auth";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
+
+function PasswordChangedNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("passwordChanged") !== "1") return null;
+  return (
+    <p className="text-sm rounded-xl p-3 mb-5" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-hover)" }}>
+      Votre mot de passe a été modifié. Connectez-vous avec le nouveau.
+    </p>
+  );
+}
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(loginAction, {});
@@ -20,6 +31,10 @@ export default function LoginPage() {
       <p className="text-sm mb-6" style={{ color: "var(--kk-muted)" }}>
         Heureux de vous revoir. Connectez-vous pour retrouver votre espace.
       </p>
+
+      <Suspense fallback={null}>
+        <PasswordChangedNotice />
+      </Suspense>
 
       {state.error && (
         <div className="kk-error mb-5">{state.error}</div>

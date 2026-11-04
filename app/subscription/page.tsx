@@ -244,12 +244,19 @@ export default async function SubscriptionPage({
                         {Number(p.amount).toLocaleString("fr-FR")} {p.currency}
                       </p>
                     </div>
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
-                      style={{ background: statusInfo.bg, color: statusInfo.color }}
-                    >
-                      {statusInfo.label}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className="text-xs font-bold px-2.5 py-1 rounded-full"
+                        style={{ background: statusInfo.bg, color: statusInfo.color }}
+                      >
+                        {statusInfo.label}
+                      </span>
+                      {p.status === "completed" && (
+                        <Link href={`/recus/${p.id}`} className="text-xs font-semibold" style={{ color: "var(--kk-green)" }}>
+                          Voir le reçu
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 );
               })}

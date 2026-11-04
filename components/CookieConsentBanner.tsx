@@ -57,7 +57,7 @@ export function CookieConsentBanner() {
     <div
       role="dialog"
       aria-label="Consentement aux cookies"
-      className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-5"
+      className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-5 print:hidden"
       style={{ animation: "kk-cookie-in 0.3s ease-out" }}
     >
       <style>{`

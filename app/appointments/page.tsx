@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { cancelAppointmentAction } from "@/lib/actions/appointments";
 import Link from "next/link";
+import { ReviewForm } from "@/components/ReviewForm";
 import { AppHeader } from "@/components/AppHeader";
 import { Icon, type IconName } from "@/components/Icon";
 
@@ -39,6 +40,7 @@ export default async function PatientAppointmentsPage() {
       therapist: {
         select: { therapistProfile: { select: { firstName: true, lastName: true } }, email: true },
       },
+      review: { select: { rating: true, status: true } },
     },
     orderBy: { scheduledAt: "asc" },
     take: 50,
@@ -214,26 +216,35 @@ export default async function PatientAppointmentsPage() {
                   : (`${a.therapist.therapistProfile?.firstName ?? ""} ${a.therapist.therapistProfile?.lastName ?? ""}`.trim() || a.therapist.email);
 
                 return (
-                  <div
-                    key={a.id}
-                    className="rounded-xl p-4 flex items-center justify-between gap-3"
-                    style={{ background: "#fff", border: "1px solid var(--kk-border)", opacity: 0.75 }}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--kk-dark)" }}>
-                        <Icon name={TYPE_ICONS[a.type]} size={13} />
-                        Avec {otherName}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                        {date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                      </p>
-                    </div>
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
-                      style={{ background: statusInfo.bg, color: statusInfo.color }}
+                  <div key={a.id} className="space-y-1.5">
+                    <div
+                      className="rounded-xl p-4 flex items-center justify-between gap-3"
+                      style={{ background: "#fff", border: "1px solid var(--kk-border)", opacity: 0.75 }}
                     >
-                      {statusInfo.label}
-                    </span>
+                      <div>
+                        <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: "var(--kk-dark)" }}>
+                          <Icon name={TYPE_ICONS[a.type]} size={13} />
+                          Avec {otherName}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                          {date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                        </p>
+                      </div>
+                      <span
+                        className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
+                        style={{ background: statusInfo.bg, color: statusInfo.color }}
+                      >
+                        {statusInfo.label}
+                      </span>
+                    </div>
+                    {!isTherapist && a.status === "completed" &&
+                      (a.review ? (
+                        <p className="text-xs px-1" style={{ color: "var(--kk-muted)" }}>
+                          Votre avis : {a.review.rating}/5{a.review.status === "pending" ? ", en cours de relecture" : ""}
+                        </p>
+                      ) : (
+                        <ReviewForm appointmentId={a.id} />
+                      ))}
                   </div>
                 );
               })}
