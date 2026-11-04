@@ -16,6 +16,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { LEGACY_MODERATOR_PERMISSIONS } from "../lib/permissions";
 
 const prisma = new PrismaClient();
 
@@ -180,6 +181,11 @@ async function seedModerator() {
       passwordHash: await bcrypt.hash(PASSWORD_MODERATOR, 12),
       role: "moderator",
       status: "active",
+      // Jeu de capacités historique du modérateur (finances + lecture,
+      // cette dernière restant de toute façon ouverte à tout modérateur) —
+      // voir lib/permissions.ts. Un admin peut ensuite accorder/retirer des
+      // permissions individuellement depuis /admin/users.
+      permissions: LEGACY_MODERATOR_PERMISSIONS,
     },
   });
   console.log("✅ Modérateur créé     →", email);

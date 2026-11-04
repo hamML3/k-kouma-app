@@ -6,6 +6,7 @@ const ACTION_INFO: Record<string, { label: string; bg: string; color: string }> 
   "admin.user.create": { label: "Compte créé par un admin", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
   "admin.user.suspend": { label: "Compte suspendu", bg: "#FFF1F0", color: "#C0392B" },
   "admin.user.reactivate": { label: "Compte réactivé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  "admin.user.permissions_update": { label: "Permissions modérateur modifiées", bg: "var(--kk-purple-light)", color: "var(--kk-purple)" },
   "admin.therapist.suspend": { label: "Psychologue suspendu", bg: "#FFF1F0", color: "#C0392B" },
   "admin.therapist.unsuspend": { label: "Psychologue réactivé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
   "admin.therapist.verify": { label: "Psychologue validé", bg: "var(--kk-green-light)", color: "var(--kk-green)" },

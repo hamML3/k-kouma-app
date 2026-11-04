@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validators/auth";
+import { normalizePermissions } from "@/lib/permissions";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
@@ -27,6 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: true,
             status: true,
             passwordChangedAt: true,
+            permissions: true,
           },
         });
 
@@ -40,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           role: user.role,
           pwdChangedAt: user.passwordChangedAt?.getTime() ?? null,
+          permissions: normalizePermissions(user.permissions),
         };
       },
     }),
@@ -51,17 +54,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.role = user.role;
         token.pwdChangedAt = user.pwdChangedAt ?? null;
+        token.permissions = user.permissions ?? [];
         return token;
       }
 
       if (!token.id) return token;
 
-      // Subsequent requests: always re-read from DB so suspensions and
-      // password changes take effect immediately, not just at next sign-in —
-      // a JWT would otherwise stay valid for its full lifetime regardless.
+      // Subsequent requests: always re-read from DB so suspensions,
+      // password changes and permission grants/revocations take effect
+      // immediately, not just at next sign-in — a JWT would otherwise stay
+      // valid for its full lifetime regardless.
       const dbUser = await prisma.user.findUnique({
         where: { id: Number(token.id) },
-        select: { role: true, status: true, passwordChangedAt: true },
+        select: { role: true, status: true, passwordChangedAt: true, permissions: true },
       });
 
       if (!dbUser || dbUser.status !== "active") return null;
@@ -74,12 +79,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       token.role = dbUser.role;
+      token.permissions = normalizePermissions(dbUser.permissions);
       return token;
     },
     session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.permissions = (token.permissions as string[] | undefined) ?? [];
       }
       return session;
     },

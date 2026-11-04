@@ -5,12 +5,16 @@ declare module "next-auth" {
     user: {
       id: string;
       role: string;
+      // Permissions du compte modérateur (vide/ignoré pour les autres rôles) —
+      // voir lib/permissions.ts. Toujours un tableau, jamais undefined.
+      permissions: string[];
     } & DefaultSession["user"];
   }
 
   interface User {
     role?: string;
     pwdChangedAt?: number | null;
+    permissions?: string[];
   }
 }
 
@@ -19,5 +23,6 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     pwdChangedAt?: number | null;
+    permissions?: string[];
   }
 }

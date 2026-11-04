@@ -9,6 +9,7 @@ import { createUserSchema } from "@/lib/validators/admin";
 import { logAudit } from "@/lib/audit";
 import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
+import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
 
 export type CreateUserState = {
   error?: string;
@@ -29,20 +30,29 @@ async function requireAdmin(): Promise<{ id: number; email: string }> {
 }
 
 /**
- * Accès admin restreint ("modérateur") : peut agir sur les actions
- * financières (valider/rejeter un paiement, marquer un reversement) mais
- * jamais sur les comptes utilisateurs — ces actions-là restent sur
- * requireAdmin() ci-dessus.
+ * Accès admin restreint ("modérateur") : autorisé seulement si la permission
+ * demandée a été explicitement accordée à ce compte (lib/permissions.ts) —
+ * un admin passe toujours, implicitement. Remplace le jeu de capacités fixe
+ * qu'avait autrefois requireAdminOrModerator() par un ensemble configurable
+ * par compte modérateur.
  */
-async function requireAdminOrModerator(): Promise<{ id: number; email: string }> {
+async function requirePermission(permission: Permission): Promise<{ id: number; email: string; role: string }> {
   const session = await auth();
-  if (
-    (session?.user?.role !== "admin" && session?.user?.role !== "moderator") ||
-    !session.user.email
-  ) {
+  if (!session?.user?.email || !hasPermission(session.user.role, session.user.permissions, permission)) {
     throw new Error("Accès refusé.");
   }
-  return { id: Number(session.user.id), email: session.user.email };
+  return { id: Number(session.user.id), email: session.user.email, role: session.user.role };
+}
+
+/**
+ * Historiquement : actions financières (valider/rejeter un paiement,
+ * marquer un reversement). Conservé comme alias pour ne pas changer les
+ * trois call sites existants — correspond désormais à la permission
+ * `manage_finances`, accordée par défaut aux modérateurs existants (voir
+ * prisma/seed.ts et prisma/backfill-moderator-permissions.ts).
+ */
+async function requireAdminOrModerator(): Promise<{ id: number; email: string; role: string }> {
+  return requirePermission("manage_finances");
 }
 
 /** Création directe d'un compte par un admin (patient, thérapeute ou autre admin) — sans passer par l'inscription publique. */
@@ -50,11 +60,11 @@ export async function createUserAction(
   _prevState: CreateUserState,
   formData: FormData
 ): Promise<CreateUserState> {
-  let admin: { id: number; email: string };
+  let admin: { id: number; email: string; role: string };
   try {
-    admin = await requireAdmin();
+    admin = await requirePermission("manage_users");
   } catch {
-    return { error: "Accès refusé : réservé aux administrateurs." };
+    return { error: "Accès refusé." };
   }
 
   const raw = {
@@ -72,6 +82,13 @@ export async function createUserAction(
   }
 
   const { email, password, role, nickname, firstName, lastName } = parsed.data;
+
+  // Un modérateur titulaire de manage_users ne peut pas créer de nouveau
+  // compte admin ou modérateur — seul un véritable admin le peut
+  // (anti-élévation de privilège).
+  if (!canActOnRole(admin.role, role)) {
+    return { error: "Accès refusé : seul un administrateur peut créer un compte admin ou modérateur." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "Un compte avec cet email existe déjà." };
@@ -109,9 +126,15 @@ export async function createUserAction(
 }
 
 export async function suspendUserAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_users");
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
+
+  // Un modérateur ne peut jamais suspendre un compte admin ou modérateur,
+  // même s'il détient manage_users (anti-sabotage d'un compte à privilèges
+  // égaux ou supérieurs).
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || !canActOnRole(admin.role, target.role)) redirect("/admin/users");
 
   await prisma.user.update({ where: { id: userId }, data: { status: "suspended" } });
   await logAudit({ actor: admin, action: "admin.user.suspend", targetType: "user", targetId: userId });
@@ -121,9 +144,12 @@ export async function suspendUserAction(formData: FormData): Promise<void> {
 }
 
 export async function reactivateUserAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_users");
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/users");
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || !canActOnRole(admin.role, target.role)) redirect("/admin/users");
 
   await prisma.user.update({ where: { id: userId }, data: { status: "active" } });
   await logAudit({ actor: admin, action: "admin.user.reactivate", targetType: "user", targetId: userId });
@@ -132,10 +158,42 @@ export async function reactivateUserAction(formData: FormData): Promise<void> {
   redirect("/admin/users");
 }
 
-export async function suspendUser(formData: FormData): Promise<void> {
+/**
+ * Accorde/retire les permissions d'un compte modérateur — action
+ * volontairement réservée au véritable admin (requireAdmin), jamais
+ * délégable : pouvoir accorder des permissions est en soi un pouvoir plus
+ * élevé que n'importe laquelle des permissions qu'il distribue.
+ */
+export async function updateModeratorPermissionsAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const userId = Number(formData.get("userId"));
+  if (!userId) redirect("/admin/users");
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || target.role !== "moderator") redirect("/admin/users");
+
+  const granted = PERMISSIONS.filter((p) => formData.get(p) === "on");
+
+  await prisma.user.update({ where: { id: userId }, data: { permissions: granted } });
+  await logAudit({
+    actor: admin,
+    action: "admin.user.permissions_update",
+    targetType: "user",
+    targetId: userId,
+    metadata: { permissions: granted },
+  });
+
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
+}
+
+export async function suspendUser(formData: FormData): Promise<void> {
+  const admin = await requirePermission("manage_therapists");
+  const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || !canActOnRole(admin.role, target.role)) redirect("/admin/therapists");
 
   await prisma.user.update({
     where: { id: userId },
@@ -149,9 +207,12 @@ export async function suspendUser(formData: FormData): Promise<void> {
 }
 
 export async function unsuspendUser(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_therapists");
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target || !canActOnRole(admin.role, target.role)) redirect("/admin/therapists");
 
   await prisma.user.update({
     where: { id: userId },
@@ -165,7 +226,7 @@ export async function unsuspendUser(formData: FormData): Promise<void> {
 }
 
 export async function verifyTherapist(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_therapists");
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -196,7 +257,7 @@ export async function verifyTherapist(formData: FormData): Promise<void> {
 }
 
 export async function rejectTherapist(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_therapists");
   const userId = Number(formData.get("userId"));
   if (!userId) redirect("/admin/therapists");
 
@@ -271,7 +332,7 @@ export async function rejectManualPaymentAction(formData: FormData): Promise<voi
  * par email (il verra aussi la demande d'acceptation à sa prochaine connexion).
  */
 export async function updateTherapistCommissionAction(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("manage_therapists");
   const therapistId = Number(formData.get("therapistId"));
   if (!therapistId) redirect("/admin/therapists");
 

@@ -1,13 +1,18 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { BarChart } from "@/components/charts/BarChart";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
 import { confirmManualPaymentAction, rejectManualPaymentAction, markTherapistPayoutAction } from "@/lib/actions/admin";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { hasPermission } from "@/lib/permissions";
 
 export const metadata = { title: "Finances — Administration K-Kouma" };
 
 export default async function AdminFinancesPage() {
+  const session = await auth();
+  const canManageFinances = hasPermission(session?.user?.role, session?.user?.permissions, "manage_finances");
+
   const [payments, earnings, therapists, pendingManualPayments] = await Promise.all([
     prisma.payment.findMany({
       where: { status: "completed" },
@@ -112,28 +117,30 @@ export default async function AdminFinancesPage() {
                     {p.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <form action={rejectManualPaymentAction}>
-                    <input type="hidden" name="paymentId" value={p.id} />
-                    <ConfirmSubmitButton
-                      confirmMessage="Rejeter cette déclaration de paiement ? Aucune séance ne sera créditée."
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
-                      style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
-                    >
-                      Rejeter
-                    </ConfirmSubmitButton>
-                  </form>
-                  <form action={confirmManualPaymentAction}>
-                    <input type="hidden" name="paymentId" value={p.id} />
-                    <button
-                      type="submit"
-                      className="text-xs font-bold px-3.5 py-2 rounded-full"
-                      style={{ background: "var(--kk-green)", color: "#fff" }}
-                    >
-                      Valider et créditer
-                    </button>
-                  </form>
-                </div>
+                {canManageFinances && (
+                  <div className="flex gap-2 shrink-0">
+                    <form action={rejectManualPaymentAction}>
+                      <input type="hidden" name="paymentId" value={p.id} />
+                      <ConfirmSubmitButton
+                        confirmMessage="Rejeter cette déclaration de paiement ? Aucune séance ne sera créditée."
+                        className="text-xs font-bold px-3.5 py-2 rounded-full"
+                        style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
+                      >
+                        Rejeter
+                      </ConfirmSubmitButton>
+                    </form>
+                    <form action={confirmManualPaymentAction}>
+                      <input type="hidden" name="paymentId" value={p.id} />
+                      <button
+                        type="submit"
+                        className="text-xs font-bold px-3.5 py-2 rounded-full"
+                        style={{ background: "var(--kk-green)", color: "#fff" }}
+                      >
+                        Valider et créditer
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -208,7 +215,7 @@ export default async function AdminFinancesPage() {
                     <p className="text-sm font-bold" style={{ color: "var(--kk-gold)" }}>
                       {t.total.toLocaleString("fr-FR")} XOF
                     </p>
-                    {t.unpaid > 0 && (
+                    {t.unpaid > 0 && canManageFinances && (
                       <form action={markTherapistPayoutAction}>
                         <input type="hidden" name="therapistId" value={t.therapistId} />
                         <ConfirmSubmitButton

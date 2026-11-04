@@ -24,6 +24,13 @@ model User {
   phoneVerifiedAt DateTime?  @map("phone_verified_at")
   status          UserStatus @default(active)
   role            UserRole   @default(patient)
+  // Permissions accordées à un compte "modérateur" (ignoré pour les autres
+  // rôles) — tableau de clés Permission (lib/permissions.ts), ex.
+  // ["manage_finances"]. NULL = aucune permission accordée. Remplace le jeu
+  // de capacités fixe des modérateurs par un ensemble configurable par
+  // compte (voir prisma/backfill-moderator-permissions.ts pour les comptes
+  // modérateurs créés avant cette colonne).
+  permissions     Json?
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
 

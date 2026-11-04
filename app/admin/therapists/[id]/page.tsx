@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { verifyTherapist, rejectTherapist, suspendUser, unsuspendUser, updateTherapistCommissionAction } from "@/lib/actions/admin";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { hasPermission } from "@/lib/permissions";
 import Link from "next/link";
 
 type DocEntry = { label: string; url: string };
@@ -20,7 +21,7 @@ export default async function AdminTherapistDetailPage({
   if (isNaN(userId)) notFound();
 
   const session = await auth();
-  const isAdmin = session?.user?.role === "admin";
+  const canManageTherapists = hasPermission(session?.user?.role, session?.user?.permissions, "manage_therapists");
 
   const [user, settings] = await Promise.all([
     prisma.user.findUnique({
@@ -167,7 +168,7 @@ export default async function AdminTherapistDetailPage({
         </div>
 
         {/* Commission — réservé à l'admin */}
-        {isAdmin && (
+        {canManageTherapists && (
           <div className="rounded-2xl p-5 mb-4" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
             <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-muted)" }}>COMMISSION PERSONNALISÉE</p>
             <p className="text-xs mb-3" style={{ color: "var(--kk-faint)" }}>
@@ -196,7 +197,7 @@ export default async function AdminTherapistDetailPage({
         )}
 
         {/* Primary actions — pending, réservé à l'admin */}
-        {isPending && isAdmin && (
+        {isPending && canManageTherapists && (
           <div className="flex gap-3 mb-4">
             <form action={verifyTherapist} className="flex-1">
               <input type="hidden" name="userId" value={String(userId)} />
@@ -216,7 +217,7 @@ export default async function AdminTherapistDetailPage({
             </form>
           </div>
         )}
-        {isPending && !isAdmin && (
+        {isPending && !canManageTherapists && (
           <div className="rounded-2xl p-4 mb-4 text-sm text-center" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold)" }}>
             Candidature en attente — seul un administrateur peut la valider ou la rejeter.
           </div>
@@ -228,7 +229,7 @@ export default async function AdminTherapistDetailPage({
           </div>
         )}
 
-        {isRejected && !isSuspended && isAdmin && (
+        {isRejected && !isSuspended && canManageTherapists && (
           <form action={verifyTherapist} className="mb-4">
             <input type="hidden" name="userId" value={String(userId)} />
             <button type="submit" className="kk-btn-green w-full py-3 text-sm">
@@ -238,7 +239,7 @@ export default async function AdminTherapistDetailPage({
         )}
 
         {/* Suspend / unsuspend — réservé à l'admin, visible pour vérifiés ou rejetés */}
-        {isAdmin && (isVerified || isRejected || isSuspended) && (
+        {canManageTherapists && (isVerified || isRejected || isSuspended) && (
           <div className="rounded-2xl p-5" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
             <p className="text-xs font-bold mb-3" style={{ color: "var(--kk-muted)" }}>GESTION DU COMPTE</p>
             {isSuspended ? (

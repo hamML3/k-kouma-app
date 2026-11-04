@@ -8,7 +8,7 @@ function FieldError({ messages }: { messages?: string[] }) {
   return <p className="kk-error text-xs mt-1">{messages[0]}</p>;
 }
 
-export function CreateUserForm() {
+export function CreateUserForm({ isAdmin }: { isAdmin: boolean }) {
   const [state, action, pending] = useActionState(createUserAction, {});
   const [role, setRole] = useState<"patient" | "therapist" | "admin" | "moderator">("patient");
   const [open, setOpen] = useState(false);
@@ -56,8 +56,10 @@ export function CreateUserForm() {
           >
             <option value="patient">Patient</option>
             <option value="therapist">Psychologue</option>
-            <option value="moderator">Modérateur (accès restreint)</option>
-            <option value="admin">Administrateur</option>
+            {/* Créer un compte admin/modérateur reste réservé à un véritable
+                admin — aussi contrôlé côté serveur (lib/actions/admin.ts). */}
+            {isAdmin && <option value="moderator">Modérateur (accès restreint)</option>}
+            {isAdmin && <option value="admin">Administrateur</option>}
           </select>
         </div>
 
