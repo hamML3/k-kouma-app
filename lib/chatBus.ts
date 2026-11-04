@@ -21,6 +21,16 @@ export function publishMessage(appointmentId: number, message: ChatMessage) {
   chatBus.emit(`appointment:${appointmentId}`, message);
 }
 
+export function publishSignal(roomId: string, fromRole: string) {
+  chatBus.emit(`room:${roomId}`, fromRole);
+}
+
+export function subscribeToRoom(roomId: string, onSignal: (fromRole: string) => void): () => void {
+  const event = `room:${roomId}`;
+  chatBus.on(event, onSignal);
+  return () => chatBus.off(event, onSignal);
+}
+
 export function subscribeToAppointment(
   appointmentId: number,
   onMessage: (message: ChatMessage) => void

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { subscribeToAppointment } from "@/lib/chatBus";
+import { eventStreamResponse } from "@/lib/sse";
 
 export const dynamic = "force-dynamic";
 
@@ -26,44 +27,5 @@ export async function GET(
     return new Response("Accès refusé", { status: 403 });
   }
 
-  const encoder = new TextEncoder();
-  let unsubscribe: (() => void) | null = null;
-  let heartbeat: ReturnType<typeof setInterval> | null = null;
-
-  const stream = new ReadableStream({
-    start(controller) {
-      const send = (event: string, data: unknown) => {
-        try {
-          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-        } catch {
-          // le contrôleur peut déjà être fermé si le client s'est déconnecté
-        }
-      };
-
-      unsubscribe = subscribeToAppointment(id, (message) => send("message", message));
-
-      // Ping régulier pour garder la connexion ouverte à travers les proxys/reverse-proxy.
-      heartbeat = setInterval(() => send("ping", { t: Date.now() }), 25000);
-
-      send("ready", {});
-    },
-    cancel() {
-      unsubscribe?.();
-      if (heartbeat) clearInterval(heartbeat);
-    },
-  });
-
-  req.signal.addEventListener("abort", () => {
-    unsubscribe?.();
-    if (heartbeat) clearInterval(heartbeat);
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  return eventStreamResponse(req.signal, (send) => subscribeToAppointment(id, (message) => send("message", message)));
 }

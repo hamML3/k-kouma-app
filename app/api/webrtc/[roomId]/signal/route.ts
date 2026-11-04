@@ -2,18 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-
-// Le rôle de l'appelant dans cette salle se déduit du rendez-vous, jamais de la
-// requête : un participant ne doit pas pouvoir se faire passer pour l'autre.
-async function participantRole(roomId: string, userId: number): Promise<"patient" | "therapist" | null> {
-  const appt = await prisma.appointment.findFirst({
-    where: { webrtcRoomId: roomId },
-    select: { patientId: true, therapistId: true },
-  });
-  if (appt?.patientId === userId) return "patient";
-  if (appt?.therapistId === userId) return "therapist";
-  return null;
-}
+import { publishSignal } from "@/lib/chatBus";
+import { participantRole } from "@/lib/webrtcRoom";
 
 // GET /api/webrtc/[roomId]/signal?after=ISO_timestamp
 // Returns signals from the other participant, created after `after`
@@ -71,6 +61,7 @@ export async function POST(
   await prisma.webrtcSignal.create({
     data: { roomId, fromRole: role, payload },
   });
+  publishSignal(roomId, role);
 
   // Cleanup old signals for this room (keep last 200 to avoid DB bloat)
   const old = await prisma.webrtcSignal.findMany({

@@ -67,6 +67,10 @@ export default function RoomClient({
   const localStreamRef = useRef<MediaStream | null>(null);
   const lastSignalAt = useRef<string>(new Date(0).toISOString());
   const pollingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const signalStream = useRef<EventSource | null>(null);
+  const streamLive = useRef(false);
+  const signalsRunning = useRef(false);
+  const signalsPending = useRef(false);
 
   const [connState, setConnState] = useState<ConnectionState>("requesting");
   const [isMuted, setIsMuted] = useState(false);
@@ -181,6 +185,21 @@ export default function RoomClient({
     }
   }, [fetchSignals, sendSignal]);
 
+  // Flux et secours peuvent se déclencher ensemble : un seul traitement à la
+  // fois, sinon le même signal serait lu et appliqué deux fois.
+  const drainSignals = useCallback(async () => {
+    if (signalsRunning.current) {
+      signalsPending.current = true;
+      return;
+    }
+    signalsRunning.current = true;
+    do {
+      signalsPending.current = false;
+      await processSignals();
+    } while (signalsPending.current);
+    signalsRunning.current = false;
+  }, [processSignals]);
+
   // ── Bootstrap ────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -230,8 +249,25 @@ export default function RoomClient({
         setConnState("waiting");
       }
 
-      // Poll for signals every 1.5 s
-      pollingTimer.current = setInterval(processSignals, 1500);
+      // Le flux prévient dès qu'un signal arrive. "ready" rattrape ceux envoyés
+      // avant l'abonnement.
+      const source = new EventSource(`/api/webrtc/${roomId}/stream`);
+      signalStream.current = source;
+      source.addEventListener("ready", () => {
+        streamLive.current = true;
+        drainSignals();
+      });
+      source.addEventListener("signal", drainSignals);
+      source.onerror = () => {
+        streamLive.current = false;
+      };
+
+      // Secours : 1,5 s si le flux est coupé, 7,5 s tant qu'il fonctionne.
+      let tick = 0;
+      pollingTimer.current = setInterval(() => {
+        tick += 1;
+        if (!streamLive.current || tick % 5 === 0) drainSignals();
+      }, 1500);
     }
 
     start();
@@ -239,6 +275,7 @@ export default function RoomClient({
     return () => {
       cancelled = true;
       if (pollingTimer.current) clearInterval(pollingTimer.current);
+      signalStream.current?.close();
       pcRef.current?.close();
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
     };
