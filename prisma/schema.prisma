@@ -53,6 +53,10 @@ model User {
   submittedArticles  SubmittedArticle[] @relation("ArticleAuthor")
   reviewedArticles   SubmittedArticle[] @relation("ArticleReviewer")
 
+  reportsFiled    Report[] @relation("ReportsFiled")
+  reportsReceived Report[] @relation("ReportsReceived")
+  reportsReviewed Report[] @relation("ReportsReviewed")
+
   @@index([status, role])
   @@map("users")
 }
@@ -324,6 +328,7 @@ model Appointment {
   fundedByPayment Payment? @relation(fields: [fundedByPaymentId], references: [id])
   messages        Message[]
   earning         TherapistEarning?
+  reports         Report[]
 
   @@index([scheduledAt])
   @@index([therapistId, scheduledAt])
@@ -437,4 +442,43 @@ enum ArticleStatus {
   pending
   published
   rejected
+}
+
+// =========================================================================
+// MODULE 7 : SIGNALEMENTS
+// =========================================================================
+
+/// Signalement d'un patient envers son psychologue, ou d'un psychologue
+/// envers son patient — déposable à tout moment, y compris pendant un appel
+/// ou une conversation en cours (voir components/ReportButton.tsx), pas
+/// seulement depuis une page statique après coup. `appointmentId` est nul
+/// quand le signalement ne cite pas une séance précise (ex: depuis la fiche
+/// du psychologue assigné, ou celle d'un patient).
+model Report {
+  id            Int          @id @default(autoincrement())
+  reporterId    Int          @map("reporter_id")
+  reportedId    Int          @map("reported_id")
+  appointmentId Int?         @map("appointment_id")
+  category      String       @db.VarChar(50)
+  message       String?      @db.Text
+  status        ReportStatus @default(pending)
+  reviewedById  Int?         @map("reviewed_by_id")
+  reviewedAt    DateTime?    @map("reviewed_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  reporter    User         @relation("ReportsFiled", fields: [reporterId], references: [id])
+  reported    User         @relation("ReportsReceived", fields: [reportedId], references: [id])
+  reviewedBy  User?        @relation("ReportsReviewed", fields: [reviewedById], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([reportedId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
 }

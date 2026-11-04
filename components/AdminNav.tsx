@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { hasPermission, type Permission } from "@/lib/permissions";
 
-type NavLink = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean };
+type NavLink = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean; requiresPermission?: Permission };
 
 const NAV_LINKS: NavLink[] = [
   {
@@ -50,6 +51,19 @@ const NAV_LINKS: NavLink[] = [
         <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
         <path d="M2 8h14" stroke="currentColor" strokeWidth="1.6" />
         <circle cx="6" cy="11" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/reports",
+    label: "Signalements",
+    // Contrairement aux autres sections, réservé aux modérateurs titulaires
+    // de manage_reports — pas ouvert par défaut (voir lib/permissions.ts).
+    requiresPermission: "manage_reports",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M4 2v14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M4 2.8c2.3-1.1 4.6 1.1 6.9 0s2.9.7 4.1 1.5v5.7c-1.2-.8-1.8-1.5-4.1-.3s-4.6-1.1-6.9 0z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -110,6 +124,8 @@ const NAV_LINKS: NavLink[] = [
 
 type AdminNavProps = {
   role: string;
+  /** Permissions du compte modérateur (ignoré pour un admin, qui voit tout) — voir lib/permissions.ts. */
+  permissions?: string[];
   /** Bloc "compte connecté + déconnexion", fourni par le layout (fermeture de session en Server Action). */
   footer: React.ReactNode;
 };
@@ -119,7 +135,7 @@ type AdminNavProps = {
  * Sidebar fixe sur grand écran ; tiroir plein écran (hamburger) sur mobile, pour que le
  * back-office reste utilisable dès 375px de large (une appli mobile dédiée est prévue plus tard).
  */
-export function AdminNav({ role, footer }: AdminNavProps) {
+export function AdminNav({ role, permissions, footer }: AdminNavProps) {
   const pathname = usePathname();
   const adminLabel = role === "moderator" ? "Administration (modérateur)" : "Administration";
   const [open, setOpen] = useState(false);
@@ -144,7 +160,11 @@ export function AdminNav({ role, footer }: AdminNavProps) {
 
   const navLinks = (
     <nav className="flex-1 space-y-1">
-      {NAV_LINKS.filter((link) => !link.adminOnly || role === "admin").map((link) => {
+      {NAV_LINKS.filter(
+        (link) =>
+          (!link.adminOnly || role === "admin") &&
+          (!link.requiresPermission || hasPermission(role, permissions, link.requiresPermission))
+      ).map((link) => {
         const active = link.href === "/admin" ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link

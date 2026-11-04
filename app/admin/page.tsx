@@ -1,7 +1,15 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { hasPermission } from "@/lib/permissions";
 
 export default async function AdminDashboardPage() {
+  const session = await auth();
+  // Contrairement aux autres alertes de ce tableau de bord, visibles par
+  // tout modérateur : les signalements sont plus sensibles, donc masqués
+  // (compteur compris) à qui n'a pas manage_reports (voir lib/permissions.ts).
+  const canManageReports = hasPermission(session?.user?.role, session?.user?.permissions, "manage_reports");
+
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
   const dayEnd = new Date();
@@ -15,6 +23,7 @@ export default async function AdminDashboardPage() {
     recentUsers,
     todaysAppointments,
     pendingManualPaymentsCount,
+    pendingReportsCount,
   ] = await Promise.all([
     prisma.user.count({ where: { role: "patient" } }),
     prisma.therapistProfile.count({ where: { isVerified: true } }),
@@ -47,6 +56,7 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.payment.count({ where: { status: "pending", provider: "orange_money_manual" } }),
+    canManageReports ? prisma.report.count({ where: { status: "pending" } }) : Promise.resolve(0),
   ]);
 
   const todayLabel = new Date().toLocaleDateString("fr-FR", {
@@ -107,7 +117,7 @@ export default async function AdminDashboardPage() {
     },
   ];
 
-  const hasAlerts = pendingTherapists > 0 || pendingManualPaymentsCount > 0;
+  const hasAlerts = pendingTherapists > 0 || pendingManualPaymentsCount > 0 || pendingReportsCount > 0;
 
   return (
     <>
@@ -205,6 +215,34 @@ export default async function AdminDashboardPage() {
               </div>
               <Link href="/admin/finances" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
                 Vérifier →
+              </Link>
+            </div>
+          )}
+
+          {pendingReportsCount > 0 && (
+            <div
+              className="rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
+              style={{ background: "#FFF1F0", border: "1px solid #FFCAC8" }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-2xl shrink-0" aria-hidden>
+                  🚩
+                </span>
+                <div>
+                  <p className="font-bold" style={{ color: "#C0392B" }}>
+                    {pendingReportsCount} signalement{pendingReportsCount > 1 ? "s" : ""} à examiner
+                  </p>
+                  <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
+                    Un patient ou un psychologue a signalé un compte.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/admin/reports"
+                className="shrink-0 text-sm font-bold px-5 py-2.5 rounded-full"
+                style={{ background: "#C0392B", color: "#fff" }}
+              >
+                Examiner →
               </Link>
             </div>
           )}

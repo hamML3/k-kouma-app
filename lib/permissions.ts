@@ -13,7 +13,7 @@
  * vraiment quelque part.
  */
 
-export const PERMISSIONS = ["manage_users", "manage_therapists", "manage_finances"] as const;
+export const PERMISSIONS = ["manage_users", "manage_therapists", "manage_finances", "manage_reports"] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -21,6 +21,12 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   manage_users: "Utilisateurs — créer, suspendre, réactiver",
   manage_therapists: "Psychologues — valider, rejeter, suspendre, ajuster la commission",
   manage_finances: "Finances — valider les paiements, marquer les reversements",
+  // Contrairement aux autres permissions (qui ne gèrent que la capacité
+  // d'agir, la lecture restant ouverte à tout modérateur), celle-ci
+  // conditionne aussi la simple consultation de /admin/reports : son contenu
+  // (allégations de comportement, parfois des détails de santé) est plus
+  // sensible qu'une donnée financière, donc pas ouvert par défaut.
+  manage_reports: "Signalements — consulter et traiter les signalements patients/psychologues",
 };
 
 /**

@@ -51,6 +51,7 @@ export default async function RoomPage({
   const therapistName =
     `${appointment.therapist.therapistProfile?.firstName ?? ""} ${appointment.therapist.therapistProfile?.lastName ?? ""}`.trim();
   const otherName = isPatient ? therapistName : patientName;
+  const otherId = isPatient ? appointment.therapistId : appointment.patientId;
 
   return (
     <RoomClient
@@ -59,6 +60,7 @@ export default async function RoomPage({
       isVideoCall={appointment.type !== "text"}
       videoEnabled={appointment.type === "video"}
       otherName={otherName || "Participant"}
+      otherId={otherId}
       scheduledAt={appointment.scheduledAt.toISOString()}
       durationMinutes={appointment.durationMinutes}
       appointmentId={appointment.id}
