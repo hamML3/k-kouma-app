@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit";
 import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
+import { markTherapistEarningsPaid } from "@/lib/payouts";
 
 export type CreateUserState = {
   error?: string;
@@ -388,10 +389,7 @@ export async function markTherapistPayoutAction(formData: FormData): Promise<voi
   const therapistId = Number(formData.get("therapistId"));
   if (!therapistId) redirect("/admin/finances");
 
-  const result = await prisma.therapistEarning.updateMany({
-    where: { therapistId, paidOut: false },
-    data: { paidOut: true, paidOutAt: new Date() },
-  });
+  const result = await markTherapistEarningsPaid(therapistId);
 
   await logAudit({
     actor: admin,
