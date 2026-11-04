@@ -4,6 +4,7 @@
  *
  * Crée un jeu de données de test complet :
  *  - 1 compte admin
+ *  - 1 compte modérateur (accès admin restreint)
  *  - 6 thérapeutes (5 vérifiés + 1 en attente de vérification)
  *  - 4 patients (onboarding complété, profils variés)
  *  - Des assignations patient ↔ thérapeute
@@ -19,6 +20,7 @@ import { randomUUID } from "crypto";
 const prisma = new PrismaClient();
 
 const PASSWORD_ADMIN = "Admin@KKouma2026!";
+const PASSWORD_MODERATOR = "Moderator@2026!";
 const PASSWORD_THERAPIST = "Therapist@2026!";
 const PASSWORD_PATIENT = "Patient@2026!";
 
@@ -165,6 +167,24 @@ async function seedAdmin() {
   console.log("✅ Admin créé          →", email);
 }
 
+async function seedModerator() {
+  const email = "moderateur@k-kouma.com";
+  const exists = await prisma.user.findUnique({ where: { email } });
+  if (exists) {
+    console.log("⏭️  Modérateur déjà existant →", email);
+    return;
+  }
+  await prisma.user.create({
+    data: {
+      email,
+      passwordHash: await bcrypt.hash(PASSWORD_MODERATOR, 12),
+      role: "moderator",
+      status: "active",
+    },
+  });
+  console.log("✅ Modérateur créé     →", email);
+}
+
 async function seedTherapist(t: TherapistSeed) {
   const exists = await prisma.user.findUnique({ where: { email: t.email } });
   if (exists) {
@@ -270,6 +290,7 @@ async function main() {
   console.log("🌱 Seeding K-Kouma...\n");
 
   await seedAdmin();
+  await seedModerator();
 
   const therapistIds: Record<string, number> = {};
   for (const t of THERAPISTS) {
@@ -385,6 +406,7 @@ async function main() {
   console.log("\n🎉 Seed terminé !\n");
   console.log("─────────────────────────────────────────────");
   console.log("  Admin        : admin@k-kouma.com /", PASSWORD_ADMIN);
+  console.log("  Modérateur   : moderateur@k-kouma.com /", PASSWORD_MODERATOR);
   console.log("  Thérapeutes  : dr.aminata / dr.mamadou / dr.nene / dr.idrissa / dr.fatoumata");
   console.log("                 / dr.oumar (en attente) @k-kouma.com /", PASSWORD_THERAPIST);
   console.log("  Patients     : patient.test / aicha.patient / boubacar.patient");
