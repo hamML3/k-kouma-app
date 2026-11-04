@@ -17,6 +17,9 @@ const ACTION_INFO: Record<string, { label: string; bg: string; color: string }> 
   "admin.export.users": { label: "Export CSV utilisateurs", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "admin.export.payments": { label: "Export CSV paiements", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "admin.export.earnings": { label: "Export CSV gains psychologues", bg: "var(--kk-border)", color: "var(--kk-mid)" },
+  "report.file": { label: "Signalement déposé", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
+  "report.review": { label: "Signalement marqué traité", bg: "var(--kk-green-light)", color: "var(--kk-green)" },
+  "report.dismiss": { label: "Signalement classé sans suite", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "auth.login.success": { label: "Connexion réussie", bg: "var(--kk-border)", color: "var(--kk-mid)" },
   "auth.login.failed": { label: "Connexion échouée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
   "auth.password_reset.requested": { label: "Réinitialisation demandée", bg: "var(--kk-gold-light)", color: "var(--kk-gold)" },
@@ -27,6 +30,7 @@ const CATEGORIES = [
   { value: undefined, label: "Tout" },
   { value: "admin", label: "Actions admin" },
   { value: "auth", label: "Authentification" },
+  { value: "report", label: "Signalements" },
 ];
 
 const SINCE_OPTIONS = [

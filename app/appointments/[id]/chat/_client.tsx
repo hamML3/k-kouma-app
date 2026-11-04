@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { completeAppointmentAction } from "@/lib/actions/appointments";
+import { ReportButton } from "@/components/ReportButton";
 
 type Message = {
   id: number;
@@ -17,6 +18,7 @@ export default function ChatClient({
   userId,
   role,
   otherName,
+  otherId,
   durationMinutes,
   initialMessages,
 }: {
@@ -24,6 +26,7 @@ export default function ChatClient({
   userId: number;
   role: string;
   otherName: string;
+  otherId: number;
   durationMinutes: number;
   initialMessages: Message[];
 }) {
@@ -149,6 +152,8 @@ export default function ChatClient({
     <div className="min-h-screen flex flex-col" style={{ background: "var(--kk-bg)" }}>
       <ChatTopBar
         otherName={otherName}
+        otherId={otherId}
+        appointmentId={appointmentId}
         durationMinutes={durationMinutes}
         onEnd={endConversation}
         canEnd={role === "therapist"}
@@ -226,11 +231,15 @@ export default function ChatClient({
 
 function ChatTopBar({
   otherName,
+  otherId,
+  appointmentId,
   durationMinutes,
   onEnd,
   canEnd,
 }: {
   otherName: string;
+  otherId: number;
+  appointmentId: number;
   durationMinutes: number;
   onEnd: () => void;
   canEnd: boolean;
@@ -268,23 +277,27 @@ function ChatTopBar({
             </p>
           </div>
         </div>
-        {canEnd ? (
-          <button
-            type="button"
-            onClick={onEnd}
-            className="text-xs font-bold px-3.5 py-2 rounded-full shrink-0"
-            style={{ background: "#FFF1F0", color: "#C0392B" }}
-          >
-            Terminer
-          </button>
-        ) : (
-          <span
-            className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
-            style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
-          >
-            Séance en cours
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Signalement — accessible à tout moment pendant la conversation, sans la fermer */}
+          <ReportButton reportedId={otherId} reportedName={otherName} appointmentId={appointmentId} variant="light" />
+          {canEnd ? (
+            <button
+              type="button"
+              onClick={onEnd}
+              className="text-xs font-bold px-3.5 py-2 rounded-full shrink-0"
+              style={{ background: "#FFF1F0", color: "#C0392B" }}
+            >
+              Terminer
+            </button>
+          ) : (
+            <span
+              className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
+              style={{ background: "var(--kk-green-light)", color: "var(--kk-green)" }}
+            >
+              Séance en cours
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

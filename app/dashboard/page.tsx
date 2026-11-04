@@ -8,6 +8,7 @@ import { ResendVerificationBanner } from "@/components/ResendVerificationBanner"
 import { changeTherapistAction } from "@/lib/actions/assignments";
 import { recommendedArticles } from "@/lib/articles";
 import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
+import { ReportButton } from "@/components/ReportButton";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -291,13 +292,20 @@ export default async function DashboardPage() {
                   </p>
                 )}
               </div>
-              <Link
-                href={`/therapists/${assignedTherapist.id}`}
-                className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0"
-                style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
-              >
-                Profil
-              </Link>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <Link
+                  href={`/therapists/${assignedTherapist.id}`}
+                  className="text-xs font-bold px-3 py-1.5 rounded-full"
+                  style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
+                >
+                  Profil
+                </Link>
+                {/* Signalement — déposable à tout moment, pas seulement pendant une séance */}
+                <ReportButton
+                  reportedId={activeAssignment!.therapistId}
+                  reportedName={`${assignedTherapist.firstName} ${assignedTherapist.lastName}`}
+                />
+              </div>
             </div>
 
             <div className="flex gap-2 mt-4 pt-4 flex-wrap" style={{ borderTop: "1px solid var(--kk-border)" }}>

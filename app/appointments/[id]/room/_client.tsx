@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { completeAppointmentAction } from "@/lib/actions/appointments";
+import { ReportButton } from "@/components/ReportButton";
 
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -37,6 +38,7 @@ export default function RoomClient({
   isVideoCall,
   videoEnabled,
   otherName,
+  otherId,
   durationMinutes,
   appointmentId,
   userId,
@@ -46,6 +48,7 @@ export default function RoomClient({
   isVideoCall: boolean;
   videoEnabled: boolean;
   otherName: string;
+  otherId: number;
   scheduledAt: string;
   durationMinutes: number;
   appointmentId: number;
@@ -326,6 +329,11 @@ export default function RoomClient({
           className="absolute inset-0 w-full h-full object-cover"
           style={{ display: connState === "connected" ? "block" : "none" }}
         />
+
+        {/* Signalement — accessible à tout moment pendant l'appel, sans le quitter */}
+        <div className="absolute top-4 right-4 z-10">
+          <ReportButton reportedId={otherId} reportedName={otherName} appointmentId={appointmentId} variant="dark" />
+        </div>
 
         {/* Overlay when not yet connected */}
         {connState !== "connected" && (

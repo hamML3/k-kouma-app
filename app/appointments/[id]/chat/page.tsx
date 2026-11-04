@@ -42,6 +42,7 @@ export default async function ChatPage({
   const therapistName =
     `${appointment.therapist.therapistProfile?.firstName ?? ""} ${appointment.therapist.therapistProfile?.lastName ?? ""}`.trim();
   const otherName = isPatient ? therapistName : patientName;
+  const otherId = isPatient ? appointment.therapistId : appointment.patientId;
 
   const initialMessages = await prisma.message.findMany({
     where: { appointmentId },
@@ -56,6 +57,7 @@ export default async function ChatPage({
       userId={userId}
       role={session.user.role}
       otherName={otherName || "Participant"}
+      otherId={otherId}
       durationMinutes={appointment.durationMinutes}
       initialMessages={initialMessages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
     />

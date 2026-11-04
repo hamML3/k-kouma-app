@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
+import { ReportButton } from "@/components/ReportButton";
 
 const ANSWER_LABELS: Record<string, Record<string, string>> = {
   therapyType: {
@@ -146,7 +147,7 @@ export default async function PatientDetailPage({
           >
             {nickname.slice(0, 1).toUpperCase()}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1
               className="text-2xl font-bold"
               style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
@@ -156,6 +157,10 @@ export default async function PatientDetailPage({
             <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
               Patient depuis le {new Date(patient.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
             </p>
+          </div>
+          {/* Signalement — déposable à tout moment, pas seulement pendant une séance */}
+          <div className="shrink-0">
+            <ReportButton reportedId={patientUserId} reportedName={nickname} />
           </div>
         </div>
 
