@@ -30,6 +30,7 @@ export default async function ProposeArticlePage() {
   });
 
   const backHref = role === "therapist" ? "/dashboard" : "/admin/articles";
+  const isAdmin = role === "admin";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
@@ -52,20 +53,21 @@ export default async function ProposeArticlePage() {
       <main className="max-w-2xl mx-auto px-5 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
-            Proposer un article
+            {isAdmin ? "Publier un article" : "Proposer un article"}
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-            Partagez un article avec les patients. Chaque proposition est relue par un administrateur avant
-            publication sur le blog.
+            {isAdmin
+              ? "Partagez un article avec les patients — publié immédiatement sur le blog."
+              : "Partagez un article avec les patients. Chaque proposition est relue par un administrateur avant publication sur le blog."}
           </p>
         </div>
 
-        <ProposeArticleForm />
+        <ProposeArticleForm isAdmin={isAdmin} />
 
         {submissions.length > 0 && (
           <div className="mt-10">
             <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-muted)" }}>
-              Mes propositions
+              {isAdmin ? "Mes articles" : "Mes propositions"}
             </h2>
             <div className="space-y-2">
               {submissions.map((s) => {
@@ -81,7 +83,7 @@ export default async function ProposeArticlePage() {
                         {s.title}
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--kk-faint)" }}>
-                        Proposé le {s.createdAt.toLocaleDateString("fr-FR")}
+                        {s.status === "published" ? "Publié" : "Proposé"} le {s.createdAt.toLocaleDateString("fr-FR")}
                       </p>
                     </div>
                     <span

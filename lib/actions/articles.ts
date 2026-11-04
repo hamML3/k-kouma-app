@@ -11,6 +11,8 @@ export type ProposeArticleState = {
   error?: string;
   fieldErrors?: Record<string, string[] | undefined>;
   success?: boolean;
+  /** true si publié directement (admin) plutôt qu'envoyé en attente de relecture. */
+  published?: boolean;
 };
 
 // Le middleware (proxy.ts) laisse volontairement passer les Server Actions
@@ -18,9 +20,11 @@ export type ProposeArticleState = {
 // elle-même avant toute lecture/écriture sensible (voir lib/actions/admin.ts).
 
 /**
- * Thérapeute, modérateur ou admin : tous peuvent *proposer* un article —
- * seule la relecture (publication/rejet) est réservée à l'admin, voir
- * requireAdmin() ci-dessous. `patient` n'a jamais accès à cette fonctionnalité.
+ * Thérapeute ou modérateur : *proposent* un article, qui attend la relecture
+ * admin (voir requireAdmin() ci-dessous). Admin : publie directement, sans
+ * passer par sa propre file — il porte déjà la responsabilité finale du
+ * contenu de la plateforme, une auto-validation n'ajouterait rien.
+ * `patient` n'a jamais accès à cette fonctionnalité.
  */
 async function requireArticleAuthor(): Promise<{ id: number; email: string; role: string }> {
   const session = await auth();
@@ -97,6 +101,11 @@ export async function proposeArticleAction(
 
   const slug = await ensureUniqueSlug(slugify(title));
 
+  // L'admin porte la responsabilité finale de la plateforme : il publie
+  // directement, sans passer par sa propre file de relecture. Thérapeutes
+  // et modérateurs, eux, restent toujours soumis à la validation admin.
+  const isAdmin = author.role === "admin";
+
   const created = await prisma.submittedArticle.create({
     data: {
       authorId: author.id,
@@ -105,20 +114,26 @@ export async function proposeArticleAction(
       excerpt,
       body,
       imageUrl: imageUrl || null,
-      status: "pending",
+      status: isAdmin ? "published" : "pending",
+      ...(isAdmin && { reviewedById: author.id, reviewedAt: new Date() }),
     },
   });
 
   await logAudit({
     actor: author,
-    action: "article.propose",
+    action: isAdmin ? "article.publish" : "article.propose",
     targetType: "submitted_article",
     targetId: created.id,
     metadata: { title, slug },
   });
 
   revalidatePath("/articles/proposer");
-  return { success: true };
+  if (isAdmin) {
+    revalidatePath("/blog");
+    revalidatePath(`/blog/${slug}`);
+    revalidatePath("/dashboard");
+  }
+  return { success: true, published: isAdmin };
 }
 
 /** Publie une proposition d'article — réservé à l'admin (voir requireAdmin). */

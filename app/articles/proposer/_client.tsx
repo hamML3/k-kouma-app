@@ -5,7 +5,7 @@ import { proposeArticleAction, type ProposeArticleState } from "@/lib/actions/ar
 
 const initialState: ProposeArticleState = {};
 
-export default function ProposeArticleForm() {
+export default function ProposeArticleForm({ isAdmin }: { isAdmin: boolean }) {
   const [state, action, pending] = useActionState(proposeArticleAction, initialState);
 
   return (
@@ -20,7 +20,9 @@ export default function ProposeArticleForm() {
             <path d="M6 10l3 3 5-5" stroke="#557B53" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <p className="text-sm font-semibold" style={{ color: "var(--kk-green)" }}>
-            Votre article a bien été envoyé — il est en attente de validation par un administrateur.
+            {state.published
+              ? "Votre article a été publié."
+              : "Votre article a bien été envoyé — il est en attente de validation par un administrateur."}
           </p>
         </div>
       )}
@@ -79,7 +81,7 @@ export default function ProposeArticleForm() {
         </div>
 
         <button type="submit" disabled={pending} className="kk-btn-green w-full">
-          {pending ? "Envoi…" : "Envoyer pour validation"}
+          {pending ? "Envoi…" : isAdmin ? "Publier" : "Envoyer pour validation"}
         </button>
       </form>
     </div>
