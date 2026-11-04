@@ -52,6 +52,18 @@ const NAV_LINKS: NavLink[] = [
     ),
   },
   {
+    href: "/admin/stats",
+    label: "Statistiques",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M2.5 15.5h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <rect x="3.5" y="9.5" width="3" height="6" rx="1" stroke="currentColor" strokeWidth="1.6" />
+        <rect x="7.5" y="5.5" width="3" height="10" rx="1" stroke="currentColor" strokeWidth="1.6" />
+        <rect x="11.5" y="7.5" width="3" height="8" rx="1" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/audit",
     label: "Journal d'audit",
     icon: (
