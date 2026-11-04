@@ -4,6 +4,7 @@ import { BarChart } from "@/components/charts/BarChart";
 import { HorizontalBarChart } from "@/components/charts/HorizontalBarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
 import { confirmManualPaymentAction, rejectManualPaymentAction, markTherapistPayoutAction } from "@/lib/actions/admin";
+import { approvePayoutRequestAction, rejectPayoutRequestAction } from "@/lib/actions/payouts";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { hasPermission } from "@/lib/permissions";
 
@@ -13,7 +14,7 @@ export default async function AdminFinancesPage() {
   const session = await auth();
   const canManageFinances = hasPermission(session?.user?.role, session?.user?.permissions, "manage_finances");
 
-  const [payments, earnings, therapists, pendingManualPayments] = await Promise.all([
+  const [payments, earnings, therapists, pendingManualPayments, pendingPayoutRequests] = await Promise.all([
     prisma.payment.findMany({
       where: { status: "completed" },
       orderBy: { paidAt: "desc" },
@@ -32,6 +33,13 @@ export default async function AdminFinancesPage() {
       where: { status: "pending", provider: "orange_money_manual" },
       orderBy: { createdAt: "asc" },
       include: { patient: { select: { patientProfile: { select: { nickname: true } }, email: true } } },
+    }),
+    prisma.payoutRequest.findMany({
+      where: { status: "pending" },
+      orderBy: { createdAt: "asc" },
+      include: {
+        therapist: { select: { therapistProfile: { select: { firstName: true, lastName: true } }, email: true } },
+      },
     }),
   ]);
 
@@ -155,6 +163,65 @@ export default async function AdminFinancesPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {pendingPayoutRequests.length > 0 && (
+        <div className="mb-8 sm:mb-10">
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold)" }}>
+            Demandes de retrait à traiter ({pendingPayoutRequests.length})
+          </h2>
+          <div className="space-y-2">
+            {pendingPayoutRequests.map((r) => {
+              const therapistName = r.therapist.therapistProfile
+                ? `${r.therapist.therapistProfile.firstName} ${r.therapist.therapistProfile.lastName}`
+                : r.therapist.email;
+              return (
+                <div
+                  key={r.id}
+                  className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  style={{ background: "#fff", border: "1.5px solid #E9C98A" }}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
+                      {therapistName}
+                      <span className="font-normal" style={{ color: "var(--kk-mid)" }}>
+                        {" "}· {Number(r.amount).toLocaleString("fr-FR")} XOF
+                      </span>
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                      {r.therapist.email} · demandé le{" "}
+                      {r.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  {canManageFinances && (
+                    <div className="flex gap-2 shrink-0">
+                      <form action={rejectPayoutRequestAction} className="flex-1 sm:flex-none">
+                        <input type="hidden" name="requestId" value={r.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage="Rejeter cette demande de retrait ? Les gains du psychologue ne seront pas marqués reversés."
+                          className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"
+                          style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
+                        >
+                          Rejeter
+                        </ConfirmSubmitButton>
+                      </form>
+                      <form action={approvePayoutRequestAction} className="flex-1 sm:flex-none">
+                        <input type="hidden" name="requestId" value={r.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage={`Approuver et reverser ${Number(r.amount).toLocaleString("fr-FR")} XOF à ${therapistName} ?`}
+                          className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green-hover)]"
+                          style={{ background: "var(--kk-green)", color: "#fff" }}
+                        >
+                          Approuver
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

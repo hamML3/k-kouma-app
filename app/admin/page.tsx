@@ -9,6 +9,10 @@ export default async function AdminDashboardPage() {
   // tout modérateur : les signalements sont plus sensibles, donc masqués
   // (compteur compris) à qui n'a pas manage_reports (voir lib/permissions.ts).
   const canManageReports = hasPermission(session?.user?.role, session?.user?.permissions, "manage_reports");
+  // Les demandes de retrait sont une action financière — masquées (compteur
+  // compris) à qui n'a pas manage_finances, comme pour les paiements Orange
+  // Money à vérifier ci-dessous.
+  const canManageFinances = hasPermission(session?.user?.role, session?.user?.permissions, "manage_finances");
 
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
@@ -23,6 +27,7 @@ export default async function AdminDashboardPage() {
     recentUsers,
     todaysAppointments,
     pendingManualPaymentsCount,
+    pendingPayoutRequestsCount,
     pendingReportsCount,
   ] = await Promise.all([
     prisma.user.count({ where: { role: "patient" } }),
@@ -56,6 +61,7 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.payment.count({ where: { status: "pending", provider: "orange_money_manual" } }),
+    canManageFinances ? prisma.payoutRequest.count({ where: { status: "pending" } }) : Promise.resolve(0),
     canManageReports ? prisma.report.count({ where: { status: "pending" } }) : Promise.resolve(0),
   ]);
 
@@ -117,7 +123,8 @@ export default async function AdminDashboardPage() {
     },
   ];
 
-  const hasAlerts = pendingTherapists > 0 || pendingManualPaymentsCount > 0 || pendingReportsCount > 0;
+  const hasAlerts =
+    pendingTherapists > 0 || pendingManualPaymentsCount > 0 || pendingPayoutRequestsCount > 0 || pendingReportsCount > 0;
 
   return (
     <>
@@ -215,6 +222,30 @@ export default async function AdminDashboardPage() {
               </div>
               <Link href="/admin/finances" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
                 Vérifier →
+              </Link>
+            </div>
+          )}
+
+          {pendingPayoutRequestsCount > 0 && (
+            <div
+              className="rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
+              style={{ background: "var(--kk-gold-light)", border: "1px solid #E9C98A" }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-2xl shrink-0" aria-hidden>
+                  ⏳
+                </span>
+                <div>
+                  <p className="font-bold" style={{ color: "var(--kk-gold)" }}>
+                    {pendingPayoutRequestsCount} demande{pendingPayoutRequestsCount > 1 ? "s" : ""} de retrait à traiter
+                  </p>
+                  <p className="text-sm mt-0.5" style={{ color: "#8A6530" }}>
+                    Des psychologues ont demandé le reversement de leurs gains.
+                  </p>
+                </div>
+              </div>
+              <Link href="/admin/finances" className="kk-btn-green shrink-0 text-sm px-5 py-2.5">
+                Traiter →
               </Link>
             </div>
           )}

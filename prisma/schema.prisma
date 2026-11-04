@@ -44,14 +44,16 @@ model User {
   patientAppointments   Appointment[] @relation("PatientAppointments")
   therapistAppointments Appointment[] @relation("TherapistAppointments")
 
-  verificationTokens VerificationToken[]
-  otpCodes           OtpCode[]
-  sentMessages       Message[]
-  payments           Payment[]
-  therapistEarnings  TherapistEarning[]
-  auditLogs          AuditLog[]
-  submittedArticles  SubmittedArticle[] @relation("ArticleAuthor")
-  reviewedArticles   SubmittedArticle[] @relation("ArticleReviewer")
+  verificationTokens     VerificationToken[]
+  otpCodes               OtpCode[]
+  sentMessages           Message[]
+  payments               Payment[]
+  therapistEarnings      TherapistEarning[]
+  payoutRequests         PayoutRequest[]     @relation("PayoutRequestTherapist")
+  payoutRequestsReviewed PayoutRequest[]     @relation("PayoutRequestReviewer")
+  auditLogs              AuditLog[]
+  submittedArticles      SubmittedArticle[]  @relation("ArticleAuthor")
+  reviewedArticles       SubmittedArticle[]  @relation("ArticleReviewer")
 
   reportsFiled    Report[] @relation("ReportsFiled")
   reportsReceived Report[] @relation("ReportsReceived")
@@ -298,6 +300,36 @@ model TherapistEarning {
   @@index([therapistId])
   @@index([therapistId, paidOut])
   @@map("therapist_earnings")
+}
+
+/// Demande de retrait initiée par le thérapeute lui-même, plutôt que
+/// d'attendre qu'un admin pense à reverser ses gains (voir
+/// markTherapistPayoutAction). `amount` est un instantané du total non
+/// reversé au moment de la demande, pour que l'admin voie ce qui était
+/// réellement dû à cet instant précis même si d'autres séances se terminent
+/// avant la revue.
+model PayoutRequest {
+  id           Int                 @id @default(autoincrement())
+  therapistId  Int                 @map("therapist_id")
+  amount       Decimal             @db.Decimal(10, 2)
+  status       PayoutRequestStatus @default(pending)
+  reviewedById Int?                @map("reviewed_by_id")
+  reviewedAt   DateTime?           @map("reviewed_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  therapist  User  @relation("PayoutRequestTherapist", fields: [therapistId], references: [id])
+  reviewedBy User? @relation("PayoutRequestReviewer", fields: [reviewedById], references: [id])
+
+  @@index([therapistId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payout_requests")
+}
+
+enum PayoutRequestStatus {
+  pending
+  approved
+  rejected
 }
 
 // =========================================================================

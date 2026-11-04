@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/AppHeader";
 import { BarChart } from "@/components/charts/BarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
+import { RequestPayoutSection } from "./_client";
 
 export const metadata = { title: "Mes gains — K-Kouma" };
 
@@ -14,20 +15,26 @@ export default async function EarningsPage() {
 
   const therapistId = Number(session.user.id);
 
-  const earnings = await prisma.therapistEarning.findMany({
-    where: { therapistId },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    include: {
-      appointment: {
-        select: {
-          scheduledAt: true,
-          type: true,
-          patient: { select: { patientProfile: { select: { nickname: true } }, email: true } },
+  const [earnings, pendingPayoutRequest] = await Promise.all([
+    prisma.therapistEarning.findMany({
+      where: { therapistId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        appointment: {
+          select: {
+            scheduledAt: true,
+            type: true,
+            patient: { select: { patientProfile: { select: { nickname: true } }, email: true } },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.payoutRequest.findFirst({
+      where: { therapistId, status: "pending" },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   const total = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
   const unpaidTotal = earnings.filter((e) => !e.paidOut).reduce((sum, e) => sum + Number(e.amount), 0);
@@ -92,6 +99,15 @@ export default async function EarningsPage() {
             </p>
           </div>
         </div>
+
+        <RequestPayoutSection
+          unpaidTotal={unpaidTotal}
+          initialPendingRequest={
+            pendingPayoutRequest
+              ? { amount: Number(pendingPayoutRequest.amount), createdAt: pendingPayoutRequest.createdAt.toISOString() }
+              : null
+          }
+        />
 
         <div className="rounded-2xl p-5 mb-8" style={{ background: "#fff", border: "1px solid var(--kk-border)" }}>
           <h2 className="text-sm font-bold mb-4" style={{ color: "var(--kk-dark)" }}>
