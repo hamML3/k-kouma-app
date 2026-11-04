@@ -66,7 +66,7 @@ const THERAPISTS: TherapistSeed[] = [
     firstName: "Néné",
     lastName: "Koffi",
     bio: "Thérapeute de couple et de famille, accompagne les partenaires dans la communication et la résolution de conflits depuis plus de 10 ans.",
-    specialties: "Couples,Relations et couple",
+    specialties: "Relations et couple,Enfants et adolescents",
     languages: "Français,Malinké,Bambara",
     isVerified: true,
   },

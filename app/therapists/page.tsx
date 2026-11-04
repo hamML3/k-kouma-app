@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { Icon } from "@/components/Icon";
 import { getSpecialtyIcon } from "@/lib/icons";
+import { splitSpecialties } from "@/lib/specialties";
 import { chooseTherapistAction } from "@/lib/actions/assignments";
 import { scoreTherapist, matchBadge, type OnboardingAnswers } from "@/lib/matching";
 
@@ -241,9 +242,7 @@ export default async function TherapistsPage({
               const fullName = `${t.firstName} ${t.lastName}`;
               const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
               const languages = t.languages ? t.languages.split(",").map((l) => l.trim()) : [];
-              const specialtiesList = t.specialties
-                ? t.specialties.split(",").map((s) => s.trim())
-                : [];
+              const specialtiesList = splitSpecialties(t.specialties);
               const badge = match ? matchBadge(match.pct) : null;
               const isAssigned = t.user.id === assignedTherapistId;
 
@@ -351,6 +350,15 @@ export default async function TherapistsPage({
                             </span>
                           );
                         })}
+                        {specialtiesList.length > 2 && (
+                          <span
+                            className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                            style={{ background: "var(--kk-purple-light)", color: "var(--kk-purple)" }}
+                            title={specialtiesList.slice(2).join(", ")}
+                          >
+                            +{specialtiesList.length - 2}
+                          </span>
+                        )}
                         {languages.slice(0, 2).map((l) => (
                           <span
                             key={l}

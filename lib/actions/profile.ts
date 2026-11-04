@@ -1,7 +1,9 @@
 'use server'
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { normalizeSpecialties, splitSpecialties } from "@/lib/specialties";
 
 export type ProfileState = { success?: boolean; error?: string };
 
@@ -9,12 +11,16 @@ export async function updateTherapistProfileAction(
   _prevState: ProfileState,
   formData: FormData
 ): Promise<ProfileState> {
-  const userId = Number(formData.get("userId"));
-  if (!userId) return { error: "Session invalide. Reconnectez-vous." };
+  // L'identité vient de la session, jamais d'un champ du formulaire.
+  const session = await auth();
+  const userId = Number(session?.user?.id);
+  if (!userId || session?.user?.role !== "therapist") {
+    return { error: "Session invalide. Reconnectez-vous." };
+  }
 
   const profile = await prisma.therapistProfile.findUnique({
     where: { userId },
-    select: { id: true },
+    select: { id: true, specialties: true },
   });
   if (!profile) return { error: "Profil introuvable." };
 
@@ -24,7 +30,14 @@ export async function updateTherapistProfileAction(
 
   const bio         = (formData.get("bio")         as string)?.trim() || null;
   const languages   = (formData.get("languages")   as string)?.trim() || null;
-  const specialties = (formData.get("specialties") as string)?.trim() || null;
+
+  // Les anciennes valeurs déjà enregistrées (hors liste actuelle) restent
+  // acceptées pour ne pas les effacer à chaque sauvegarde du profil.
+  const specialtiesResult = normalizeSpecialties(formData.get("specialties") as string | null, {
+    extraAllowed: splitSpecialties(profile.specialties),
+  });
+  if (!specialtiesResult.ok) return { error: specialtiesResult.error };
+  const specialties = specialtiesResult.value;
 
   await prisma.therapistProfile.update({
     where: { userId },

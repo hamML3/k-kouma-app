@@ -5,18 +5,8 @@ import { registerTherapistAction } from "@/lib/actions/auth";
 import { LoadingOverlay } from "@/components/LoadingOverlay";
 import { PasswordInput } from "@/components/PasswordInput";
 import Link from "next/link";
-
-const SPECIALTIES = [
-  "Anxiété et stress",
-  "Dépression",
-  "Traumatisme (PTSD)",
-  "Relations et couple",
-  "Deuil et perte",
-  "Troubles alimentaires",
-  "Addictions",
-  "Développement personnel",
-  "Enfants et adolescents",
-];
+import { SpecialtyPicker } from "@/components/SpecialtyPicker";
+import { MAX_SPECIALTIES } from "@/lib/specialties";
 
 const LANGUAGES = ["Français", "Bambara", "Peulh", "Malinké", "Djoula", "Akan", "Anglais"];
 
@@ -107,6 +97,8 @@ function DocUploadSlot({
 export default function RegisterTherapistPage() {
   const [state, action, pending] = useActionState(registerTherapistAction, {});
   const [languages, setLanguages] = useState<string[]>([]);
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [specialtiesError, setSpecialtiesError] = useState<string | null>(null);
   const [docs, setDocs] = useState<{ diploma: File | null; idCard: File | null; other: File | null }>({
     diploma: null,
     idCard: null,
@@ -144,7 +136,19 @@ export default function RegisterTherapistPage() {
         <div className="kk-error mb-5">{state.error}</div>
       )}
 
-      <form action={action} className="space-y-5">
+      <form
+        action={action}
+        onSubmit={(e) => {
+          // Garde côté client pour éviter un aller-retour (et la perte des
+          // fichiers joints) ; le serveur revalide de toute façon.
+          if (specialties.length === 0) {
+            e.preventDefault();
+            setSpecialtiesError("Choisissez au moins une spécialité.");
+            document.getElementById("specialties-field")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }}
+        className="space-y-5"
+      >
         {/* Identity */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -202,15 +206,21 @@ export default function RegisterTherapistPage() {
           <input type="hidden" name="languages" value={languages.join(", ")} />
         </div>
 
-        <div>
-          <label htmlFor="specialties" className="kk-label">
-            Spécialité principale{" "}
-            <span className="font-normal" style={{ color: "var(--kk-faint)" }}>(facultatif)</span>
-          </label>
-          <select id="specialties" name="specialties" className="kk-input" style={{ cursor: "pointer" }}>
-            <option value="">Sélectionner…</option>
-            {SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div id="specialties-field">
+          <p className="kk-label">
+            Spécialités{" "}
+            <span className="font-normal" style={{ color: "var(--kk-faint)" }}>
+              (1 à {MAX_SPECIALTIES})
+            </span>
+          </p>
+          <SpecialtyPicker
+            value={specialties}
+            onChange={(next) => {
+              setSpecialties(next);
+              if (next.length > 0) setSpecialtiesError(null);
+            }}
+          />
+          <FieldError messages={specialtiesError ? [specialtiesError] : state.fieldErrors?.specialties} />
         </div>
 
         <div>

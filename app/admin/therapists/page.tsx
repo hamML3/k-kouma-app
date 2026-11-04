@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
+import { splitSpecialties } from "@/lib/specialties";
 
 export default async function AdminTherapistsPage({
   searchParams,
@@ -154,7 +155,7 @@ export default async function AdminTherapistsPage({
                   </p>
                   {t.specialties && (
                     <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
-                      {t.specialties}
+                      {splitSpecialties(t.specialties).join(", ")}
                     </p>
                   )}
                   <p className="text-xs mt-1" style={{ color: "var(--kk-faint)" }}>

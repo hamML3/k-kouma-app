@@ -39,7 +39,6 @@ export default async function ProfilePage() {
     <div className="min-h-screen" style={{ background: "var(--kk-bg)" }}>
       <AppHeader role="therapist" displayName={session.user.email ?? "Mon compte"} />
       <ProfileClient
-        userId={userId}
         profile={{
           firstName:  profile.firstName,
           lastName:   profile.lastName,

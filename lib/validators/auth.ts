@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeSpecialties } from "@/lib/specialties";
 
 export const loginSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -48,13 +49,28 @@ export const registerPatientSchema = z
     }
   );
 
+// Spécialités : chaîne jointe par "," (formulaire) ou tableau (API JSON).
+// Chaque valeur est vérifiée contre la liste partagée, puis la sélection est
+// renvoyée sous la forme stockée en base ("A,B", sans espace).
+export const specialtiesField = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((raw, ctx) => {
+    const result = normalizeSpecialties(raw);
+    if (!result.ok) {
+      ctx.addIssue({ code: "custom", message: result.error });
+      return z.NEVER;
+    }
+    return result.value;
+  });
+
 export const registerTherapistSchema = z.object({
   email: z.string().email("Email invalide"),
   password: newPassword,
   phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
   firstName: z.string().min(2).max(100),
   lastName: z.string().min(2).max(100),
-  specialties: z.string().optional(),
+  specialties: specialtiesField,
   bio: z.string().max(2000).optional(),
   languages: z.string().optional(),
 });
