@@ -124,7 +124,7 @@ export default async function PatientsPage() {
                 return (
                   <div
                     key={a.id}
-                    className="rounded-2xl p-5 flex items-center gap-4"
+                    className="rounded-2xl p-5 flex items-center gap-4 transition-all hover:scale-[1.01]"
                     style={{ background: "#fff", border: "1px solid var(--kk-border)", boxShadow: "0 4px 16px rgba(60,70,55,0.04)" }}
                   >
                     <div
@@ -208,7 +208,7 @@ export default async function PatientsPage() {
                 return (
                   <div
                     key={p.id}
-                    className="rounded-2xl p-5"
+                    className="rounded-2xl p-5 transition-all hover:scale-[1.01]"
                     style={{ background: "#fff", border: "1px solid var(--kk-border)", boxShadow: "0 4px 16px rgba(60,70,55,0.04)" }}
                   >
                     <div className="flex items-start justify-between gap-3 flex-wrap">

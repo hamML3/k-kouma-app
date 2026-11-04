@@ -55,7 +55,6 @@ export default async function ChatPage({
       appointmentId={appointment.id}
       userId={userId}
       role={session.user.role}
-      displayName={session.user.email ?? "Mon compte"}
       otherName={otherName || "Participant"}
       durationMinutes={appointment.durationMinutes}
       initialMessages={initialMessages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}

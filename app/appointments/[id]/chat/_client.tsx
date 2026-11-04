@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback, useTransition } from "react";
-import { AppHeader } from "@/components/AppHeader";
+import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { completeAppointmentAction } from "@/lib/actions/appointments";
 
@@ -16,7 +16,6 @@ export default function ChatClient({
   appointmentId,
   userId,
   role,
-  displayName,
   otherName,
   durationMinutes,
   initialMessages,
@@ -24,7 +23,6 @@ export default function ChatClient({
   appointmentId: number;
   userId: number;
   role: string;
-  displayName: string;
   otherName: string;
   durationMinutes: number;
   initialMessages: Message[];
@@ -139,9 +137,9 @@ export default function ChatClient({
           <p className="text-sm mb-6" style={{ color: "var(--kk-muted)" }}>
             {isPendingCompletion ? "Finalisation…" : "La conversation est close."}
           </p>
-          <a href="/appointments" className="kk-btn-purple inline-block px-6 py-3 text-sm">
+          <Link href="/appointments" className="kk-btn-purple inline-block px-6 py-3 text-sm">
             Retour à mes rendez-vous
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -149,7 +147,6 @@ export default function ChatClient({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--kk-bg)" }}>
-      <AppHeader role={role} displayName={displayName} />
       <ChatTopBar
         otherName={otherName}
         durationMinutes={durationMinutes}
@@ -240,11 +237,21 @@ function ChatTopBar({
 }) {
   return (
     <div
-      className="px-4 py-3 flex items-center justify-between gap-3"
+      className="px-3 py-3 flex items-center justify-between gap-3"
       style={{ background: "#fff", borderBottom: "1px solid var(--kk-border)" }}
     >
-      <div className="max-w-xl mx-auto w-full flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="max-w-xl mx-auto w-full flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Link
+            href="/appointments"
+            aria-label="Retour à mes rendez-vous"
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all hover:scale-105"
+            style={{ background: "var(--kk-bg)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 4L6 8l4 4" stroke="var(--kk-mid)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
             style={{ background: "var(--kk-purple)" }}
