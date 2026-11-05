@@ -26,6 +26,9 @@ const SPECIALTIES_FILTER = [
 
 const COACH_FILTER = "Coachs";
 
+// Le libellé du filtre ne correspond pas toujours au texte des spécialités.
+const SPECIALTY_FILTER_TERMS: Record<string, string> = { Couples: "couple" };
+
 const AVATAR_COLORS = ["#557B53", "#8E7CB8", "#C58A3D", "#4A7C9B", "#B85E7C"];
 
 function InitialsAvatar({ name, color }: { name: string; color: string }) {
@@ -99,7 +102,7 @@ export default async function TherapistsPage({
       : selectedFilter === COACH_FILTER
         ? scored.filter(({ t }) => t.practitionerKind === "coach")
         : scored.filter(({ t }) =>
-            t.specialties?.toLowerCase().includes(selectedFilter.toLowerCase())
+            t.specialties?.toLowerCase().includes((SPECIALTY_FILTER_TERMS[selectedFilter] ?? selectedFilter).toLowerCase())
           );
 
   // Sort: assigned first, then by match score desc, then alphabetically
@@ -150,6 +153,15 @@ export default async function TherapistsPage({
                 Choisissez un autre horaire pour votre rendez-vous.
               </p>
             </div>
+          </div>
+        )}
+
+        {answers?.therapyType === "coaching" && !canChooseCoach(answers) && (
+          <div
+            className="rounded-2xl p-4 mb-6 text-sm"
+            style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}
+          >
+            D&apos;après vos réponses, un psychologue saura mieux vous accompagner pour le moment. C&apos;est pourquoi nous ne vous proposons pas de coach.
           </div>
         )}
 

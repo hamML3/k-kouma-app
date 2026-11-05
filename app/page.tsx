@@ -17,6 +17,7 @@ const PRICING_DISPLAY: Record<TherapyType, { color: string; bg: string }> = {
   individuelle: { color: "var(--kk-green-text)", bg: "#E4EDDD" },
   couple: { color: "var(--kk-purple-text)", bg: "#ECE7F5" },
   enfant: { color: "var(--kk-gold-text)", bg: "#FBEEDD" },
+  coaching: { color: "#2F5F7E", bg: "#E0EEF7" },
 };
 
 function fcfa(amount: number): string {
@@ -370,7 +371,7 @@ function TherapistsPreview() {
 }
 
 /* ─── Consultation modes ─────────────────────────────────────────────────── */
-function ConsultationModes() {
+function ConsultationModes({ showCoaching }: { showCoaching: boolean }) {
   const modes: { icon: IconName; title: string; desc: string; bg: string; color: string }[] = [
     {
       icon: "chat",
@@ -441,8 +442,9 @@ function ConsultationModes() {
           </div>
 
           <div className="space-y-4">
-            {(Object.entries(SESSION_PRICING) as [TherapyType, (typeof SESSION_PRICING)[TherapyType]][]).map(
-              ([type, entry]) => {
+            {(Object.entries(SESSION_PRICING) as [TherapyType, (typeof SESSION_PRICING)[TherapyType]][])
+              .filter(([type]) => showCoaching || type !== "coaching")
+              .map(([type, entry]) => {
                 const { color, bg } = PRICING_DISPLAY[type];
                 return (
                   <div key={type} className="rounded-2xl p-4" style={{ background: bg }}>
@@ -589,7 +591,7 @@ export default async function LandingPage() {
         <TherapyTypes showLifeCoachCard={showLifeCoachCard} />
         <WellbeingSection />
         <TherapistsPreview />
-        <ConsultationModes />
+        <ConsultationModes showCoaching={showLifeCoachCard} />
         <SecuritySection />
       </main>
       <PublicFooter />

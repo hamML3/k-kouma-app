@@ -155,7 +155,7 @@ export default async function AdminSettingsPage({
             </label>
             <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
               <input type="checkbox" name="showLifeCoachCard" defaultChecked={showLifeCoachCard} />
-              Afficher la carte &laquo; Coach de vie / Conseil &raquo; sur la page d&apos;accueil
+              Proposer le coaching : carte &laquo; Coach de vie / Conseil &raquo; sur la page d&apos;accueil et choix dans le questionnaire
             </label>
             <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
               Enregistrer

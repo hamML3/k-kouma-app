@@ -20,6 +20,7 @@ export type TherapistForMatching = {
   specialties: string | null;
   bio: string | null;
   languages: string | null;
+  practitionerKind?: string;
 };
 
 export type MatchResult = {
@@ -75,6 +76,7 @@ const WEIGHT = {
   language:    40,  // speaking patient's language
   motif:       15,  // each matching motif (max 3 = 45)
   therapyType: 15,  // therapy type match
+  coaching:    30,  // a coach for a patient asking for coaching
   bio:          5,  // has written a bio
 } as const;
 
@@ -131,6 +133,11 @@ export function scoreTherapist(
       if (therapyType === "couple")  reasons.push("Thérapie de couple");
       if (therapyType === "enfant")  reasons.push("Enfants / Adolescents");
     }
+  }
+
+  if (therapyType === "coaching" && therapist.practitionerKind === "coach") {
+    score += WEIGHT.coaching;
+    reasons.push("Coaching de vie");
   }
 
   // ── Safety urgency boost ───────────────────────────────────────────────────

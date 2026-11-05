@@ -70,3 +70,14 @@ describe("spécialités par métier", () => {
     expect(normalizeSpecialties("Carrière et orientation").ok).toBe(false);
   });
 });
+
+describe("couple", () => {
+  it("propose la thérapie de couple aux psychologues", () => {
+    expect(normalizeSpecialties("Thérapie de couple").ok).toBe(true);
+  });
+
+  it("propose le coaching de couple aux coachs, pas la thérapie", () => {
+    expect(normalizeSpecialties("Coaching de couple", { kind: "coach" }).ok).toBe(true);
+    expect(normalizeSpecialties("Thérapie de couple", { kind: "coach" }).ok).toBe(false);
+  });
+});

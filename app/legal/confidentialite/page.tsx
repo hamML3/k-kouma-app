@@ -77,7 +77,7 @@ const SECTIONS: Section[] = [
       p("La Plateforme limite autant que possible l'accès direct aux données financières sensibles."),
       sub("E. Données de santé"),
       p("Lorsque cela est nécessaire au Service demandé :"),
-      list(["symptômes ;", "antécédents ;", "traitements ;", "allergies communiquées ;", "résultats d'examens ;", "documents médicaux ;", "informations nécessaires à l'évaluation médicale.", "notes de suivi rédigées par le psychologue."]),
+      list(["symptômes ;", "antécédents ;", "traitements ;", "allergies communiquées ;", "résultats d'examens ;", "documents médicaux ;", "informations nécessaires à l'évaluation médicale.", "notes de suivi rédigées par le psychologue ou le coach."]),
       sub("F. Avis sur les séances"),
       p("Après une séance terminée, le Patient peut laisser une note et, s'il le souhaite, un commentaire."),
     ],
@@ -129,8 +129,8 @@ const SECTIONS: Section[] = [
       p("L'accès est limité aux personnes habilitées et uniquement lorsque cet accès est nécessaire."),
       p("La communication de données médicales à des tiers non autorisés est interdite."),
       sub("Notes de suivi"),
-      p("Le psychologue peut rédiger des notes de suivi sur les Patients qu'il accompagne. Ces notes sont chiffrées avant leur enregistrement."),
-      p("Dans la Plateforme, seul le psychologue qui les a rédigées peut les consulter : elles ne sont accessibles ni au Patient, ni aux autres psychologues, ni à l'équipe de K-Kouma."),
+      p("Le psychologue ou le coach peut rédiger des notes de suivi sur les Patients qu'il accompagne. Ces notes sont chiffrées avant leur enregistrement."),
+      p("Dans la Plateforme, seule la personne qui les a rédigées peut les consulter : elles ne sont accessibles ni au Patient, ni aux autres praticiens, ni à l'équipe de K-Kouma."),
       p("Le Patient peut exercer ses droits sur ces notes selon les modalités prévues à l'article « Vos droits »."),
     ],
   },
@@ -140,7 +140,7 @@ const SECTIONS: Section[] = [
     blocks: [
       p("Les données peuvent être accessibles :"),
       list([
-        "aux psychologues et professionnels concernés ;",
+        "aux psychologues, coachs et professionnels concernés, pour les Patients qu'ils accompagnent ;",
         "aux personnels administratifs habilités ;",
         "aux prestataires techniques nécessaires au fonctionnement du Site ;",
         "aux prestataires de paiement ;",
@@ -296,7 +296,7 @@ export default function ConfidentialitePage() {
             Politique de confidentialité et de protection des données à caractère personnel
           </h1>
           <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
-            Version 1.1 — Mise à jour le 04/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
+            Version 1.2 — Mise à jour le 05/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
           <p className="text-sm leading-relaxed mb-10" style={{ color: "var(--kk-mid)" }}>
             Pour une présentation plus accessible de nos engagements au quotidien, consultez aussi notre page{" "}

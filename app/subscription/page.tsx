@@ -98,7 +98,7 @@ export default async function SubscriptionPage({
             </p>
           </div>
           <p className="text-xs text-right max-w-[45%]" style={{ color: "var(--kk-muted)" }}>
-            Thérapie {pricing.label.toLowerCase()} · 1 séance = 1 rendez-vous, quel que soit le format (chat, audio, vidéo)
+            {therapyType === "coaching" ? pricing.label : `Thérapie ${pricing.label.toLowerCase()}`} · 1 séance = 1 rendez-vous, quel que soit le format (chat, audio, vidéo)
           </p>
         </div>
 

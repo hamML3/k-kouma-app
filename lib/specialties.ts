@@ -12,6 +12,7 @@ export const SPECIALTIES = [
   "Dépression",
   "Traumatisme (PTSD)",
   "Relations et couple",
+  "Thérapie de couple",
   "Deuil et perte",
   "Troubles alimentaires",
   "Addictions",
@@ -26,6 +27,7 @@ export const COACH_SPECIALTIES = [
   "Gestion du stress",
   "Carrière et orientation",
   "Relations et communication",
+  "Coaching de couple",
   "Objectifs et organisation",
   "Parentalité",
 ] as const;

@@ -89,13 +89,14 @@ const STEPS: Step[] = [
   {
     id: "therapyType",
     title: "Quel accompagnement recherchez-vous ?",
-    subtitle: "Choisissez le type de thérapie qui vous correspond.",
+    subtitle: "Choisissez le type d'accompagnement qui vous correspond.",
     type: "single",
     required: true,
     options: [
       { value: "individuelle", label: "Thérapie individuelle", desc: "Un accompagnement personnel et confidentiel.", accent: "green" },
       { value: "couple", label: "Thérapie de couple", desc: "Renforcez votre relation à deux.", accent: "purple" },
       { value: "enfant", label: "Adolescent / Enfant", desc: "Un soutien adapté aux plus jeunes.", accent: "gold" },
+      { value: "coaching", label: "Coaching de vie", desc: "Avancer sur vos objectifs personnels ou professionnels, sans suivi psychologique.", accent: "green" },
     ],
   },
   {
@@ -212,7 +213,7 @@ const ACCENT_STYLES: Record<string, { bg: string; border: string; text: string; 
 
 const SCALE_LABELS = ["", "😔", "😕", "😐", "🙂", "😊"];
 
-export default function OnboardingClient({ userId }: { userId: number }) {
+export default function OnboardingClient({ userId, coachingAvailable }: { userId: number; coachingAvailable: boolean }) {
   const draft = useSyncExternalStore(
     subscribeDraft,
     () => getDraft(userId),
@@ -222,7 +223,11 @@ export default function OnboardingClient({ userId }: { userId: number }) {
   const [showEmergency, setShowEmergency] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const current = STEPS[step];
+  const step0 = STEPS[step];
+  const current =
+    step0.id === "therapyType" && !coachingAvailable
+      ? { ...step0, options: step0.options.filter((option) => option.value !== "coaching") }
+      : step0;
   const total = STEPS.length;
   const progress = ((step + 1) / total) * 100;
 

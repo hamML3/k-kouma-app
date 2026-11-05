@@ -13,6 +13,7 @@ const ANSWER_LABELS: Record<string, Record<string, string>> = {
     individuelle: "Thérapie individuelle",
     couple: "Thérapie de couple",
     enfant: "Adolescent / Enfant",
+    coaching: "Coaching de vie",
   },
   motifs: {
     anxiete: "Anxiété / stress",

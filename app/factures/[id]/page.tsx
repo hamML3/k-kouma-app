@@ -20,6 +20,7 @@ const THERAPY_LABELS: Record<string, string> = {
   individuelle: "Thérapie individuelle",
   couple: "Thérapie de couple",
   enfant: "Adolescent / Enfant",
+  coaching: "Coaching de vie",
 };
 
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {

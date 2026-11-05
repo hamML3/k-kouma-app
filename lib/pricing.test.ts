@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SESSION_PRICING, amountFor, sessionsCountFor } from "./pricing";
+import { SESSION_PRICING, amountFor, resolveTherapyType, sessionsCountFor } from "./pricing";
 
 describe("amountFor", () => {
   it("returns the single-session price for each therapy type", () => {
@@ -30,4 +30,15 @@ describe("SESSION_PRICING — the promotional 'was' price must always be strictl
       }
     });
   }
+});
+
+describe("coaching", () => {
+  it("garde le tarif de la séance individuelle", () => {
+    expect(SESSION_PRICING.coaching.single).toBe(SESSION_PRICING.individuelle.single);
+    expect(SESSION_PRICING.coaching.pack3).toBe(SESSION_PRICING.individuelle.pack3);
+  });
+
+  it("est reconnu depuis le questionnaire", () => {
+    expect(resolveTherapyType({ therapyType: "coaching" })).toBe("coaching");
+  });
 });

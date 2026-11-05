@@ -70,9 +70,10 @@ const SECTIONS: Section[] = [
       p("Au sens des présentes CGUV :"),
       list([
         "« Utilisateur » désigne toute personne qui accède ou utilise la Plateforme.",
-        "« Patient » désigne toute personne physique bénéficiant ou souhaitant bénéficier d'une consultation.",
+        "« Patient » désigne toute personne physique bénéficiant ou souhaitant bénéficier d'une consultation ou d'une séance de coaching.",
         "« Professionnel de santé » désigne tout médecin ou professionnel légalement habilité à intervenir dans le cadre des services proposés.",
         "« Psychologue » désigne le médecin ou professionnel compétent dans la spécialité de psychologie intervenant, le cas échéant, par l'intermédiaire de la Plateforme.",
+        "« Coach » désigne la personne dont le dossier a été vérifié par la Plateforme et qui propose un accompagnement de développement personnel ou professionnel. Le Coach n'est pas un Professionnel de santé.",
         "« Consultation » désigne une prestation médicale ou spécialisée proposée dans le cadre des Services.",
         "« Téléconsultation » désigne une consultation réalisée à distance par un moyen de communication électronique sécurisé, lorsque cette modalité est disponible et juridiquement autorisée.",
         "« Plateforme » désigne l'ensemble des services numériques exploités sous la dénomination K-Kouma.",
@@ -89,6 +90,7 @@ const SECTIONS: Section[] = [
       p("La Plateforme peut proposer notamment :"),
       list([
         "la prise de rendez-vous avec un psychologue ;",
+        "la prise de rendez-vous avec un coach de vie ;",
         "la vente de consultations médicales ;",
         "la consultation en présentiel ;",
         "la consultation à distance lorsque celle-ci est proposée ;",
@@ -234,6 +236,19 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    number: "11 bis",
+    title: "Coaching de vie",
+    blocks: [
+      p("Le coaching de vie est un accompagnement de développement personnel ou professionnel."),
+      p("Il ne constitue ni une consultation médicale, ni une psychothérapie, ni un soin, et ne remplace pas le suivi d'un Professionnel de santé."),
+      p("Le Coach ne pose aucun diagnostic, ne prescrit aucun traitement et n'assure aucun suivi psychologique."),
+      p("Le Coach s'engage à orienter vers un psychologue, un Professionnel de santé ou les services d'urgence toute personne dont la situation le nécessite."),
+      p("La Plateforme ne propose pas de Coach aux mineurs ni aux Patients dont les réponses au questionnaire signalent un risque. Elle peut leur recommander un psychologue."),
+      p("Le Coach est soumis à une obligation de confidentialité sur les informations communiquées dans le cadre de ses séances."),
+      p("Les conditions de prix, de paiement, d'annulation et de report des séances de coaching sont celles prévues par les présentes CGUV."),
+    ],
+  },
+  {
     number: "12",
     title: "Absence de service d'urgence",
     blocks: [
@@ -278,6 +293,7 @@ const SECTIONS: Section[] = [
       p("Chaque Professionnel de santé demeure responsable de ses décisions et actes professionnels dans les conditions prévues par les textes applicables."),
       p("Lorsque la Plateforme agit comme intermédiaire technique ou administratif, elle ne se substitue pas au jugement médical du Professionnel."),
       p("Les informations générales publiées sur la Plateforme ne constituent pas un avis médical personnalisé."),
+      p("Chaque Coach demeure responsable de ses séances et des conseils qu'il donne. Lorsque la Plateforme agit comme intermédiaire technique ou administratif, elle ne se substitue pas à son jugement."),
     ],
   },
   {
@@ -447,7 +463,7 @@ export default function CguPage() {
             Conditions générales d&apos;utilisation et de vente
           </h1>
           <p className="text-sm mb-10" style={{ color: "var(--kk-muted)" }}>
-            Version 1.0 — Date d&apos;entrée en vigueur : 07/09/2026
+            Version 1.1 — Mise à jour le 05/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
 
           <div className="kk-card p-5 mb-10 space-y-3">

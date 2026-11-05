@@ -121,3 +121,18 @@ describe("matchBadge", () => {
     expect(matchBadge(5).label).toBe("Profil général");
   });
 });
+
+describe("coaching", () => {
+  it("met en avant un coach pour une demande de coaching", () => {
+    const coach = scoreTherapist({ therapyType: "coaching" }, therapist({ practitionerKind: "coach" }));
+    const psychologist = scoreTherapist({ therapyType: "coaching" }, therapist({ practitionerKind: "psychologist" }));
+    expect(coach.score).toBeGreaterThan(psychologist.score);
+    expect(coach.reasons).toContain("Coaching de vie");
+  });
+
+  it("ne favorise pas un coach pour une thérapie", () => {
+    const coach = scoreTherapist({ therapyType: "individuelle" }, therapist({ practitionerKind: "coach" }));
+    const psychologist = scoreTherapist({ therapyType: "individuelle" }, therapist({ practitionerKind: "psychologist" }));
+    expect(coach.score).toBe(psychologist.score);
+  });
+});

@@ -1,4 +1,4 @@
-export type TherapyType = "individuelle" | "couple" | "enfant";
+export type TherapyType = "individuelle" | "couple" | "enfant" | "coaching";
 
 export type PricingEntry = {
   label: string;
@@ -17,6 +17,7 @@ export const SESSION_PRICING: Record<TherapyType, PricingEntry> = {
   individuelle: { label: "Individuelle", single: 10000, pack3: 28000, pack3Was: 30000 },
   couple: { label: "Couple", single: 20000, pack3: 57000, pack3Was: 60000 },
   enfant: { label: "Adolescent / Enfant", single: 8500, pack3: 23500, pack3Was: 25500 },
+  coaching: { label: "Coaching de vie", single: 10000, pack3: 28000, pack3Was: 30000 },
 };
 
 export const CURRENCY = "XOF";
@@ -37,7 +38,7 @@ export function amountFor(therapyType: TherapyType, pack: "single" | "pack3"): n
  * (paiement) restent la même source de vérité.
  */
 export function resolveTherapyType(answers: { therapyType?: string } | null | undefined): TherapyType {
-  return answers?.therapyType === "couple" || answers?.therapyType === "enfant"
+  return answers?.therapyType === "couple" || answers?.therapyType === "enfant" || answers?.therapyType === "coaching"
     ? answers.therapyType
     : "individuelle";
 }

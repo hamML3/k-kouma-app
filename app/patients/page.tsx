@@ -20,6 +20,7 @@ const THERAPY_LABELS: Record<string, string> = {
   individuelle: "Individuelle",
   couple: "Couple",
   enfant: "Enfant / Ado",
+  coaching: "Coaching",
 };
 
 export const metadata = {
