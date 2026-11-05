@@ -31,8 +31,10 @@ describe("noteEncryption", () => {
 
   it("refuse une note modifiée", () => {
     const stored = encryptNote("secret", owners);
-    const last = stored.at(-3) === "A" ? "B" : "A";
-    expect(() => decryptNote(`${stored.slice(0, -3)}${last}${stored.slice(-2)}`, owners)).toThrow();
+    const prefix = "enc:v1:";
+    const bytes = Buffer.from(stored.slice(prefix.length), "base64");
+    bytes[bytes.length - 1] ^= 1;
+    expect(() => decryptNote(prefix + bytes.toString("base64"), owners)).toThrow();
   });
 
   it("refuse une autre clé", () => {
