@@ -1,3 +1,4 @@
+import { PRACTITIONER_TITLES } from "@/lib/practitioners";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -85,6 +86,9 @@ export default async function AdminTherapistDetailPage({
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
+              {PRACTITIONER_TITLES[t.practitionerKind]}
+            </span>
             {isVerified && (
               <span className="px-3 py-1.5 rounded-full text-sm font-bold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
                 ✓ Vérifié
@@ -242,7 +246,7 @@ export default async function AdminTherapistDetailPage({
 
         {isVerified && (
           <div className="rounded-2xl p-4 mb-4 text-sm text-center font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
-            ✓ Ce psychologue est vérifié et peut consulter des patients.
+            ✓ Ce praticien est vérifié et peut consulter des patients.
           </div>
         )}
 

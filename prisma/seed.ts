@@ -33,6 +33,7 @@ type TherapistSeed = {
   specialties: string;
   languages: string;
   isVerified: boolean;
+  practitionerKind?: "psychologist" | "coach";
 };
 
 type PatientSeed = {
@@ -43,6 +44,16 @@ type PatientSeed = {
 };
 
 const THERAPISTS: TherapistSeed[] = [
+  {
+    email: "coach.awa@k-kouma.com",
+    firstName: "Awa",
+    lastName: "Keita",
+    bio: "Coach de vie certifiée, j'accompagne les adultes sur leurs objectifs personnels et professionnels, avec une approche concrète et bienveillante.",
+    specialties: "Développement personnel,Confiance en soi,Carrière et orientation",
+    languages: "Français,Bambara",
+    isVerified: true,
+    practitionerKind: "coach",
+  },
   {
     email: "dr.aminata@k-kouma.com",
     firstName: "Aminata",
@@ -211,6 +222,7 @@ async function seedTherapist(t: TherapistSeed) {
           specialties: t.specialties,
           languages: t.languages,
           isVerified: t.isVerified,
+          practitionerKind: t.practitionerKind ?? "psychologist",
           // Thérapeutes de démo déjà vérifiés : on les considère comme ayant
           // accepté la commission par défaut en vigueur, pour ne pas les
           // bloquer sur /conditions-commission dans les tests manuels.

@@ -53,11 +53,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (rawSpecialties !== undefined) {
     const current = await prisma.therapistProfile.findUnique({
       where: { userId: Number(id) },
-      select: { specialties: true },
+      select: { specialties: true, practitionerKind: true },
     });
     if (!current) return NextResponse.json({ error: "Thérapeute introuvable" }, { status: 404 });
     const result = normalizeSpecialties(rawSpecialties, {
       extraAllowed: splitSpecialties(current.specialties),
+      kind: current.practitionerKind,
     });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
     specialties = result.value;

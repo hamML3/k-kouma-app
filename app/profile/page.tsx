@@ -23,6 +23,7 @@ export default async function ProfilePage() {
         languages: true,
         specialties: true,
         commissionPercent: true,
+        practitionerKind: true,
       },
     }),
     prisma.platformSettings.findUnique({ where: { id: 1 } }),
@@ -45,6 +46,7 @@ export default async function ProfilePage() {
           bio:        profile.bio        ?? "",
           languages:  profile.languages  ?? "",
           specialties: profile.specialties ?? "",
+          practitionerKind: profile.practitionerKind,
         }}
         commissionPercent={commissionPercent}
       />

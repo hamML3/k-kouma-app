@@ -66,6 +66,29 @@ export default function RegisterPage() {
             <path d="M6 4l4 4-4 4" stroke="#A8AEA1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
+
+        <Link href="/register/coach" className="kk-register-card kk-register-card--purple">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "var(--kk-gold-light)" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="7.5" stroke="#C58A3D" strokeWidth="1.8" />
+              <path d="M13 7l-1.8 4.2L7 13l1.8-4.2L13 7Z" stroke="#C58A3D" strokeWidth="1.8" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm" style={{ color: "var(--kk-dark)" }}>
+              Je suis coach
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+              Proposez vos séances de coaching de vie à distance
+            </p>
+          </div>
+          <svg className="shrink-0 self-center" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 4l4 4-4 4" stroke="#A8AEA1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
       </div>
     </>
   );

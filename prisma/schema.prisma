@@ -181,6 +181,10 @@ model TherapistProfile {
   // UTC à partir de ces heures "murales", puis affichés au patient dans son
   // propre fuseau (PatientProfile.timezone). Voir lib/availability.ts.
   timezone                  String    @default("Africa/Bamako") @db.VarChar(50)
+  // Métier affiché aux patients. Un coach garde le rôle "therapist" (agenda,
+  // commission, validation) mais n'est pas un professionnel de santé : voir
+  // canChooseCoach dans lib/practitioners.ts.
+  practitionerKind          PractitionerKind @default(psychologist) @map("practitioner_kind")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -188,6 +192,11 @@ model TherapistProfile {
 }
 
 /// Réglages globaux de la plateforme — ligne unique (id=1).
+enum PractitionerKind {
+  psychologist
+  coach
+}
+
 model PlatformSettings {
   id                       Int      @id @default(1)
   defaultCommissionPercent Decimal  @default(20.00) @map("default_commission_percent") @db.Decimal(5, 2)

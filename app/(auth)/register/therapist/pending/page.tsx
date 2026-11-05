@@ -43,7 +43,7 @@ export default function TherapistPendingPage() {
         <ol className="space-y-1.5" style={{ color: "#8A6530" }}>
           <li className="flex items-start gap-2">
             <span className="font-bold shrink-0">1.</span>
-            Préparez une copie de votre diplôme de psychologue
+            Préparez une copie de votre diplôme ou de votre certification
           </li>
           <li className="flex items-start gap-2">
             <span className="font-bold shrink-0">2.</span>

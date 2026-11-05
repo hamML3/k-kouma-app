@@ -4,7 +4,8 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { updateTherapistProfileAction } from "@/lib/actions/profile";
 import { SpecialtyPicker } from "@/components/SpecialtyPicker";
-import { SPECIALTIES, MAX_SPECIALTIES, splitSpecialties } from "@/lib/specialties";
+import type { PractitionerKind } from "@/lib/practitioners";
+import { MAX_SPECIALTIES, specialtiesFor, splitSpecialties } from "@/lib/specialties";
 
 type Profile = {
   firstName: string;
@@ -12,6 +13,7 @@ type Profile = {
   bio: string;
   languages: string;
   specialties: string;
+  practitionerKind: PractitionerKind;
 };
 
 export default function ProfileClient({
@@ -27,7 +29,7 @@ export default function ProfileClient({
   const [specialties, setSpecialties] = useState<string[]>(initialSpecialties);
   // Anciennes valeurs hors liste : affichées pour pouvoir être conservées ou retirées.
   const legacySpecialties = initialSpecialties.filter(
-    (s) => !(SPECIALTIES as readonly string[]).includes(s)
+    (s) => !specialtiesFor(profile.practitionerKind).includes(s)
   );
 
   return (
@@ -130,6 +132,7 @@ export default function ProfileClient({
                 value={specialties}
                 onChange={setSpecialties}
                 extraOptions={legacySpecialties}
+                kind={profile.practitionerKind}
               />
             </div>
           </div>

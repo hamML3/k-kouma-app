@@ -1,3 +1,4 @@
+import { PRACTITIONER_LABELS } from "@/lib/practitioners";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
         therapist: {
           select: {
             therapistProfile: {
-              select: { id: true, firstName: true, lastName: true, specialties: true, bio: true },
+              select: { id: true, firstName: true, lastName: true, specialties: true, bio: true, practitionerKind: true },
             },
           },
         },
@@ -322,7 +323,7 @@ export default async function DashboardPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-green-text)" }}>
-                  Votre psychologue
+                  Votre {PRACTITIONER_LABELS[assignedTherapist.practitionerKind]}
                 </p>
                 <p className="font-bold" style={{ color: "var(--kk-dark)", fontFamily: "var(--font-lora)" }}>
                   {assignedTherapist.firstName} {assignedTherapist.lastName}

@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { canChooseCoach } from "@/lib/practitioners";
 
 async function requirePatientId(): Promise<number> {
   const session = await auth();
@@ -21,9 +22,18 @@ export async function chooseTherapistAction(formData: FormData): Promise<void> {
 
   const therapist = await prisma.therapistProfile.findFirst({
     where: { userId: therapistId, isVerified: true, user: { status: "active" } },
-    select: { id: true },
+    select: { id: true, practitionerKind: true },
   });
   if (!therapist) redirect("/therapists");
+
+  if (therapist.practitionerKind === "coach") {
+    const patient = await prisma.patientProfile.findUnique({
+      where: { userId: patientId },
+      select: { onboardingAnswers: true },
+    });
+    const answers = patient?.onboardingAnswers as { safety?: string; therapyType?: string } | null;
+    if (!canChooseCoach(answers)) redirect("/therapists?error=coach");
+  }
 
   // Deactivate any currently active assignment for this patient
   await prisma.patientTherapistAssignment.updateMany({

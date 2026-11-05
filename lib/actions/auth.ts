@@ -24,6 +24,7 @@ import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
 import { logAudit } from "@/lib/audit";
 import { DOCUMENTS_DIR, MAX_DOCUMENT_BYTES, detectDocumentType, documentUrl } from "@/lib/therapistDocuments";
 import { notifyStaff } from "@/lib/notifications";
+import { PRACTITIONER_LABELS } from "@/lib/practitioners";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
 async function dispatchVerificationEmail(userId: number, email: string, name: string) {
@@ -169,6 +170,7 @@ export async function registerTherapistAction(
     phoneNumber: phoneRaw || undefined,
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
+    practitionerKind: (formData.get("practitionerKind") as string) || undefined,
     specialties: (formData.get("specialties") as string) || undefined,
     bio: (formData.get("bio") as string) || undefined,
     languages: (formData.get("languages") as string) || undefined,
@@ -185,6 +187,7 @@ export async function registerTherapistAction(
     phoneNumber,
     firstName,
     lastName,
+    practitionerKind,
     specialties,
     bio,
     languages,
@@ -196,7 +199,7 @@ export async function registerTherapistAction(
   }
 
   const submittedDocs = [
-    { label: "Diplôme", file: formData.get("diploma") as File | null },
+    { label: practitionerKind === "coach" ? "Certification ou diplôme" : "Diplôme", file: formData.get("diploma") as File | null },
     { label: "Pièce d'identité", file: formData.get("idCard") as File | null },
     { label: "Document complémentaire", file: formData.get("document2") as File | null },
   ].filter((doc): doc is { label: string; file: File } => Boolean(doc.file && doc.file.size > 0));
@@ -238,6 +241,7 @@ export async function registerTherapistAction(
           create: {
             firstName,
             lastName,
+            practitionerKind,
             specialties,
             bio,
             languages,
@@ -252,7 +256,7 @@ export async function registerTherapistAction(
     await dispatchVerificationEmail(user.id, email, firstName);
     await notifyStaff("manage_therapists", {
       type: "therapist.registered",
-      title: "Nouvelle candidature de psychologue",
+      title: `Nouvelle candidature de ${PRACTITIONER_LABELS[practitionerKind]}`,
       body: `${firstName} ${lastName}`,
       link: `/admin/therapists/${user.id}`,
     });

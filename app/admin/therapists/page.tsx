@@ -139,6 +139,14 @@ export default async function AdminTherapistsPage({
                     >
                       {t.firstName} {t.lastName}
                     </p>
+                    {t.practitionerKind === "coach" && (
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}
+                      >
+                        Coach
+                      </span>
+                    )}
                     {t.isVerified && (
                       <span
                         className="text-xs font-bold px-2 py-0.5 rounded-full"

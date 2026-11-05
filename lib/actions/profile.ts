@@ -20,7 +20,7 @@ export async function updateTherapistProfileAction(
 
   const profile = await prisma.therapistProfile.findUnique({
     where: { userId },
-    select: { id: true, specialties: true },
+    select: { id: true, specialties: true, practitionerKind: true },
   });
   if (!profile) return { error: "Profil introuvable." };
 
@@ -35,6 +35,7 @@ export async function updateTherapistProfileAction(
   // acceptées pour ne pas les effacer à chaque sauvegarde du profil.
   const specialtiesResult = normalizeSpecialties(formData.get("specialties") as string | null, {
     extraAllowed: splitSpecialties(profile.specialties),
+    kind: profile.practitionerKind,
   });
   if (!specialtiesResult.ok) return { error: specialtiesResult.error };
   const specialties = specialtiesResult.value;

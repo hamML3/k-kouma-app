@@ -1,3 +1,4 @@
+import { PRACTITIONER_LABELS, PRACTITIONER_TITLES, canChooseCoach } from "@/lib/practitioners";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -22,6 +23,8 @@ const SPECIALTIES_FILTER = [
   "Traumatisme",
   "Deuil",
 ];
+
+const COACH_FILTER = "Coachs";
 
 const AVATAR_COLORS = ["#557B53", "#8E7CB8", "#C58A3D", "#4A7C9B", "#B85E7C"];
 
@@ -79,8 +82,12 @@ export default async function TherapistsPage({
   const hasAnswers = Boolean(answers && Object.keys(answers).length > 0);
   const assignedTherapistId = currentAssignment?.therapistId ?? null;
 
+  // Un coach n'est jamais proposé à un patient qui a besoin d'un suivi clinique.
+  const eligible = canChooseCoach(answers) ? therapists : therapists.filter((t) => t.practitionerKind !== "coach");
+  const hasCoaches = eligible.some((t) => t.practitionerKind === "coach");
+
   // Score every therapist
-  const scored = therapists.map((t) => {
+  const scored = eligible.map((t) => {
     const match = hasAnswers && answers ? scoreTherapist(answers, t) : null;
     return { t, match };
   });
@@ -89,9 +96,11 @@ export default async function TherapistsPage({
   const afterFilter =
     selectedFilter === "Tous"
       ? scored
-      : scored.filter(({ t }) =>
-          t.specialties?.toLowerCase().includes(selectedFilter.toLowerCase())
-        );
+      : selectedFilter === COACH_FILTER
+        ? scored.filter(({ t }) => t.practitionerKind === "coach")
+        : scored.filter(({ t }) =>
+            t.specialties?.toLowerCase().includes(selectedFilter.toLowerCase())
+          );
 
   // Sort: assigned first, then by match score desc, then alphabetically
   afterFilter.sort((a, b) => {
@@ -118,7 +127,7 @@ export default async function TherapistsPage({
             <span className="text-xl">✓</span>
             <div>
               <p className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
-                Votre psychologue a été sélectionné !
+                Votre choix est enregistré !
               </p>
               <p className="text-xs" style={{ color: "var(--kk-mid)" }}>
                 Vous pouvez maintenant prendre rendez-vous directement depuis son profil.
@@ -141,6 +150,12 @@ export default async function TherapistsPage({
                 Choisissez un autre horaire pour votre rendez-vous.
               </p>
             </div>
+          </div>
+        )}
+
+        {error === "coach" && (
+          <div className="kk-error mb-6">
+            D&apos;après vos réponses au questionnaire, un suivi par un psychologue est plus adapté. Choisissez un psychologue dans la liste.
           </div>
         )}
 
@@ -167,7 +182,9 @@ export default async function TherapistsPage({
             className="text-3xl font-bold mb-1"
             style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
           >
-            {hasAnswers ? "Psychologues recommandés" : "Nos psychologues"}
+            {hasCoaches
+              ? hasAnswers ? "Psychologues et coachs recommandés" : "Nos psychologues et coachs"
+              : hasAnswers ? "Psychologues recommandés" : "Nos psychologues"}
           </h1>
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
             {afterFilter.length} professionnel{afterFilter.length !== 1 ? "s" : ""} disponible{afterFilter.length !== 1 ? "s" : ""}
@@ -201,7 +218,7 @@ export default async function TherapistsPage({
 
         {/* Specialty filters */}
         <div className="flex gap-2 flex-wrap mb-7">
-          {SPECIALTIES_FILTER.map((s) => {
+          {(hasCoaches ? [...SPECIALTIES_FILTER, COACH_FILTER] : SPECIALTIES_FILTER).map((s) => {
             const active = selectedFilter === s;
             const icon = getSpecialtyIcon(s);
             return (
@@ -266,7 +283,7 @@ export default async function TherapistsPage({
                       className="text-xs font-bold px-3 py-1 rounded-full inline-block mb-3"
                       style={{ background: "var(--kk-green)", color: "#fff" }}
                     >
-                      ★ Votre psychologue actuel
+                      ★ Votre {PRACTITIONER_LABELS[t.practitionerKind]} actuel
                     </div>
                   )}
 
@@ -284,7 +301,7 @@ export default async function TherapistsPage({
                             {fullName}
                           </p>
                           <p className="text-xs font-semibold mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                            Psychologue clinicien
+                            {PRACTITIONER_TITLES[t.practitionerKind]}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -319,7 +336,7 @@ export default async function TherapistsPage({
                       {match && match.reasons.length > 0 && (
                         <div className="mt-2">
                           <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--kk-faint)" }}>
-                            Pourquoi ce psychologue vous est recommandé
+                            Pourquoi ce {PRACTITIONER_LABELS[t.practitionerKind]} vous est recommandé
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                           {match.reasons.map((r) => (

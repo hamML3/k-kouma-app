@@ -149,7 +149,7 @@ export default function BookingClient({
             className="rounded-xl p-4 text-xs"
             style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
           >
-            La séance dure <strong>45 minutes</strong>. Le psychologue confirmera votre créneau par email sous 24h.
+            La séance dure <strong>45 minutes</strong>. Votre praticien confirmera votre créneau par email sous 24h.
           </div>
 
           <button type="submit" disabled={!ready} className="kk-btn-purple w-full">

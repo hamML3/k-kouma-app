@@ -17,6 +17,7 @@ import { effectiveCommissionPercent, therapistShare } from "@/lib/commission";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isSlotBookable } from "@/lib/therapistSlots";
 import { createNotification } from "@/lib/notifications";
+import { canChooseCoach } from "@/lib/practitioners";
 
 /** Best-effort : une notification qui échoue ne doit jamais faire échouer l'action réelle. */
 async function notify(label: string, send: () => Promise<unknown>) {
@@ -59,6 +60,18 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
 
   if (!assignment) {
     redirect("/therapists?error=assign");
+  }
+
+  // Le questionnaire peut avoir été rempli après le choix du coach.
+  const [practitioner, patientProfile] = await Promise.all([
+    prisma.therapistProfile.findUnique({ where: { userId: therapistId }, select: { practitionerKind: true } }),
+    prisma.patientProfile.findUnique({ where: { userId: patientId }, select: { onboardingAnswers: true } }),
+  ]);
+  if (
+    practitioner?.practitionerKind === "coach" &&
+    !canChooseCoach(patientProfile?.onboardingAnswers as { safety?: string; therapyType?: string } | null)
+  ) {
+    redirect("/therapists?error=coach");
   }
 
   if (!(await isSlotBookable(therapistId, new Date(scheduledAt)))) {

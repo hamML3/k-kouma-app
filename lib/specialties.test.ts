@@ -55,3 +55,18 @@ describe("normalizeSpecialties", () => {
     });
   });
 });
+
+describe("spécialités par métier", () => {
+  it("accepte une spécialité de coach pour un coach", () => {
+    expect(normalizeSpecialties("Confiance en soi", { kind: "coach" }).ok).toBe(true);
+  });
+
+  it("refuse une spécialité clinique pour un coach", () => {
+    expect(normalizeSpecialties("Dépression", { kind: "coach" }).ok).toBe(false);
+  });
+
+  it("garde la liste des psychologues par défaut", () => {
+    expect(normalizeSpecialties("Dépression").ok).toBe(true);
+    expect(normalizeSpecialties("Carrière et orientation").ok).toBe(false);
+  });
+});

@@ -1,3 +1,5 @@
+import type { PractitionerKind } from "@/lib/practitioners";
+
 /**
  * Liste unique des spécialités proposées aux thérapeutes, partagée entre le
  * formulaire d'inscription, l'édition de profil et la validation serveur.
@@ -16,6 +18,21 @@ export const SPECIALTIES = [
   "Développement personnel",
   "Enfants et adolescents",
 ] as const;
+
+/** Accompagnement non clinique : pas de dépression, de traumatisme ni d'addiction. */
+export const COACH_SPECIALTIES = [
+  "Développement personnel",
+  "Confiance en soi",
+  "Gestion du stress",
+  "Carrière et orientation",
+  "Relations et communication",
+  "Objectifs et organisation",
+  "Parentalité",
+] as const;
+
+export function specialtiesFor(kind: PractitionerKind): readonly string[] {
+  return kind === "coach" ? COACH_SPECIALTIES : SPECIALTIES;
+}
 
 export const MIN_SPECIALTIES = 1;
 export const MAX_SPECIALTIES = 5;
@@ -45,16 +62,16 @@ export type SpecialtiesResult =
 
 /**
  * Valide une sélection soumise par le client (jamais fiable) : chaque valeur
- * doit appartenir à SPECIALTIES (ou à `extraAllowed`, ex. les anciennes
+ * doit appartenir à la liste du métier (ou à `extraAllowed`, ex. les anciennes
  * valeurs déjà enregistrées sur le profil), entre MIN et MAX éléments.
  * Renvoie la chaîne normalisée à stocker (jointe par "," sans espace).
  */
 export function normalizeSpecialties(
   raw: string | string[] | null | undefined,
-  options: { extraAllowed?: readonly string[] } = {}
+  options: { extraAllowed?: readonly string[]; kind?: PractitionerKind } = {}
 ): SpecialtiesResult {
   const list = splitSpecialties(raw);
-  const allowed = new Set<string>([...SPECIALTIES, ...(options.extraAllowed ?? [])]);
+  const allowed = new Set<string>([...specialtiesFor(options.kind ?? "psychologist"), ...(options.extraAllowed ?? [])]);
 
   const unknown = list.filter((s) => !allowed.has(s));
   if (unknown.length > 0) {

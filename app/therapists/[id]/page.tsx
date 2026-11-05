@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icon";
 import { getSpecialtyIcon } from "@/lib/icons";
 import { splitSpecialties } from "@/lib/specialties";
 import { AppHeader } from "@/components/AppHeader";
+import { PRACTITIONER_TITLES } from "@/lib/practitioners";
 
 const AVATAR_COLORS = ["#557B53", "#8E7CB8", "#C58A3D", "#4A7C9B", "#B85E7C"];
 
@@ -78,7 +79,7 @@ export default async function TherapistProfilePage({
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Retour aux psychologues
+          Retour à la liste
         </Link>
 
         {/* Profile header */}
@@ -102,7 +103,7 @@ export default async function TherapistProfilePage({
                   {fullName}
                 </h1>
                 <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                  Psychologue clinicien
+                  {PRACTITIONER_TITLES[profile.practitionerKind]}
                 </p>
               </div>
               <span
@@ -141,6 +142,15 @@ export default async function TherapistProfilePage({
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5 mb-5">
+          {profile.practitionerKind === "coach" && (
+            <p
+              className="text-sm rounded-xl p-3"
+              style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}
+            >
+              Un coach de vie n&apos;est pas un professionnel de santé. Pour un suivi psychologique, choisissez un psychologue.
+            </p>
+          )}
+
           {/* Bio */}
           <div
             className="sm:col-span-2 rounded-2xl p-6"

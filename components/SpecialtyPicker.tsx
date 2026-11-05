@@ -1,6 +1,7 @@
 'use client'
 
-import { SPECIALTIES, MAX_SPECIALTIES } from "@/lib/specialties";
+import { MAX_SPECIALTIES, specialtiesFor } from "@/lib/specialties";
+import type { PractitionerKind } from "@/lib/practitioners";
 
 /**
  * Sélection multiple de spécialités sous forme de pastilles (même style que
@@ -15,13 +16,16 @@ export function SpecialtyPicker({
   value,
   onChange,
   extraOptions = [],
+  kind = "psychologist",
 }: {
   name?: string;
   value: string[];
   onChange: (next: string[]) => void;
   extraOptions?: string[];
+  kind?: PractitionerKind;
 }) {
-  const options = [...SPECIALTIES, ...extraOptions.filter((o) => !(SPECIALTIES as readonly string[]).includes(o))];
+  const base = specialtiesFor(kind);
+  const options = [...base, ...extraOptions.filter((o) => !base.includes(o))];
   const atMax = value.length >= MAX_SPECIALTIES;
 
   function toggle(s: string) {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeSpecialties } from "@/lib/specialties";
+import { PRACTITIONER_KINDS } from "@/lib/practitioners";
 
 export const loginSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -49,31 +50,29 @@ export const registerPatientSchema = z
     }
   );
 
-// Spécialités : chaîne jointe par "," (formulaire) ou tableau (API JSON).
-// Chaque valeur est vérifiée contre la liste partagée, puis la sélection est
-// renvoyée sous la forme stockée en base ("A,B", sans espace).
-export const specialtiesField = z
-  .union([z.string(), z.array(z.string())])
-  .optional()
-  .transform((raw, ctx) => {
-    const result = normalizeSpecialties(raw);
+// Spécialités : chaîne jointe par "," (formulaire) ou tableau (API JSON). La
+// liste autorisée dépend du métier, d'où la vérification après coup, renvoyée
+// sous la forme stockée en base ("A,B", sans espace).
+export const registerTherapistSchema = z
+  .object({
+    email: z.string().email("Email invalide"),
+    password: newPassword,
+    phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
+    firstName: z.string().min(2).max(100),
+    lastName: z.string().min(2).max(100),
+    practitionerKind: z.enum(PRACTITIONER_KINDS).default("psychologist"),
+    specialties: z.union([z.string(), z.array(z.string())]).optional(),
+    bio: z.string().max(2000).optional(),
+    languages: z.string().optional(),
+  })
+  .transform((data, ctx) => {
+    const result = normalizeSpecialties(data.specialties, { kind: data.practitionerKind });
     if (!result.ok) {
-      ctx.addIssue({ code: "custom", message: result.error });
+      ctx.addIssue({ code: "custom", path: ["specialties"], message: result.error });
       return z.NEVER;
     }
-    return result.value;
+    return { ...data, specialties: result.value };
   });
-
-export const registerTherapistSchema = z.object({
-  email: z.string().email("Email invalide"),
-  password: newPassword,
-  phoneNumber: z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide").optional(),
-  firstName: z.string().min(2).max(100),
-  lastName: z.string().min(2).max(100),
-  specialties: specialtiesField,
-  bio: z.string().max(2000).optional(),
-  languages: z.string().optional(),
-});
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Email invalide"),
