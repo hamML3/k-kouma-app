@@ -98,6 +98,7 @@ const SECTIONS: Section[] = [
         "assurer la sécurité ;",
         "prévenir les fraudes ;",
         "répondre aux demandes ;",
+        "vous adresser par e-mail les actualités et offres de K-Kouma, sauf si vous vous y êtes opposé : chaque e-mail contient un lien de désinscription, et la case « Recevoir les actualités et offres » de Mon compte permet de changer d'avis à tout moment. Ces envois ne reposent jamais sur vos données de santé ;",
         "respecter les obligations légales ;",
         "améliorer les Services dans le respect des droits des personnes.",
       ]),
@@ -297,7 +298,7 @@ export default function ConfidentialitePage() {
             Politique de confidentialité et de protection des données à caractère personnel
           </h1>
           <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
-            Version 1.2 — Mise à jour le 09/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
+            Version 1.3 — Mise à jour le 09/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
           <p className="text-sm leading-relaxed mb-10" style={{ color: "var(--kk-mid)" }}>
             Pour une présentation plus accessible de nos engagements au quotidien, consultez aussi notre page{" "}

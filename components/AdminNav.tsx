@@ -133,6 +133,17 @@ const NAV_LINKS: NavLink[] = [
     ),
   },
   {
+    href: "/admin/emails",
+    label: "E-mails",
+    adminOnly: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2.5" y="4" width="13" height="10" rx="1.6" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M3 5l6 4.5L15 5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/settings",
     label: "Réglages",
     adminOnly: true,

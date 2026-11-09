@@ -6,6 +6,9 @@ const PUBLIC_PREFIXES = [
   "/verify-email",
   // Lien de changement d'adresse : peut s'ouvrir sur un autre appareil, sans session.
   "/confirm-email",
+  // Désinscription des e-mails promotionnels : lien signé, sans session.
+  "/desabonnement",
+  "/api/unsubscribe",
   "/blog",
   "/faq",
   "/a-propos",

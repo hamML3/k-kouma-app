@@ -342,3 +342,58 @@ export async function sendAppointmentNoticeEmail(params: {
   );
   return client().emails.send({ from: FROM, to: params.to, subject: `${params.subject} — K-Kouma`, html });
 }
+
+export type CampaignContent = {
+  subject: string;
+  body: string;
+  category: "promotion" | "information";
+  buttonLabel?: string | null;
+  buttonUrl?: string | null;
+};
+
+/**
+ * E-mail groupé, personnalisé par destinataire. Le texte est saisi en clair
+ * dans l'administration : échappé ici, une ligne vide sépare les paragraphes.
+ * Une promotion porte toujours son lien de désinscription.
+ */
+export function renderCampaignHtml(content: CampaignContent, name: string, unsubscribeUrl: string | null): string {
+  const paragraphs = content.body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p style="font-size:14px;line-height:1.6;color:#5C645B;">${esc(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  const cta =
+    content.buttonLabel && content.buttonUrl ? button(esc(content.buttonUrl), esc(content.buttonLabel)) : "";
+  const footer =
+    content.category === "promotion" && unsubscribeUrl
+      ? `Vous recevez cet e-mail car vous avez un compte K-Kouma. <a href="${esc(unsubscribeUrl)}" style="color:#8A9183;">Se désinscrire des actualités et offres</a>.`
+      : "Message d'information concernant votre compte K-Kouma.";
+  return wrapper(
+    esc(content.subject),
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
+     ${paragraphs}
+     ${cta}
+     <p style="font-size:11px;line-height:1.6;color:#8A9183;margin-top:28px;">${footer}</p>`
+  );
+}
+
+export type CampaignMessage = { to: string; subject: string; html: string; oneClickUnsubscribeUrl: string | null };
+
+/** Envoi par lots (100 au plus par appel Resend). Renvoie le nombre d'e-mails acceptés. */
+export async function sendCampaignBatch(messages: CampaignMessage[]): Promise<number> {
+  const { error } = await client().batch.send(
+    messages.map((m) => ({
+      from: FROM,
+      to: m.to,
+      subject: m.subject,
+      html: m.html,
+      // Désinscription en un clic depuis Gmail, Outlook… (exigé des envois groupés).
+      ...(m.oneClickUnsubscribeUrl
+        ? { headers: { "List-Unsubscribe": `<${m.oneClickUnsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+        : {}),
+    }))
+  );
+  if (error) throw new Error(error.message);
+  return messages.length;
+}

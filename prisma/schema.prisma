@@ -24,6 +24,9 @@ model User {
   // Nouvelle adresse demandée depuis « Mon compte », en attente du clic sur
   // le lien envoyé à cette adresse (VerificationToken de type email_change).
   pendingEmail          String?    @map("pending_email") @db.VarChar(180)
+  // Désinscription des e-mails promotionnels (lien en bas de chaque envoi,
+  // ou case dans « Mon compte »). Les informations de service restent envoyées.
+  marketingOptOutAt     DateTime?  @map("marketing_opt_out_at")
   phoneVerifiedAt       DateTime?  @map("phone_verified_at")
   status                UserStatus @default(active)
   role                  UserRole   @default(patient)
@@ -60,6 +63,7 @@ model User {
   conversationsOwned       Conversation[]        @relation("ConversationOwner")
   conversationsAsTherapist Conversation[]        @relation("ConversationTherapist")
   conversationMessages     ConversationMessage[] @relation("ConversationMessageSender")
+  emailCampaigns           EmailCampaign[]
   payments                 Payment[]
   therapistEarnings        TherapistEarning[]
   payoutRequests           PayoutRequest[]       @relation("PayoutRequestTherapist")
@@ -777,4 +781,41 @@ enum ReviewStatus {
   pending
   published
   hidden
+}
+
+enum EmailCampaignCategory {
+  promotion
+  information
+}
+
+enum EmailCampaignStatus {
+  sending
+  sent
+  failed
+}
+
+/// E-mail groupé envoyé depuis Administration → E-mails. Une promotion n'est
+/// jamais envoyée aux comptes désinscrits ; une information de service l'est.
+/// `audience` garde la sélection faite : groupes (rôles) ou personnes choisies.
+model EmailCampaign {
+  id             Int                   @id @default(autoincrement())
+  subject        String                @db.VarChar(200)
+  body           String                @db.Text
+  category       EmailCampaignCategory
+  buttonLabel    String?               @map("button_label") @db.VarChar(60)
+  buttonUrl      String?               @map("button_url") @db.VarChar(500)
+  audience       Json
+  recipientCount Int                   @default(0) @map("recipient_count")
+  sentCount      Int                   @default(0) @map("sent_count")
+  failedCount    Int                   @default(0) @map("failed_count")
+  skippedOptOut  Int                   @default(0) @map("skipped_opt_out")
+  status         EmailCampaignStatus   @default(sending)
+  createdById    Int                   @map("created_by_id")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  finishedAt     DateTime?             @map("finished_at")
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([createdAt])
+  @@map("email_campaigns")
 }
