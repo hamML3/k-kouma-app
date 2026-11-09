@@ -7,6 +7,7 @@ import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { ARTICLES, getArticle } from "@/lib/articles";
+import { ARTICLE_AUTHOR_SELECT, articleByline } from "@/lib/articleAuthor";
 
 export function generateStaticParams() {
   // Seuls les slugs éditoriaux (ARTICLES, en mémoire) sont pré-rendus au
@@ -19,11 +20,7 @@ export function generateStaticParams() {
 async function getSubmittedArticle(slug: string) {
   return prisma.submittedArticle.findUnique({
     where: { slug, status: "published" },
-    include: {
-      author: {
-        select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } },
-      },
-    },
+    include: { author: { select: ARTICLE_AUTHOR_SELECT } },
   });
 }
 
@@ -47,9 +44,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     const submitted = await getSubmittedArticle(slug);
     if (!submitted) notFound();
 
-    const authorName = submitted.author.therapistProfile
-      ? `${submitted.author.therapistProfile.firstName} ${submitted.author.therapistProfile.lastName}`
-      : submitted.author.email;
+    const byline = articleByline(submitted.author);
     const paragraphs = submitted.body.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
 
     return (
@@ -82,7 +77,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             )}
 
             <p className="text-xs font-bold mb-2" style={{ color: "var(--kk-purple-text)" }}>
-              Par {authorName}
+              Par{" "}
+              {byline.profileHref ? (
+                <Link href={byline.profileHref} className="underline underline-offset-2">
+                  {byline.name}
+                </Link>
+              ) : (
+                byline.name
+              )}
+              {byline.title && <span className="font-semibold" style={{ color: "var(--kk-muted)" }}> · {byline.title}</span>}
             </p>
             <h1
               className="text-2xl sm:text-3xl font-bold mb-3 leading-snug"

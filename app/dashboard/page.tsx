@@ -482,6 +482,18 @@ export default async function DashboardPage() {
                 title="Mes patients"
                 desc="Accédez au suivi de vos patients"
               />
+              <DashboardCard
+                href="/articles/proposer"
+                icon={
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M5 17l1-4 9-9 3 3-9 9-4 1z" stroke="#8E7CB8" strokeWidth="1.8" strokeLinejoin="round" />
+                    <path d="M13 6l3 3" stroke="#8E7CB8" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                }
+                iconBg="var(--kk-purple-light)"
+                title="Écrire un article"
+                desc="Partagez vos conseils avec les lecteurs du blog"
+              />
             </>
           )}
         </div>

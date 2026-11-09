@@ -1,11 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { hasPermission, type Permission } from "@/lib/permissions";
+import { scheduleStaffAlert, type StaffAlertFacts } from "@/lib/telegram";
 
 export type NotificationContent = {
   type: string;
   title: string;
   body?: string;
   link?: string;
+  /**
+   * Faits non sensibles repris par l'alerte Telegram de l'équipe (staff
+   * uniquement, voir lib/telegram.ts). Jamais affichés dans l'application.
+   */
+  alert?: StaffAlertFacts;
 };
 
 /** Le lien part dans un redirect() : tout ce qui n'est pas un chemin interne est écarté. */
@@ -64,8 +70,12 @@ async function notifyMany(userIds: number[], content: NotificationContent): Prom
   }
 }
 
-/** Prévient les admins et les modérateurs titulaires de cette permission. */
+/**
+ * Prévient les admins et les modérateurs titulaires de cette permission, plus
+ * le groupe Telegram de l'équipe si ce type d'événement y est autorisé.
+ */
 export async function notifyStaff(permission: Permission, content: NotificationContent): Promise<void> {
+  scheduleStaffAlert(content);
   try {
     const staff = await prisma.user.findMany({
       where: { role: { in: ["admin", "moderator"] }, status: "active" },
@@ -82,6 +92,7 @@ export async function notifyStaff(permission: Permission, content: NotificationC
 
 /** La publication d'articles n'est pas une permission déléguable : seuls les admins la reçoivent. */
 export async function notifyAdmins(content: NotificationContent): Promise<void> {
+  scheduleStaffAlert(content);
   try {
     const admins = await prisma.user.findMany({
       where: { role: "admin", status: "active" },

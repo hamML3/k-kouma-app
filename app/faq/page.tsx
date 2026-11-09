@@ -35,7 +35,7 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
       },
       {
         q: "Comment payer ?",
-        a: "Le paiement se fait par Mobile Money (Orange Money, Wave et autres opérateurs) directement depuis votre espace personnel.",
+        a: "Pour le moment, le paiement se fait par Orange Money : depuis votre espace, choisissez votre formule, payez le code marchand K-Kouma avec le #144# ou dans Sarali sur l'application Max-It, puis indiquez la référence reçue par SMS. Vos séances sont créditées après vérification par notre équipe, généralement sous quelques heures.",
       },
       {
         q: "Puis-je changer de psychologue en cours de route ?",

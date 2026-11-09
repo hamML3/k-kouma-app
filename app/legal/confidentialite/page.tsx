@@ -74,6 +74,7 @@ const SECTIONS: Section[] = [
       list(["date ;", "heure ;", "service réservé ;", "professionnel concerné ;", "historique des réservations."]),
       sub("D. Données financières"),
       p("Les informations nécessaires au paiement peuvent être traitées par les prestataires de paiement."),
+      p("Lorsque vous payez par code marchand Orange Money, nous enregistrons le numéro de téléphone utilisé et la référence de la transaction, afin de vérifier le paiement sur notre compte marchand et d'établir votre facture."),
       p("La Plateforme limite autant que possible l'accès direct aux données financières sensibles."),
       sub("E. Données de santé"),
       p("Lorsque cela est nécessaire au Service demandé :"),
@@ -296,7 +297,7 @@ export default function ConfidentialitePage() {
             Politique de confidentialité et de protection des données à caractère personnel
           </h1>
           <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
-            Version 1.2 — Mise à jour le 05/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
+            Version 1.2 — Mise à jour le 09/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
           <p className="text-sm leading-relaxed mb-10" style={{ color: "var(--kk-mid)" }}>
             Pour une présentation plus accessible de nos engagements au quotidien, consultez aussi notre page{" "}

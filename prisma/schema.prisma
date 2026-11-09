@@ -213,6 +213,12 @@ model PlatformSettings {
   // Active/désactive le pont de paiement manuel Orange Money (lib/orangeMoney.ts)
   // sans retirer la variable d'environnement ni redéployer.
   orangeMoneyManualEnabled Boolean  @default(true) @map("orange_money_manual_enabled")
+  // Code marchand Orange Money saisi depuis /admin/settings. Prioritaire sur
+  // ORANGE_MONEY_MERCHANT_CODE (.env), qui ne sert plus que de repli.
+  orangeMoneyMerchantCode  String?  @map("orange_money_merchant_code") @db.VarChar(30)
+  // Nom affiché par Orange Money au moment de payer : le patient vérifie qu'il
+  // paie bien K-Kouma avant de valider.
+  orangeMoneyMerchantName  String?  @map("orange_money_merchant_name") @db.VarChar(100)
   // Affiche ou masque la carte "Coach de vie / Conseil" sur la page d'accueil publique.
   showLifeCoachCard        Boolean  @default(true) @map("show_life_coach_card")
   // Mention fiscale imprimée sur les factures (régime de TVA, exonération…).
@@ -544,6 +550,9 @@ model SubmittedArticle {
   body         String        @db.Text
   imageUrl     String?       @map("image_url") @db.VarChar(512)
   status       ArticleStatus @default(pending)
+  // Commentaire de l'admin lors d'un refus, montré à l'auteur pour qu'il
+  // puisse corriger et renvoyer son article. Effacé à la publication.
+  reviewNote   String?       @map("review_note") @db.VarChar(500)
   reviewedById Int?          @map("reviewed_by_id")
   reviewedAt   DateTime?     @map("reviewed_at")
   createdAt    DateTime      @default(now()) @map("created_at")

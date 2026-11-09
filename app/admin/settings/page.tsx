@@ -7,7 +7,12 @@ import {
   updateMaintenanceModeAction,
   updateFeatureTogglesAction,
   updateInvoiceSettingsAction,
+  updateOrangeMoneySettingsAction,
+  sendTelegramTestAction,
 } from "@/lib/actions/settings";
+import { telegramStatus } from "@/lib/telegram";
+import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
+import { isPaydunyaConfigured } from "@/lib/paydunya";
 
 export const metadata = { title: "Réglages — Administration K-Kouma" };
 
@@ -26,7 +31,10 @@ export default async function AdminSettingsPage({
   const announcementActive = settings?.announcementActive ?? false;
   const announcementText = settings?.announcementText ?? "";
   const maintenanceModeEnabled = settings?.maintenanceModeEnabled ?? false;
-  const orangeMoneyManualEnabled = settings?.orangeMoneyManualEnabled ?? true;
+  const orangeMoney = await getOrangeMoneyConfig();
+  const merchantCodeFromEnv = !settings?.orangeMoneyMerchantCode && orangeMoney.merchantCode !== null;
+  const paydunyaActive = isPaydunyaConfigured();
+  const telegram = telegramStatus();
   const showLifeCoachCard = settings?.showLifeCoachCard ?? true;
 
   return (
@@ -45,13 +53,30 @@ export default async function AdminSettingsPage({
           Enregistré. Les thérapeutes concernés ont été prévenus par email.
         </div>
       )}
-      {saved && saved !== "commission" && (
+      {saved === "telegram_test" && (
+        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
+          Message de test envoyé. Vérifiez qu&apos;il est bien arrivé dans le groupe Telegram de l&apos;équipe.
+        </div>
+      )}
+      {saved && saved !== "commission" && saved !== "telegram_test" && (
         <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Enregistré.
         </div>
       )}
+      {error === "merchant_code" && (
+        <div className="kk-error mb-6">Code marchand invalide : il doit contenir uniquement des chiffres (4 à 20).</div>
+      )}
       {error === "invalid" && (
         <div className="kk-error mb-6">Pourcentage invalide (doit être entre 0 et 100).</div>
+      )}
+      {error === "telegram_unconfigured" && (
+        <div className="kk-error mb-6">Alertes Telegram non configurées sur le serveur : aucun message envoyé.</div>
+      )}
+      {error === "telegram_failed" && (
+        <div className="kk-error mb-6">
+          Telegram a refusé ou n&apos;a pas reçu le message. Vérifiez le jeton du bot, l&apos;identifiant du groupe et
+          que le bot fait bien partie du groupe.
+        </div>
       )}
 
       <div className="grid sm:grid-cols-2 gap-6 items-start">
@@ -150,12 +175,72 @@ export default async function AdminSettingsPage({
 
           <form action={updateFeatureTogglesAction} className="space-y-3">
             <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-              <input type="checkbox" name="orangeMoneyManualEnabled" defaultChecked={orangeMoneyManualEnabled} />
-              Paiement manuel Orange Money (nécessite un code marchand configuré)
-            </label>
-            <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
               <input type="checkbox" name="showLifeCoachCard" defaultChecked={showLifeCoachCard} />
               Proposer le coaching : carte &laquo; Coach de vie / Conseil &raquo; sur la page d&apos;accueil et choix dans le questionnaire
+            </label>
+            <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
+              Enregistrer
+            </button>
+          </form>
+        </div>
+
+        <div className="kk-card p-6">
+          <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Paiement Orange Money
+          </p>
+          <p className="text-xs mb-3" style={{ color: "var(--kk-mid)" }}>
+            En attendant l&apos;API de paiement : les patients paient votre code marchand depuis leur téléphone,
+            déclarent la référence reçue par SMS, et vous validez dans Finances après vérification sur votre
+            compte marchand.
+          </p>
+          <p
+            className="text-xs font-semibold rounded-xl px-3 py-2 mb-4"
+            style={
+              orangeMoney.enabled && !paydunyaActive
+                ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" }
+                : { background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }
+            }
+          >
+            {paydunyaActive
+              ? "Le paiement en ligne PayDunya est actif : le paiement manuel n'est pas proposé aux patients."
+              : orangeMoney.enabled
+              ? "Actif : les patients voient ce mode de paiement sur la page Mes séances."
+              : !orangeMoney.merchantCode
+              ? "Inactif : saisissez votre code marchand pour l'ouvrir aux patients."
+              : "Suspendu : cochez la case pour le rouvrir aux patients."}
+          </p>
+
+          <form action={updateOrangeMoneySettingsAction} className="space-y-3">
+            <div>
+              <label htmlFor="orangeMoneyMerchantCode" className="kk-label">
+                Code marchand
+              </label>
+              <input
+                id="orangeMoneyMerchantCode"
+                name="orangeMoneyMerchantCode"
+                inputMode="numeric"
+                maxLength={30}
+                defaultValue={settings?.orangeMoneyMerchantCode ?? ""}
+                placeholder={merchantCodeFromEnv ? `${orangeMoney.merchantCode} (fichier .env)` : "Ex. 123456"}
+                className="kk-input"
+              />
+            </div>
+            <div>
+              <label htmlFor="orangeMoneyMerchantName" className="kk-label">
+                Nom du compte affiché par Orange Money (facultatif)
+              </label>
+              <input
+                id="orangeMoneyMerchantName"
+                name="orangeMoneyMerchantName"
+                maxLength={100}
+                defaultValue={settings?.orangeMoneyMerchantName ?? "K-Kouma Sarl Siege Marchand"}
+                placeholder="K-Kouma Sarl Siege Marchand"
+                className="kk-input"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
+              <input type="checkbox" name="orangeMoneyManualEnabled" defaultChecked={orangeMoney.switchedOn} />
+              Proposer ce mode de paiement aux patients
             </label>
             <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
               Enregistrer
@@ -186,6 +271,35 @@ export default async function AdminSettingsPage({
             </div>
             <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
               Enregistrer
+            </button>
+          </form>
+        </div>
+
+        <div className="kk-card p-6">
+          <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+            Alertes Telegram
+          </p>
+          <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
+            Message court dans le groupe Telegram de l&apos;équipe quand une action est attendue (paiement à
+            vérifier, candidature, article, signalement…). Aucune donnée de santé ni d&apos;identité de patient n&apos;y
+            est envoyée. Se règle dans le fichier .env du serveur (TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID).
+          </p>
+
+          <p className="text-sm font-semibold mb-4" style={{ color: "var(--kk-mid)" }}>
+            {telegram.state === "configured" && <>Configuré : groupe se terminant par {telegram.chatIdHint}.</>}
+            {telegram.state === "missing" && <>Non configuré : aucune alerte n&apos;est envoyée.</>}
+            {telegram.state === "invalid" && (
+              <>Configuration invalide : le jeton du bot ou l&apos;identifiant du groupe n&apos;a pas le bon format.</>
+            )}
+          </p>
+
+          <form action={sendTelegramTestAction}>
+            <button
+              type="submit"
+              className="kk-btn-purple px-5 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={telegram.state !== "configured"}
+            >
+              Envoyer un message de test
             </button>
           </form>
         </div>

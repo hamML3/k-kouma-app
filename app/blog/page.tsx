@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ARTICLE_AUTHOR_SELECT, articleByline } from "@/lib/articleAuthor";
 import Image from "next/image";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,9 +24,7 @@ export default async function BlogPage() {
       title: true,
       excerpt: true,
       imageUrl: true,
-      author: {
-        select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } },
-      },
+      author: { select: ARTICLE_AUTHOR_SELECT },
     },
   });
 
@@ -84,9 +83,7 @@ export default async function BlogPage() {
             ))}
 
             {submitted.map((a) => {
-              const authorName = a.author.therapistProfile
-                ? `${a.author.therapistProfile.firstName} ${a.author.therapistProfile.lastName}`
-                : a.author.email;
+              const byline = articleByline(a.author);
               return (
                 <Link
                   key={a.slug}
@@ -105,7 +102,8 @@ export default async function BlogPage() {
                   </div>
                   <div className="p-5 flex-1 flex flex-col">
                     <p className="text-xs font-bold mb-1" style={{ color: "var(--kk-purple-text)" }}>
-                      Par {authorName}
+                      Par {byline.name}
+                      {byline.title && <span className="font-semibold" style={{ color: "var(--kk-muted)" }}> · {byline.title}</span>}
                     </p>
                     <h2
                       className="font-bold text-base mb-2"

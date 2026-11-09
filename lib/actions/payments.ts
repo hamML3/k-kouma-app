@@ -9,7 +9,7 @@ import { createInvoice, isPaydunyaConfigured } from "@/lib/paydunya";
 import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, resolveTherapyType } from "@/lib/pricing";
 import { declareManualPaymentSchema } from "@/lib/validators/payments";
 import { isMaintenanceModeEnabled } from "@/lib/platformSettings";
-import { isOrangeMoneyManualEnabled } from "@/lib/orangeMoney";
+import { isOrangeMoneyManualEnabled, MAX_PENDING_MANUAL_PAYMENTS } from "@/lib/orangeMoney";
 
 const MAINTENANCE_ERROR =
   "La plateforme est actuellement en maintenance. Les achats de séances sont temporairement suspendus — réessayez dans quelques instants.";
@@ -136,6 +136,18 @@ export async function declareManualPaymentAction(
   }
 
   const patientId = Number(session.user.id);
+
+  // Évite qu'un compte inonde l'équipe de déclarations : chacune demande une
+  // vérification à la main sur le compte marchand.
+  const pendingCount = await prisma.payment.count({
+    where: { patientId, provider: "orange_money_manual", status: "pending" },
+  });
+  if (pendingCount >= MAX_PENDING_MANUAL_PAYMENTS) {
+    return {
+      error: `Vous avez déjà ${pendingCount} paiements en cours de vérification. Attendez qu'ils soient traités avant d'en déclarer un autre.`,
+    };
+  }
+
   const patient = await prisma.user.findUnique({
     where: { id: patientId },
     select: { patientProfile: { select: { onboardingAnswers: true } } },
@@ -174,6 +186,7 @@ export async function declareManualPaymentAction(
     title: "Paiement Orange Money à vérifier",
     body: `${amount.toLocaleString("fr-FR")} ${CURRENCY}, référence ${parsed.data.reference}.`,
     link: "/admin/finances",
+    alert: { amount, currency: CURRENCY, reference: parsed.data.reference },
   });
 
   revalidatePath("/subscription");

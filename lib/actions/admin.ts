@@ -13,6 +13,11 @@ import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib
 import { markTherapistEarningsPaid } from "@/lib/payouts";
 import { completePendingPayment } from "@/lib/payments";
 import { createNotification } from "@/lib/notifications";
+import {
+  MANUAL_PAYMENT_REJECTION_REASONS,
+  isRejectionReason,
+  type ManualPaymentRejectionReason,
+} from "@/lib/validators/payments";
 
 export type CreateUserState = {
   error?: string;
@@ -293,7 +298,11 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
   if (!paymentId) redirect("/admin/finances");
 
   const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-  if (!payment || payment.status !== "pending") redirect("/admin/finances");
+  // Seules les déclarations manuelles se valident à la main : un paiement
+  // PayDunya en attente n'est confirmé que par son webhook.
+  if (!payment || payment.status !== "pending" || payment.provider !== "orange_money_manual") {
+    redirect("/admin/finances");
+  }
 
   if (!(await completePendingPayment(payment))) redirect("/admin/finances");
 
@@ -302,7 +311,12 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
     action: "admin.payment.confirm",
     targetType: "payment",
     targetId: paymentId,
-    metadata: { amount: Number(payment.amount), sessionsCount: payment.sessionsCount, provider: payment.provider },
+    metadata: {
+      amount: Number(payment.amount),
+      sessionsCount: payment.sessionsCount,
+      provider: payment.provider,
+      reference: payment.providerRef,
+    },
   });
 
   await createNotification({
@@ -317,27 +331,43 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
   redirect("/admin/finances");
 }
 
-/** Rejette une déclaration de paiement Orange Money manuel (référence introuvable, montant incorrect…). */
+/**
+ * Rejette une déclaration de paiement Orange Money manuel, avec un motif
+ * transmis au patient. La référence est libérée (et gardée dans le journal
+ * d'audit) : si le refus venait d'une erreur de formule, le patient peut la
+ * déclarer à nouveau.
+ */
 export async function rejectManualPaymentAction(formData: FormData): Promise<void> {
   const admin = await requireAdminOrModerator();
   const paymentId = Number(formData.get("paymentId"));
   if (!paymentId) redirect("/admin/finances");
+  const rawReason = formData.get("reason");
+  const reason: ManualPaymentRejectionReason = isRejectionReason(rawReason) ? rawReason : "other";
 
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId }, select: { patientId: true } });
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: { patientId: true, provider: true, providerRef: true },
+  });
+  if (!payment || payment.provider !== "orange_money_manual") redirect("/admin/finances");
 
   const { count } = await prisma.payment.updateMany({
-    where: { id: paymentId, status: "pending" },
-    data: { status: "failed" },
+    where: { id: paymentId, status: "pending", provider: "orange_money_manual" },
+    data: { status: "failed", providerRef: null },
   });
 
-  await logAudit({ actor: admin, action: "admin.payment.reject", targetType: "payment", targetId: paymentId });
-
-  if (count > 0 && payment) {
+  if (count > 0) {
+    await logAudit({
+      actor: admin,
+      action: "admin.payment.reject",
+      targetType: "payment",
+      targetId: paymentId,
+      metadata: { reason, reference: payment.providerRef },
+    });
     await createNotification({
       userId: payment.patientId,
       type: "payment.rejected",
       title: "Paiement non validé",
-      body: "Nous n'avons pas pu vérifier votre déclaration. Vérifiez la référence ou contactez-nous.",
+      body: MANUAL_PAYMENT_REJECTION_REASONS[reason],
       link: "/subscription",
     });
   }

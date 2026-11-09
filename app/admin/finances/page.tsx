@@ -139,6 +139,10 @@ export default async function AdminFinancesPage() {
           <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold-text)" }}>
             Paiements Orange Money à vérifier ({pendingManualPayments.length})
           </h2>
+          <p className="text-xs mb-3" style={{ color: "var(--kk-mid)" }}>
+            Avant de valider, retrouvez l&apos;opération dans l&apos;historique de votre compte marchand : même
+            référence, même montant, envoyée depuis ce numéro. La validation crédite les séances et émet la facture.
+          </p>
           <div className="space-y-2">
             {pendingManualPayments.map((p) => (
               <div
@@ -155,14 +159,27 @@ export default async function AdminFinancesPage() {
                     </span>
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
-                    Réf. <strong>{p.providerRef}</strong> · envoyé depuis {p.payerPhone} ·{" "}
+                    Réf. <strong style={{ color: "var(--kk-dark)" }}>{p.providerRef}</strong> · envoyé depuis{" "}
+                    <strong style={{ color: "var(--kk-dark)" }}>{p.payerPhone}</strong> ·{" "}
                     {p.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
                 {canManageFinances && (
-                  <div className="flex gap-2 shrink-0">
-                    <form action={rejectManualPaymentAction} className="flex-1 sm:flex-none">
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    <form action={rejectManualPaymentAction} className="flex flex-1 sm:flex-none gap-2">
                       <input type="hidden" name="paymentId" value={p.id} />
+                      <select
+                        name="reason"
+                        aria-label="Motif du refus"
+                        defaultValue="not_found"
+                        className="text-xs font-semibold rounded-full px-3 py-2 shrink-0"
+                        style={{ background: "#fff", border: "1px solid var(--kk-border-mid)", color: "var(--kk-mid)" }}
+                      >
+                        <option value="not_found">Référence introuvable</option>
+                        <option value="wrong_amount">Montant incorrect</option>
+                        <option value="already_used">Déjà utilisée</option>
+                        <option value="other">Autre motif</option>
+                      </select>
                       <ConfirmSubmitButton
                         confirmMessage="Rejeter cette déclaration de paiement ? Aucune séance ne sera créditée."
                         className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"

@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { sendCommissionTermsChangedEmail } from "@/lib/email";
+import { normalizeMerchantCode } from "@/lib/orangeMoney";
+import { sendTelegramTestMessage, telegramStatus } from "@/lib/telegram";
 
 async function requireAdmin(): Promise<{ id: number; email: string }> {
   const session = await auth();
@@ -140,26 +142,22 @@ export async function updateInvoiceSettingsAction(formData: FormData): Promise<v
   redirect("/admin/settings?saved=invoice");
 }
 
-/**
- * Bascules de fonctionnalités : paiement manuel Orange Money (lib/orangeMoney.ts)
- * et affichage de la carte "Coach de vie" sur la page d'accueil publique.
- */
+/** Bascule de fonctionnalité : affichage du coaching (page d'accueil et questionnaire). */
 export async function updateFeatureTogglesAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
 
-  const orangeMoneyManualEnabled = formData.get("orangeMoneyManualEnabled") === "on";
   const showLifeCoachCard = formData.get("showLifeCoachCard") === "on";
 
   await prisma.platformSettings.upsert({
     where: { id: 1 },
-    create: { id: 1, orangeMoneyManualEnabled, showLifeCoachCard, updatedById: admin.id },
-    update: { orangeMoneyManualEnabled, showLifeCoachCard, updatedById: admin.id },
+    create: { id: 1, showLifeCoachCard, updatedById: admin.id },
+    update: { showLifeCoachCard, updatedById: admin.id },
   });
 
   await logAudit({
     actor: admin,
     action: "admin.settings.feature_toggles_update",
-    metadata: { orangeMoneyManualEnabled, showLifeCoachCard },
+    metadata: { showLifeCoachCard },
   });
 
   revalidatePath("/admin/settings");
@@ -167,4 +165,56 @@ export async function updateFeatureTogglesAction(formData: FormData): Promise<vo
   // à jour immédiate de la carte "Coach de vie" plutôt que d'attendre.
   revalidatePath("/");
   redirect("/admin/settings?saved=features");
+}
+
+/**
+ * Paiement manuel Orange Money (lib/orangeMoney.ts) : code marchand, nom du
+ * compte affiché par Orange, et interrupteur. Un code vide retombe sur
+ * ORANGE_MONEY_MERCHANT_CODE du .env s'il existe.
+ */
+export async function updateOrangeMoneySettingsAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const rawCode = ((formData.get("orangeMoneyMerchantCode") as string) ?? "").trim();
+  const orangeMoneyMerchantCode = rawCode ? normalizeMerchantCode(rawCode) : null;
+  if (rawCode && !orangeMoneyMerchantCode) {
+    redirect("/admin/settings?error=merchant_code");
+  }
+  const orangeMoneyMerchantName =
+    ((formData.get("orangeMoneyMerchantName") as string) ?? "").trim().slice(0, 100) || null;
+  const orangeMoneyManualEnabled = formData.get("orangeMoneyManualEnabled") === "on";
+
+  const data = { orangeMoneyMerchantCode, orangeMoneyMerchantName, orangeMoneyManualEnabled, updatedById: admin.id };
+  await prisma.platformSettings.upsert({ where: { id: 1 }, create: { id: 1, ...data }, update: data });
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.orange_money_update",
+    metadata: { orangeMoneyMerchantCode, orangeMoneyMerchantName, orangeMoneyManualEnabled },
+  });
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/subscription");
+  redirect("/admin/settings?saved=orange_money");
+}
+
+/**
+ * Bouton « Envoyer un message de test » des alertes Telegram. La
+ * configuration vient des variables d'environnement du serveur, jamais du
+ * formulaire : cette action n'en lit aucun champ.
+ */
+export async function sendTelegramTestAction(): Promise<void> {
+  const admin = await requireAdmin();
+
+  const status = telegramStatus();
+  const delivered = status.state === "configured" ? await sendTelegramTestMessage() : false;
+
+  await logAudit({
+    actor: admin,
+    action: "admin.settings.telegram_test",
+    metadata: { state: status.state, delivered },
+  });
+
+  if (status.state !== "configured") redirect("/admin/settings?error=telegram_unconfigured");
+  redirect(delivered ? "/admin/settings?saved=telegram_test" : "/admin/settings?error=telegram_failed");
 }

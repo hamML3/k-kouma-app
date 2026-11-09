@@ -14,6 +14,8 @@ export type ProposeArticleState = {
   success?: boolean;
   /** true si publié directement (admin) plutôt qu'envoyé en attente de relecture. */
   published?: boolean;
+  /** true si une proposition existante a été modifiée. */
+  edited?: boolean;
 };
 
 // Le middleware (proxy.ts) laisse volontairement passer les Server Actions
@@ -33,7 +35,13 @@ async function requireArticleAuthor(): Promise<{ id: number; email: string; role
   if (!session?.user?.email || (role !== "therapist" && role !== "moderator" && role !== "admin")) {
     throw new Error("Accès refusé.");
   }
-  return { id: Number(session.user.id), email: session.user.email, role };
+  const id = Number(session.user.id);
+  // Un praticien dont le dossier n'est pas encore validé ne publie rien au
+  // nom de K-Kouma (même règle que pour recevoir des patients).
+  if (role === "therapist" && !(await isVerifiedPractitioner(id))) {
+    throw new Error("Accès refusé.");
+  }
+  return { id, email: session.user.email, role };
 }
 
 /**
@@ -49,6 +57,11 @@ async function requireAdmin(): Promise<{ id: number; email: string }> {
     throw new Error("Accès refusé : réservé aux administrateurs.");
   }
   return { id: Number(session.user.id), email: session.user.email };
+}
+
+async function isVerifiedPractitioner(userId: number): Promise<boolean> {
+  const profile = await prisma.therapistProfile.findUnique({ where: { userId }, select: { isVerified: true } });
+  return profile?.isVerified ?? false;
 }
 
 function slugify(title: string): string {
@@ -74,7 +87,11 @@ async function ensureUniqueSlug(base: string): Promise<string> {
   }
 }
 
-/** Crée une proposition d'article, en attente de relecture admin. */
+/**
+ * Crée une proposition d'article, ou modifie l'une des siennes (champ
+ * `articleId`) tant qu'elle n'est pas publiée : une proposition refusée
+ * repart alors en relecture avec ses corrections.
+ */
 export async function proposeArticleAction(
   _prevState: ProposeArticleState,
   formData: FormData
@@ -99,13 +116,58 @@ export async function proposeArticleAction(
   }
 
   const { title, excerpt, body, imageUrl } = parsed.data;
+  const isAdmin = author.role === "admin";
+
+  const editId = Number(formData.get("articleId")) || null;
+  if (editId) {
+    const existing = await prisma.submittedArticle.findUnique({ where: { id: editId } });
+    // L'auteur ne modifie que ses propres propositions non publiées.
+    if (!existing || existing.authorId !== author.id || existing.status === "published") {
+      return { error: "Cet article ne peut plus être modifié." };
+    }
+    await prisma.submittedArticle.update({
+      where: { id: editId },
+      data: {
+        title,
+        excerpt,
+        body,
+        imageUrl: imageUrl || null,
+        status: isAdmin ? "published" : "pending",
+        reviewNote: null,
+        reviewedById: isAdmin ? author.id : null,
+        reviewedAt: isAdmin ? new Date() : null,
+      },
+    });
+    await logAudit({
+      actor: author,
+      action: isAdmin ? "article.publish" : "article.resubmit",
+      targetType: "submitted_article",
+      targetId: editId,
+      metadata: { title, slug: existing.slug },
+    });
+    if (!isAdmin) {
+      await notifyAdmins({
+        type: "article.proposed",
+        title: existing.status === "rejected" ? "Article corrigé à relire" : "Article modifié à relire",
+        body: title,
+        link: "/admin/articles",
+        alert: { articleTitle: title },
+      });
+    }
+    revalidatePath("/articles/proposer");
+    revalidatePath("/admin/articles");
+    if (isAdmin) {
+      revalidatePath("/blog");
+      revalidatePath(`/blog/${existing.slug}`);
+    }
+    return { success: true, published: isAdmin, edited: true };
+  }
 
   const slug = await ensureUniqueSlug(slugify(title));
 
   // L'admin porte la responsabilité finale de la plateforme : il publie
   // directement, sans passer par sa propre file de relecture. Thérapeutes
   // et modérateurs, eux, restent toujours soumis à la validation admin.
-  const isAdmin = author.role === "admin";
 
   const created = await prisma.submittedArticle.create({
     data: {
@@ -134,6 +196,7 @@ export async function proposeArticleAction(
       title: "Nouvel article à relire",
       body: title,
       link: "/admin/articles",
+      alert: { articleTitle: title },
     });
   }
 
@@ -157,7 +220,7 @@ export async function publishArticleAction(formData: FormData): Promise<void> {
 
   await prisma.submittedArticle.update({
     where: { id: articleId },
-    data: { status: "published", reviewedById: admin.id, reviewedAt: new Date() },
+    data: { status: "published", reviewNote: null, reviewedById: admin.id, reviewedAt: new Date() },
   });
 
   await logAudit({
@@ -191,10 +254,11 @@ export async function rejectArticleAction(formData: FormData): Promise<void> {
 
   const article = await prisma.submittedArticle.findUnique({ where: { id: articleId } });
   if (!article || article.status !== "pending") redirect("/admin/articles");
+  const reviewNote = ((formData.get("reviewNote") as string) ?? "").trim().slice(0, 500) || null;
 
   await prisma.submittedArticle.update({
     where: { id: articleId },
-    data: { status: "rejected", reviewedById: admin.id, reviewedAt: new Date() },
+    data: { status: "rejected", reviewNote, reviewedById: admin.id, reviewedAt: new Date() },
   });
 
   await logAudit({
@@ -202,14 +266,14 @@ export async function rejectArticleAction(formData: FormData): Promise<void> {
     action: "article.reject",
     targetType: "submitted_article",
     targetId: articleId,
-    metadata: { slug: article.slug, title: article.title },
+    metadata: { slug: article.slug, title: article.title, reviewNote },
   });
 
   await createNotification({
     userId: article.authorId,
     type: "article.rejected",
-    title: "Article non retenu",
-    body: article.title,
+    title: "Article à revoir",
+    body: reviewNote ? `${article.title} : ${reviewNote}` : `${article.title}. Vous pouvez le modifier et le renvoyer.`,
     link: "/articles/proposer",
   });
 

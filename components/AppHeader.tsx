@@ -22,7 +22,7 @@ const THERAPIST_LINKS: NavLink[] = [
   { href: "/appointments", label: "Rendez-vous" },
   { href: "/disponibilites", label: "Disponibilités" },
   { href: "/earnings", label: "Mes gains" },
-  { href: "/blog", label: "Articles" },
+  { href: "/articles/proposer", label: "Mes articles" },
   { href: "/profile", label: "Mon profil" },
 ];
 

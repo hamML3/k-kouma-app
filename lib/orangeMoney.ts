@@ -1,23 +1,46 @@
-// Pont manuel Orange Money — en attendant un compte marchand API (comme pour
-// PayDunya/Resend : tant que ORANGE_MONEY_MERCHANT_CODE n'est pas dans .env,
-// le reste de l'app continue de fonctionner normalement, l'achat de séances
-// par ce biais est juste indisponible.
+// Paiement manuel Orange Money, en attendant l'accès à une API de paiement :
+// le patient paie le code marchand K-Kouma depuis son téléphone, déclare la
+// référence reçue par SMS, et l'équipe valide après avoir vérifié l'opération
+// dans l'historique du compte marchand (lib/actions/payments.ts et
+// /admin/finances).
+//
+// Le code marchand se saisit dans /admin/settings. La variable
+// ORANGE_MONEY_MERCHANT_CODE du .env reste lue en repli, pour les serveurs
+// déjà configurés ainsi.
 
 import { getPlatformSettings } from "@/lib/platformSettings";
 
-export function orangeMoneyMerchantCode(): string | null {
-  return process.env.ORANGE_MONEY_MERCHANT_CODE?.trim() || null;
+/** Au-delà, le patient doit attendre qu'une déclaration soit traitée avant d'en faire une autre. */
+export const MAX_PENDING_MANUAL_PAYMENTS = 3;
+
+export type OrangeMoneyConfig = {
+  /** Code marchand à payer, ou null s'il n'est configuré nulle part. */
+  merchantCode: string | null;
+  /** Nom du compte marchand tel qu'Orange Money l'affiche, si renseigné. */
+  merchantName: string | null;
+  /** Interrupteur de /admin/settings, indépendant du code. */
+  switchedOn: boolean;
+  /** Vrai seulement si les patients peuvent réellement payer par ce biais. */
+  enabled: boolean;
+};
+
+/** Accepte les chiffres, espaces compris ("12 34 56"), et les renvoie sans espaces. */
+export function normalizeMerchantCode(raw: string | null | undefined): string | null {
+  const code = (raw ?? "").replace(/\s+/g, "");
+  return /^[0-9]{4,20}$/.test(code) ? code : null;
 }
 
-/**
- * Vrai si le paiement manuel Orange Money est réellement disponible : code
- * marchand configuré (.env) ET option non désactivée par un admin depuis
- * /admin/settings (PlatformSettings.orangeMoneyManualEnabled) — ce second
- * réglage permet de suspendre l'option sans toucher à la configuration ni
- * redéployer.
- */
-export async function isOrangeMoneyManualEnabled(): Promise<boolean> {
-  if (orangeMoneyMerchantCode() === null) return false;
+export async function getOrangeMoneyConfig(): Promise<OrangeMoneyConfig> {
   const settings = await getPlatformSettings();
-  return settings?.orangeMoneyManualEnabled ?? true;
+  const merchantCode =
+    normalizeMerchantCode(settings?.orangeMoneyMerchantCode) ??
+    normalizeMerchantCode(process.env.ORANGE_MONEY_MERCHANT_CODE);
+  const merchantName = settings?.orangeMoneyMerchantName?.trim() || null;
+  const switchedOn = settings?.orangeMoneyManualEnabled ?? true;
+  return { merchantCode, merchantName, switchedOn, enabled: switchedOn && merchantCode !== null };
+}
+
+/** Vrai si le paiement manuel est proposé aux patients : code marchand connu et option active. */
+export async function isOrangeMoneyManualEnabled(): Promise<boolean> {
+  return (await getOrangeMoneyConfig()).enabled;
 }

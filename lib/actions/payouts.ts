@@ -91,6 +91,7 @@ export async function requestPayoutAction(): Promise<RequestPayoutState> {
     title: "Nouvelle demande de retrait",
     body: `${unpaidTotal.toLocaleString("fr-FR")} XOF à reverser.`,
     link: "/admin/finances",
+    alert: { amount: unpaidTotal, currency: "XOF" },
   });
 
   revalidatePath("/earnings");

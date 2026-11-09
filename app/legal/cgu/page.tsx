@@ -189,6 +189,9 @@ const SECTIONS: Section[] = [
       p("Le paiement peut être effectué par les moyens proposés sur la Plateforme, notamment :"),
       list(["Mobile Money ;", "carte bancaire ;", "portefeuille électronique ;", "virement ;", "tout autre moyen de paiement sécurisé."]),
       p(
+        "Lorsque le paiement est effectué par code marchand Orange Money, l'Utilisateur déclare sur la Plateforme la référence de la transaction. Les séances sont créditées après vérification du paiement par K-Kouma ; une déclaration qui ne correspond à aucun paiement reçu n'ouvre droit à aucune séance."
+      ),
+      p(
         "Lorsque le paiement est traité par un prestataire tiers, les données bancaires ou financières peuvent être collectées et traitées directement par ce prestataire conformément à ses propres règles de sécurité."
       ),
       p(
@@ -463,7 +466,7 @@ export default function CguPage() {
             Conditions générales d&apos;utilisation et de vente
           </h1>
           <p className="text-sm mb-10" style={{ color: "var(--kk-muted)" }}>
-            Version 1.1 — Mise à jour le 05/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
+            Version 1.1 — Mise à jour le 09/11/2026 (version 1.0 entrée en vigueur le 07/09/2026)
           </p>
 
           <div className="kk-card p-5 mb-10 space-y-3">

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { publishArticleAction, rejectArticleAction } from "@/lib/actions/articles";
+import { PRACTITIONER_TITLES } from "@/lib/practitioners";
 
 export const metadata = { title: "Articles — Administration K-Kouma" };
 
@@ -37,7 +38,7 @@ export default async function AdminArticlesPage({
           select: {
             email: true,
             role: true,
-            therapistProfile: { select: { firstName: true, lastName: true } },
+            therapistProfile: { select: { firstName: true, lastName: true, practitionerKind: true } },
           },
         },
       },
@@ -47,7 +48,7 @@ export default async function AdminArticlesPage({
   const TABS = [
     { id: "pending", label: `En attente (${pendingCount})`, color: "var(--kk-gold-text)" },
     { id: "published", label: `Publiés (${publishedCount})`, color: "var(--kk-green-text)" },
-    { id: "rejected", label: `Rejetés (${rejectedCount})`, color: "#C0392B" },
+    { id: "rejected", label: `À revoir par l'auteur (${rejectedCount})`, color: "#C0392B" },
   ];
 
   return (
@@ -95,7 +96,9 @@ export default async function AdminArticlesPage({
             const authorName = a.author.therapistProfile
               ? `${a.author.therapistProfile.firstName} ${a.author.therapistProfile.lastName}`
               : a.author.email;
-            const roleLabel = ROLE_LABEL[a.author.role] ?? a.author.role;
+            const roleLabel = a.author.therapistProfile
+              ? PRACTITIONER_TITLES[a.author.therapistProfile.practitionerKind]
+              : ROLE_LABEL[a.author.role] ?? a.author.role;
 
             return (
               <div key={a.id} className="kk-card p-5">
@@ -138,24 +141,40 @@ export default async function AdminArticlesPage({
                   </div>
 
                   {tab === "pending" && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col gap-2 shrink-0 w-full sm:w-72">
                       <form action={publishArticleAction}>
                         <input type="hidden" name="articleId" value={a.id} />
-                        <button type="submit" className="kk-btn-green text-sm px-4 py-2">
+                        <button type="submit" className="kk-btn-green text-sm px-4 py-2 w-full">
                           Publier
                         </button>
                       </form>
-                      <form action={rejectArticleAction}>
+                      <form action={rejectArticleAction} className="space-y-2">
                         <input type="hidden" name="articleId" value={a.id} />
+                        <textarea
+                          name="reviewNote"
+                          rows={3}
+                          maxLength={500}
+                          aria-label="Commentaire pour l'auteur"
+                          placeholder="Commentaire pour l'auteur : ce qu'il doit corriger (facultatif)"
+                          className="kk-input text-sm resize-y"
+                        />
                         <button
                           type="submit"
-                          className="text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+                          className="text-sm font-bold px-4 py-2 rounded-xl transition-colors w-full"
                           style={{ background: "#FFF1F0", color: "#C0392B" }}
                         >
-                          Rejeter
+                          Renvoyer à l&apos;auteur
                         </button>
                       </form>
                     </div>
+                  )}
+                  {tab === "rejected" && a.reviewNote && (
+                    <p
+                      className="text-xs rounded-xl px-3 py-2 w-full sm:w-72 whitespace-pre-line"
+                      style={{ background: "#FFF1F0", color: "#9B2C20" }}
+                    >
+                      <strong>Commentaire envoyé :</strong> {a.reviewNote}
+                    </p>
                   )}
                   {tab === "published" && (
                     <Link href={`/blog/${a.slug}`} target="_blank" className="kk-btn-outline text-sm px-4 py-2 shrink-0">

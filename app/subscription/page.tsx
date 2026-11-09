@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BuyButton, ManualPaymentForm } from "./_client";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
-import { orangeMoneyMerchantCode, isOrangeMoneyManualEnabled } from "@/lib/orangeMoney";
+import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
@@ -46,8 +46,11 @@ export default async function SubscriptionPage({
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
   const paymentAvailable = isPaydunyaConfigured();
-  const merchantCode = orangeMoneyMerchantCode();
-  const manualOrangeMoneyEnabled = await isOrangeMoneyManualEnabled();
+  const orangeMoney = await getOrangeMoneyConfig();
+  const manualOrangeMoneyEnabled = orangeMoney.enabled;
+  const pendingManualCount = payments.filter(
+    (p) => p.provider === "orange_money_manual" && p.status === "pending"
+  ).length;
 
   const PAYMENT_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: "En attente", bg: "var(--kk-gold-light)", color: "var(--kk-gold-text)" },
@@ -155,26 +158,23 @@ export default async function SubscriptionPage({
           </div>
         )}
 
-        {!paymentAvailable && manualOrangeMoneyEnabled && merchantCode && (
+        {!paymentAvailable && manualOrangeMoneyEnabled && orangeMoney.merchantCode && (
           <div className="mb-8 space-y-4">
-            <div
-              className="rounded-2xl p-4 text-sm"
-              style={{ background: "var(--kk-purple-light)", color: "var(--kk-dark)", border: "1px solid #C8BCEB" }}
-            >
-              <p className="font-bold mb-2">Paiement par Orange Money</p>
-              <ol className="list-decimal list-inside space-y-1" style={{ color: "var(--kk-mid)" }}>
-                <li>
-                  Dans l&apos;appli Orange Money, utilisez <strong>« Payer marchand »</strong> (ou le menu USSD
-                  Orange Money équivalent) avec le code marchand{" "}
-                  <strong style={{ color: "var(--kk-dark)" }}>{merchantCode}</strong> et le montant exact.
-                </li>
-                <li>Notez la référence de transaction reçue par SMS.</li>
-                <li>Déclarez votre paiement ci-dessous — vos séances sont créditées après vérification.</li>
-              </ol>
-            </div>
+            {pendingManualCount > 0 && (
+              <div
+                className="rounded-2xl p-4 text-sm"
+                style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)", border: "1px solid #E9C98A" }}
+              >
+                {pendingManualCount === 1
+                  ? "Un paiement est en cours de vérification. Vos séances seront créditées dès qu'il sera confirmé."
+                  : `${pendingManualCount} paiements sont en cours de vérification. Vos séances seront créditées dès qu'ils seront confirmés.`}
+              </div>
+            )}
             <ManualPaymentForm
-              singleAmount={`${pricing.single.toLocaleString("fr-FR")} FCFA`}
-              pack3Amount={`${pricing.pack3.toLocaleString("fr-FR")} FCFA`}
+              merchantCode={orangeMoney.merchantCode}
+              merchantName={orangeMoney.merchantName}
+              singleAmount={pricing.single}
+              pack3Amount={pricing.pack3}
             />
           </div>
         )}
@@ -227,7 +227,12 @@ export default async function SubscriptionPage({
             </h2>
             <div className="space-y-2">
               {payments.map((p) => {
-                const statusInfo = PAYMENT_STATUS_LABELS[p.status] ?? PAYMENT_STATUS_LABELS.pending;
+                const statusInfo =
+                  p.provider === "orange_money_manual" && p.status === "pending"
+                    ? { ...PAYMENT_STATUS_LABELS.pending, label: "Vérification en cours" }
+                    : p.provider === "orange_money_manual" && p.status === "failed"
+                    ? { ...PAYMENT_STATUS_LABELS.failed, label: "Non validé" }
+                    : PAYMENT_STATUS_LABELS[p.status] ?? PAYMENT_STATUS_LABELS.pending;
                 return (
                   <div
                     key={p.id}
