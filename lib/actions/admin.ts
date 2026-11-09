@@ -11,14 +11,9 @@ import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/com
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
 import { markTherapistEarningsPaid } from "@/lib/payouts";
-import { completePendingPayment } from "@/lib/payments";
-import { scheduleInvoiceEmail } from "@/lib/invoices";
 import { createNotification } from "@/lib/notifications";
-import {
-  MANUAL_PAYMENT_REJECTION_REASONS,
-  isRejectionReason,
-  type ManualPaymentRejectionReason,
-} from "@/lib/validators/payments";
+import { isRejectionReason, type ManualPaymentRejectionReason } from "@/lib/validators/payments";
+import { confirmManualPayment, rejectManualPayment } from "@/lib/manualPayments";
 
 export type CreateUserState = {
   error?: string;
@@ -296,84 +291,18 @@ export async function rejectTherapist(formData: FormData): Promise<void> {
 export async function confirmManualPaymentAction(formData: FormData): Promise<void> {
   const admin = await requireAdminOrModerator();
   const paymentId = Number(formData.get("paymentId"));
-  if (!paymentId) redirect("/admin/finances");
-
-  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-  // Seules les déclarations manuelles se valident à la main : un paiement
-  // PayDunya en attente n'est confirmé que par son webhook.
-  if (!payment || payment.status !== "pending" || payment.provider !== "orange_money_manual") {
-    redirect("/admin/finances");
-  }
-
-  if (!(await completePendingPayment(payment))) redirect("/admin/finances");
-  scheduleInvoiceEmail(paymentId);
-
-  await logAudit({
-    actor: admin,
-    action: "admin.payment.confirm",
-    targetType: "payment",
-    targetId: paymentId,
-    metadata: {
-      amount: Number(payment.amount),
-      sessionsCount: payment.sessionsCount,
-      provider: payment.provider,
-      reference: payment.providerRef,
-    },
-  });
-
-  await createNotification({
-    userId: payment.patientId,
-    type: "payment.confirmed",
-    title: "Paiement validé",
-    body: `${payment.sessionsCount} séance${payment.sessionsCount > 1 ? "s" : ""} ajoutée${payment.sessionsCount > 1 ? "s" : ""} à votre compte. Votre facture vous est envoyée par e-mail.`,
-    link: "/subscription",
-  });
-
+  if (paymentId) await confirmManualPayment(paymentId, admin);
   revalidatePath("/admin/finances");
   redirect("/admin/finances");
 }
 
-/**
- * Rejette une déclaration de paiement Orange Money manuel, avec un motif
- * transmis au patient. La référence est libérée (et gardée dans le journal
- * d'audit) : si le refus venait d'une erreur de formule, le patient peut la
- * déclarer à nouveau.
- */
+/** Rejette une déclaration de paiement Orange Money manuel, avec un motif transmis au patient. */
 export async function rejectManualPaymentAction(formData: FormData): Promise<void> {
   const admin = await requireAdminOrModerator();
   const paymentId = Number(formData.get("paymentId"));
-  if (!paymentId) redirect("/admin/finances");
   const rawReason = formData.get("reason");
   const reason: ManualPaymentRejectionReason = isRejectionReason(rawReason) ? rawReason : "other";
-
-  const payment = await prisma.payment.findUnique({
-    where: { id: paymentId },
-    select: { patientId: true, provider: true, providerRef: true },
-  });
-  if (!payment || payment.provider !== "orange_money_manual") redirect("/admin/finances");
-
-  const { count } = await prisma.payment.updateMany({
-    where: { id: paymentId, status: "pending", provider: "orange_money_manual" },
-    data: { status: "failed", providerRef: null },
-  });
-
-  if (count > 0) {
-    await logAudit({
-      actor: admin,
-      action: "admin.payment.reject",
-      targetType: "payment",
-      targetId: paymentId,
-      metadata: { reason, reference: payment.providerRef },
-    });
-    await createNotification({
-      userId: payment.patientId,
-      type: "payment.rejected",
-      title: "Paiement non validé",
-      body: MANUAL_PAYMENT_REJECTION_REASONS[reason],
-      link: "/subscription",
-    });
-  }
-
+  if (paymentId) await rejectManualPayment(paymentId, admin, reason);
   revalidatePath("/admin/finances");
   redirect("/admin/finances");
 }

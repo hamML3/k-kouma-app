@@ -234,6 +234,9 @@ model PlatformSettings {
   showLifeCoachCard        Boolean  @default(true) @map("show_life_coach_card")
   // Mention fiscale imprimée sur les factures (régime de TVA, exonération…).
   invoiceTaxNote           String?  @map("invoice_tax_note") @db.VarChar(255)
+  // Menu et commandes du bot Telegram activés (webhook déclaré) : les alertes
+  // portent alors des boutons d'action (valider un paiement…).
+  telegramCommandsEnabledAt DateTime? @map("telegram_commands_enabled_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
   updatedById              Int?     @map("updated_by_id")
 

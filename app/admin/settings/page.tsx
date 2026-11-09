@@ -8,8 +8,10 @@ import {
   updateFeatureTogglesAction,
   updateInvoiceSettingsAction,
   updateOrangeMoneySettingsAction,
+  enableTelegramCommandsAction,
+  disableTelegramCommandsAction,
 } from "@/lib/actions/settings";
-import { telegramStatus } from "@/lib/telegram";
+import { telegramApi, telegramStatus, telegramWebhookUrl } from "@/lib/telegram";
 import Link from "next/link";
 import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
@@ -35,6 +37,12 @@ export default async function AdminSettingsPage({
   const merchantCodeFromEnv = !settings?.orangeMoneyMerchantCode && orangeMoney.merchantCode !== null;
   const paydunyaActive = isPaydunyaConfigured();
   const telegram = telegramStatus();
+  const commandsEnabled = Boolean(settings?.telegramCommandsEnabledAt);
+  // État réel côté Telegram, seulement si le menu est censé être actif.
+  const webhookInfo = commandsEnabled
+    ? ((await telegramApi("getWebhookInfo", {})).result as { url?: string; last_error_message?: string; pending_update_count?: number } | undefined)
+    : undefined;
+  const webhookMismatch = commandsEnabled && webhookInfo !== undefined && webhookInfo.url !== telegramWebhookUrl();
   const linkedStaff = await prisma.user.count({
     where: { role: { in: ["admin", "moderator"] }, status: "active", telegramChatId: { not: null } },
   });
@@ -60,6 +68,15 @@ export default async function AdminSettingsPage({
         <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Enregistré.
         </div>
+      )}
+      {error === "telegram_unconfigured" && (
+        <div className="kk-error mb-6">Configurez d&apos;abord TELEGRAM_BOT_TOKEN et TELEGRAM_BOT_USERNAME dans le fichier .env du serveur.</div>
+      )}
+      {error === "telegram_https" && (
+        <div className="kk-error mb-6">Le menu du bot demande un site en https (NEXTAUTH_URL) : Telegram refuse les adresses en http.</div>
+      )}
+      {error === "telegram_webhook" && (
+        <div className="kk-error mb-6">Telegram a refusé l&apos;activation. Vérifiez le jeton du bot et que le site est joignable depuis Internet.</div>
       )}
       {error === "merchant_code" && (
         <div className="kk-error mb-6">Code marchand invalide : il doit contenir uniquement des chiffres (4 à 20).</div>
@@ -289,9 +306,46 @@ export default async function AdminSettingsPage({
             {telegram.state === "invalid" && <>Configuration invalide : {telegram.problem}</>}
           </p>
 
-          <Link href="/admin/compte" className="kk-btn-purple inline-block px-5 py-2.5 text-sm">
-            Relier mon Telegram
-          </Link>
+          <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "var(--kk-bg)", color: "var(--kk-mid)" }}>
+            <p className="font-bold mb-1" style={{ color: "var(--kk-dark)" }}>
+              Menu et commandes du bot {commandsEnabled ? "· actifs" : "· inactifs"}
+            </p>
+            <p>
+              Une fois actifs, le bot répond aux membres reliés : résumé de l&apos;activité, paiements à vérifier (avec
+              boutons Valider / Refuser), inscriptions, candidatures, état du serveur. Le bot doit être réservé à ce
+              site : le site de test a besoin d&apos;un autre bot.
+            </p>
+            {webhookMismatch && (
+              <p className="mt-2 font-semibold" style={{ color: "#9B2C20" }}>
+                Le bot est actuellement branché sur une autre adresse ({webhookInfo?.url || "aucune"}) : réactivez le menu.
+              </p>
+            )}
+            {webhookInfo?.last_error_message && (
+              <p className="mt-2 font-semibold" style={{ color: "#9B2C20" }}>
+                Dernière erreur signalée par Telegram : {webhookInfo.last_error_message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/admin/compte" className="kk-btn-outline inline-block px-5 py-2.5 text-sm">
+              Relier mon Telegram
+            </Link>
+            {telegram.state === "configured" && telegram.botUsername && (
+              <form action={commandsEnabled ? disableTelegramCommandsAction : enableTelegramCommandsAction}>
+                <button type="submit" className={`${commandsEnabled ? "kk-btn-outline" : "kk-btn-purple"} px-5 py-2.5 text-sm`}>
+                  {commandsEnabled ? (webhookMismatch ? "Désactiver" : "Désactiver le menu") : "Activer le menu du bot"}
+                </button>
+              </form>
+            )}
+            {commandsEnabled && webhookMismatch && (
+              <form action={enableTelegramCommandsAction}>
+                <button type="submit" className="kk-btn-purple px-5 py-2.5 text-sm">
+                  Réactiver
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </>

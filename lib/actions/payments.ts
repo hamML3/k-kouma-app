@@ -158,8 +158,9 @@ export async function declareManualPaymentAction(
   const amount = amountFor(therapyType, parsed.data.pack);
   const sessionsCount = sessionsCountFor(parsed.data.pack);
 
+  let paymentId: number;
   try {
-    await prisma.payment.create({
+    ({ id: paymentId } = await prisma.payment.create({
       data: {
         patientId,
         therapyType,
@@ -171,7 +172,8 @@ export async function declareManualPaymentAction(
         payerPhone: parsed.data.payerPhone,
         status: "pending",
       },
-    });
+      select: { id: true },
+    }));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("provider_ref")) {
@@ -186,7 +188,7 @@ export async function declareManualPaymentAction(
     title: "Paiement Orange Money à vérifier",
     body: `${amount.toLocaleString("fr-FR")} ${CURRENCY}, référence ${parsed.data.reference}.`,
     link: "/admin/finances",
-    alert: { amount, currency: CURRENCY, reference: parsed.data.reference },
+    alert: { amount, currency: CURRENCY, reference: parsed.data.reference, paymentId },
   });
 
   revalidatePath("/subscription");

@@ -46,8 +46,12 @@ export async function confirmTelegramLinkAction(): Promise<void> {
   const staff = await requireStaff();
   const user = await prisma.user.findUnique({
     where: { id: staff.id },
-    select: { telegramLinkCode: true, telegramLinkExpiresAt: true },
+    select: { telegramLinkCode: true, telegramLinkExpiresAt: true, telegramChatId: true },
   });
+  // Menu du bot actif : le webhook a déjà relié le compte à la réception du code.
+  if (user?.telegramChatId && !user.telegramLinkCode) redirect(`${PAGE}?telegram=linked`);
+  const settings = await prisma.platformSettings.findUnique({ where: { id: 1 }, select: { telegramCommandsEnabledAt: true } });
+  if (settings?.telegramCommandsEnabledAt) redirect(`${PAGE}?telegram=notfound`);
   if (!user?.telegramLinkCode || !user.telegramLinkExpiresAt || user.telegramLinkExpiresAt < new Date()) {
     redirect(`${PAGE}?telegram=expired`);
   }

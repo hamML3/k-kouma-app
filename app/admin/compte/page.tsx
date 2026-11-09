@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
+import { CopyText } from "@/components/CopyText";
 import { telegramStartLink, telegramStatus } from "@/lib/telegram";
 import {
   confirmTelegramLinkAction,
@@ -13,11 +14,11 @@ import {
 export const metadata = { title: "Mon compte — K-Kouma" };
 
 const NOTICES: Record<string, { text: string; ok: boolean }> = {
-  linked: { text: "Telegram relié. Un message de confirmation vous a été envoyé.", ok: true },
+  linked: { text: "Telegram relié. Un message de confirmation vous a été envoyé, avec le menu du bot.", ok: true },
   unlinked: { text: "Telegram délié : vous ne recevrez plus les alertes.", ok: true },
   test_sent: { text: "Message de test envoyé : vérifiez votre conversation avec le bot.", ok: true },
   test_failed: { text: "Telegram n'a pas accepté le message. Avez-vous bloqué ou supprimé le bot ? Reliez à nouveau votre Telegram.", ok: false },
-  notfound: { text: "Message introuvable. Dans Telegram, appuyez bien sur « Démarrer » dans la conversation avec le bot, puis réessayez.", ok: false },
+  notfound: { text: "Pas encore reçu. Dans Telegram, appuyez sur « Démarrer », ou envoyez au bot le message indiqué ci-dessous, puis réessayez.", ok: false },
   expired: { text: "Le lien a expiré (15 minutes). Recommencez.", ok: false },
   webhook: { text: "Ce bot est déjà utilisé par une autre application (webhook déclaré). Créez un bot réservé à K-Kouma avec @BotFather.", ok: false },
   refused: { text: "Telegram refuse le jeton du bot. Vérifiez TELEGRAM_BOT_TOKEN dans le fichier .env du serveur.", ok: false },
@@ -119,9 +120,13 @@ export default async function AdminAccountPage({
                   </button>
                 </form>
               </div>
-              <p className="text-xs" style={{ color: "var(--kk-faint)" }}>
-                Ce lien est personnel et valable 15 minutes.
-              </p>
+              <div className="text-xs space-y-1.5" style={{ color: "var(--kk-mid)" }}>
+                <p>
+                  Le bouton « Démarrer » n&apos;apparaît pas (bot déjà ouvert) ? Envoyez-lui simplement ce message :
+                </p>
+                <CopyText value={`/start ${pendingCode}`} />
+                <p style={{ color: "var(--kk-faint)" }}>Ce code est personnel et valable 15 minutes.</p>
+              </div>
             </div>
           ) : (
             <form action={startTelegramLinkAction}>

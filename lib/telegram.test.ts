@@ -10,6 +10,8 @@ import {
   telegramRecipients,
   telegramStartLink,
   telegramStatus,
+  telegramWebhookSecret,
+  telegramWebhookUrl,
 } from "./telegram";
 
 // Jeton factice au bon format : aucun appel réel n'est fait (fetch est simulé).
@@ -315,5 +317,44 @@ describe("robustesse", () => {
     expect(() => scheduleStaffAlert({ type: "therapist.registered", link: "/admin/therapists/7" }, [STAFF_CHAT])).not.toThrow();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(errorSpy).toHaveBeenCalled());
+  });
+});
+
+describe("bot interactif", () => {
+  it("alerte d'inscription patient : un compteur, aucune identité", () => {
+    const message = staffAlertMessage({ type: "patient.registered", link: "/admin/users", alert: { count: 3 } });
+    expect(message).toContain("Nouvelle inscription patient");
+    expect(message).toContain("3 inscriptions aujourd'hui.");
+  });
+
+  it("boutons Valider / Refuser sur un paiement, seulement si le menu du bot est actif", async () => {
+    configure();
+    const input = { type: "payment.declared", link: "/admin/finances", alert: { amount: 20000, paymentId: 42 } };
+    await sendStaffAlert(input, [STAFF_CHAT]);
+    const [, plain] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(plain.body as string).reply_markup).toBeUndefined();
+    await sendStaffAlert(input, [STAFF_CHAT], true);
+    const [, withButtons] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(JSON.parse(withButtons.body as string).reply_markup.inline_keyboard[0].map((b: { callback_data: string }) => b.callback_data)).toEqual([
+      "p:v:42",
+      "p:r:42",
+    ]);
+  });
+
+  it("secret du webhook : stable, dérivé du jeton et d'AUTH_SECRET, absent sans eux", () => {
+    expect(telegramWebhookSecret()).toBeNull();
+    configure();
+    vi.stubEnv("AUTH_SECRET", "secret-de-test");
+    const first = telegramWebhookSecret();
+    expect(first).toMatch(/^[0-9a-f]{64}$/);
+    expect(telegramWebhookSecret()).toBe(first);
+    vi.stubEnv("AUTH_SECRET", "autre-secret");
+    expect(telegramWebhookSecret()).not.toBe(first);
+  });
+
+  it("adresse du webhook : https uniquement", () => {
+    expect(telegramWebhookUrl()).toBe("https://k-kouma.test/api/telegram/webhook");
+    vi.stubEnv("NEXTAUTH_URL", "http://localhost:3000");
+    expect(telegramWebhookUrl()).toBeNull();
   });
 });

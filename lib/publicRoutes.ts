@@ -17,6 +17,8 @@ const PUBLIC_PREFIXES = [
   "/api/therapists",
   "/api/platform-banner",
   "/api/payments/paydunya/webhook",
+  // Protégée par le secret que Telegram joint à chaque appel.
+  "/api/telegram/webhook",
   // Protégée par CRON_SECRET, le cron n'a pas de session.
   "/api/cron",
 ];

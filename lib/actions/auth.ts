@@ -23,7 +23,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, clientIp, retryAfterMessage } from "@/lib/rateLimit";
 import { logAudit } from "@/lib/audit";
 import { DOCUMENTS_DIR, MAX_DOCUMENT_BYTES, detectDocumentType, documentUrl } from "@/lib/therapistDocuments";
-import { notifyStaff } from "@/lib/notifications";
+import { alertStaffOnTelegram, notifyStaff } from "@/lib/notifications";
 import { PRACTITIONER_LABELS } from "@/lib/practitioners";
 
 /** Génère et envoie l'email de vérification ; n'échoue jamais l'appelant si Resend est indisponible. */
@@ -143,6 +143,16 @@ export async function registerPatientAction(
   });
 
   await dispatchVerificationEmail(user.id, email, nickname);
+
+  // Alerte Telegram de l'équipe, sans identité (ni pseudo ni e-mail).
+  const dayStart = new Date();
+  dayStart.setUTCHours(0, 0, 0, 0);
+  await alertStaffOnTelegram("manage_users", {
+    type: "patient.registered",
+    title: "Nouvelle inscription patient",
+    link: "/admin/users",
+    alert: { count: await prisma.user.count({ where: { role: "patient", createdAt: { gte: dayStart } } }).catch(() => 0) },
+  });
 
   // Le patient arrive directement sur son tableau de bord : le questionnaire
   // et le choix du psychologue y sont proposés, jamais imposés.

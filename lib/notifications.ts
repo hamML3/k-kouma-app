@@ -70,41 +70,60 @@ async function notifyMany(userIds: number[], content: NotificationContent): Prom
   }
 }
 
+type StaffMember = { id: number; telegramChatId: string | null };
+
+/** Membres actifs du staff concernés (admins, et modérateurs titulaires de la permission). */
+async function staffFor(permission: Permission | "admins"): Promise<StaffMember[]> {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: { in: permission === "admins" ? ["admin"] : ["admin", "moderator"] }, status: "active" },
+      select: { id: true, role: true, permissions: true, telegramChatId: true },
+    });
+    return users
+      .filter((u) => permission === "admins" || hasPermission(u.role, u.permissions, permission))
+      .map((u) => ({ id: u.id, telegramChatId: u.telegramChatId }));
+  } catch (err) {
+    console.error("[notification] destinataires introuvables:", err);
+    return [];
+  }
+}
+
+/** Vrai si le bot reçoit les réponses (webhook actif) : les alertes peuvent porter des boutons. */
+async function telegramInteractive(): Promise<boolean> {
+  try {
+    const settings = await prisma.platformSettings.findUnique({ where: { id: 1 }, select: { telegramCommandsEnabledAt: true } });
+    return Boolean(settings?.telegramCommandsEnabledAt);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Prévient les admins et les modérateurs titulaires de cette permission :
  * dans l'application, et sur Telegram pour ceux qui l'ont relié, si ce type
- * d'événement y est autorisé (lib/telegram.ts).
+ * d'événement y est autorisé (lib/telegram.ts). Même sans destinataire en
+ * base, TELEGRAM_CHAT_ID (s'il existe) reçoit l'alerte.
  */
 export async function notifyStaff(permission: Permission, content: NotificationContent): Promise<void> {
-  let staff: { id: number; role: string; permissions: unknown; telegramChatId: string | null }[] = [];
-  try {
-    staff = (
-      await prisma.user.findMany({
-        where: { role: { in: ["admin", "moderator"] }, status: "active" },
-        select: { id: true, role: true, permissions: true, telegramChatId: true },
-      })
-    ).filter((u) => hasPermission(u.role, u.permissions, permission));
-  } catch (err) {
-    console.error(`[notification:${content.type}] destinataires introuvables:`, err);
-  }
-  // Même sans destinataire en base, TELEGRAM_CHAT_ID (s'il existe) reçoit l'alerte.
-  scheduleStaffAlert(content, staff.map((u) => u.telegramChatId));
+  const staff = await staffFor(permission);
+  scheduleStaffAlert(content, staff.map((u) => u.telegramChatId), await telegramInteractive());
   await notifyMany(staff.map((u) => u.id), content);
 }
 
 /** La publication d'articles n'est pas une permission déléguable : seuls les admins la reçoivent. */
 export async function notifyAdmins(content: NotificationContent): Promise<void> {
-  let admins: { id: number; telegramChatId: string | null }[] = [];
-  try {
-    admins = await prisma.user.findMany({
-      where: { role: "admin", status: "active" },
-      select: { id: true, telegramChatId: true },
-    });
-  } catch (err) {
-    console.error(`[notification:${content.type}] destinataires introuvables:`, err);
-  }
-  scheduleStaffAlert(content, admins.map((u) => u.telegramChatId));
+  const admins = await staffFor("admins");
+  scheduleStaffAlert(content, admins.map((u) => u.telegramChatId), await telegramInteractive());
   await notifyMany(admins.map((u) => u.id), content);
+}
+
+/**
+ * Alerte Telegram seule, sans notification dans l'application : pour les
+ * événements fréquents qui n'appellent pas d'action (ex. une inscription).
+ */
+export async function alertStaffOnTelegram(permission: Permission, content: NotificationContent): Promise<void> {
+  const staff = await staffFor(permission);
+  scheduleStaffAlert(content, staff.map((u) => u.telegramChatId), await telegramInteractive());
 }
 
 /** Le compteur de la cloche ne doit jamais faire tomber la page qui l'affiche. */

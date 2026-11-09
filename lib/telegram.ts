@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { createHmac } from "crypto";
 
 /**
  * Alertes Telegram de l'équipe : un message court à chaque membre du staff
@@ -129,11 +130,57 @@ async function callTelegram(config: TelegramConfig, method: string, payload: obj
   });
 }
 
+/** Boutons sous un message : [[{ text, callback_data }]] (une ligne par tableau). */
+export type InlineKeyboard = { text: string; callback_data?: string; url?: string }[][];
+
+/**
+ * Appel direct à l'API Bot (menu, boutons, webhook). Ne lève jamais ;
+ * `result` est la réponse de Telegram quand elle est acceptée.
+ */
+export async function telegramApi(method: string, payload: object): Promise<{ ok: boolean; status: number; result?: unknown; description?: string }> {
+  const config = readConfig();
+  if (!config) return { ok: false, status: 0 };
+  try {
+    const res = await callTelegram(config, method, payload);
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; result?: unknown; description?: unknown };
+    const description = typeof data.description === "string" ? redact(data.description, config.token).slice(0, 200) : undefined;
+    if (!res.ok || !data.ok) console.error(`[telegram] ${method} refusé (HTTP ${res.status}) ${description ?? ""}`);
+    return { ok: res.ok && data.ok === true, status: res.status, result: data.result, description };
+  } catch (err) {
+    console.error(`[telegram] ${method} échoué : ${err instanceof Error ? err.name : "Erreur"}`);
+    return { ok: false, status: 0 };
+  }
+}
+
+/**
+ * Secret que Telegram renvoie dans l'en-tête X-Telegram-Bot-Api-Secret-Token
+ * de chaque appel du webhook. Dérivé du jeton et d'AUTH_SECRET : pas de
+ * variable de plus à gérer, et il change si l'un des deux change.
+ */
+export function telegramWebhookSecret(): string | null {
+  const config = readConfig();
+  const key = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!config || !key) return null;
+  return createHmac("sha256", key).update(`telegram-webhook:${config.token}`).digest("hex");
+}
+
+/** Adresse publique du webhook ; Telegram exige HTTPS. */
+export function telegramWebhookUrl(): string | null {
+  const base = process.env.NEXTAUTH_URL;
+  if (!base) return null;
+  try {
+    const url = new URL("/api/telegram/webhook", base);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Envoie un message (déjà au format HTML Telegram) à une conversation.
  * Renvoie true si Telegram l'a accepté, false sinon — sans jamais lever.
  */
-export async function sendTelegramMessage(html: string, chatId: string): Promise<boolean> {
+export async function sendTelegramMessage(html: string, chatId: string, keyboard?: InlineKeyboard): Promise<boolean> {
   const config = readConfig();
   if (!config || !isTelegramChatId(chatId)) return false;
   try {
@@ -142,6 +189,7 @@ export async function sendTelegramMessage(html: string, chatId: string): Promise
       text: html.slice(0, MAX_MESSAGE_LENGTH),
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
+      ...(keyboard ? { reply_markup: { inline_keyboard: keyboard } } : {}),
     });
     if (!res.ok) {
       const detail = await res
@@ -168,8 +216,8 @@ export function telegramRecipients(chatIds: (string | null | undefined)[]): stri
 }
 
 /** Envoie à plusieurs conversations ; renvoie le nombre d'envois acceptés. */
-export async function sendTelegramToMany(html: string, chatIds: string[]): Promise<number> {
-  const results = await Promise.all(chatIds.map((id) => sendTelegramMessage(html, id)));
+export async function sendTelegramToMany(html: string, chatIds: string[], keyboard?: InlineKeyboard): Promise<number> {
+  const results = await Promise.all(chatIds.map((id) => sendTelegramMessage(html, id, keyboard)));
   return results.filter(Boolean).length;
 }
 
@@ -219,9 +267,22 @@ export type StaffAlertFacts = {
   /** Référence de transaction : n'est envoyée que si elle a la forme d'un identifiant (saisie par le patient). */
   reference?: string;
   articleTitle?: string;
+  /** Nombre d'inscriptions du jour (alerte d'inscription patient). */
+  count?: number;
+  /** Paiement concerné : permet les boutons Valider / Refuser quand le menu du bot est actif. */
+  paymentId?: number;
 };
 
 type StaffAlertInput = { type: string; link?: string; alert?: StaffAlertFacts };
+
+/** Boutons d'action ajoutés à une alerte, seulement si le bot reçoit les réponses (webhook actif). */
+function staffAlertKeyboard(input: StaffAlertInput): InlineKeyboard | undefined {
+  const id = input.alert?.paymentId;
+  if (input.type === "payment.declared" && Number.isInteger(id) && id! > 0) {
+    return [[{ text: "✅ Valider", callback_data: `p:v:${id}` }, { text: "❌ Refuser", callback_data: `p:r:${id}` }]];
+  }
+  return undefined;
+}
 
 type StaffAlertSpec = { title: string; lines: (facts: StaffAlertFacts) => string[]; linkLabel: string };
 
@@ -270,6 +331,14 @@ const STAFF_ALERTS: Record<string, StaffAlertSpec> = {
     },
     linkLabel: "Ouvrir les articles",
   },
+  "patient.registered": {
+    title: "Nouvelle inscription patient",
+    lines: (facts) =>
+      typeof facts.count === "number" && facts.count > 0
+        ? [`${facts.count} inscription${facts.count > 1 ? "s" : ""} aujourd'hui.`]
+        : [],
+    linkLabel: "Voir les utilisateurs",
+  },
   "review.submitted": {
     title: "Nouvel avis à modérer",
     lines: () => [],
@@ -293,11 +362,15 @@ export function staffAlertMessage(input: StaffAlertInput): string | null {
 }
 
 /** Envoie l'alerte d'un événement staff aux destinataires, si son type est dans la liste blanche. */
-export async function sendStaffAlert(input: StaffAlertInput, chatIds: (string | null | undefined)[]): Promise<number> {
+export async function sendStaffAlert(
+  input: StaffAlertInput,
+  chatIds: (string | null | undefined)[],
+  interactive = false
+): Promise<number> {
   try {
     const message = staffAlertMessage(input);
     if (!message) return 0;
-    return await sendTelegramToMany(message, telegramRecipients(chatIds));
+    return await sendTelegramToMany(message, telegramRecipients(chatIds), interactive ? staffAlertKeyboard(input) : undefined);
   } catch (err) {
     console.error(`[telegram:${input.type}] alerte non construite:`, err instanceof Error ? err.name : err);
     return 0;
@@ -321,14 +394,14 @@ export async function sendTelegramTestMessage(chatId: string): Promise<boolean> 
  * after() lève : l'envoi part alors en tâche de fond, ce qui suffit sur un
  * serveur Node permanent (un seul process PM2).
  */
-export function scheduleStaffAlert(input: StaffAlertInput, chatIds: (string | null | undefined)[]): void {
+export function scheduleStaffAlert(input: StaffAlertInput, chatIds: (string | null | undefined)[], interactive = false): void {
   if (!readConfig() || !Object.hasOwn(STAFF_ALERTS, input.type)) return;
   const recipients = telegramRecipients(chatIds);
   if (recipients.length === 0) return;
   const snapshot: StaffAlertInput = { type: input.type, link: input.link, alert: input.alert && { ...input.alert } };
   try {
-    after(() => sendStaffAlert(snapshot, recipients));
+    after(() => sendStaffAlert(snapshot, recipients, interactive));
   } catch {
-    void sendStaffAlert(snapshot, recipients);
+    void sendStaffAlert(snapshot, recipients, interactive);
   }
 }
