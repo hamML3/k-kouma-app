@@ -28,11 +28,11 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
     items: [
       {
         q: "Le chat compte-t-il comme une séance ?",
-        a: "Oui. Chat, audio et vidéo sont trois formats équivalents : chacun consomme une séance de votre crédit, au même tarif. Le format ne change ni le prix ni la durée — seule la manière d'échanger avec votre psychologue change.",
+        a: "Oui. Chat, audio et vidéo sont trois formats équivalents : chacun consomme une séance de votre crédit, au même tarif. Le format ne change ni le prix ni la durée (une heure) — seule la manière d'échanger avec votre psychologue change.",
       },
       {
         q: "Combien coûte une séance ?",
-        a: "Le tarif dépend du type de thérapie (individuelle, couple, ou adolescent/enfant). Le détail est visible sur la page Tarifs. Un pack de 3 séances est proposé à prix réduit.",
+        a: "Chaque séance dure une heure. Le tarif dépend du type de séance (individuelle, couple, adolescent/enfant ou coaching). Le détail est visible sur la page Tarifs. Un pack de 3 séances est proposé à prix réduit.",
       },
       {
         q: "Comment payer ?",

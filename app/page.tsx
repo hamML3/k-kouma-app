@@ -531,7 +531,7 @@ function ConsultationModes({ showCoaching }: { showCoaching: boolean }) {
                         <Icon name="video" size={12} />
                       </span>
                     </div>
-                    <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance : <strong>{fcfa(entry.single)}</strong></p>
+                    <p className="text-xs mb-1.5" style={{ color: "#5C645B" }}>1 séance (1 h) : <strong>{fcfa(entry.single)}</strong></p>
                     <div className="text-xs" style={{ color: "#5C645B" }}>
                       {entry.pack3Was ? (
                         <p className="flex items-center gap-1.5 flex-wrap">

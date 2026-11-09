@@ -119,7 +119,7 @@ export default async function SubscriptionPage({
             </p>
           </div>
           <p className="text-xs text-right max-w-[45%]" style={{ color: "var(--kk-muted)" }}>
-            {therapyType === "coaching" ? pricing.label : `Thérapie ${pricing.label.toLowerCase()}`} · 1 séance = 1 rendez-vous, quel que soit le format (chat, audio, vidéo)
+            {therapyType === "coaching" ? pricing.label : `Thérapie ${pricing.label.toLowerCase()}`} · 1 séance = 1 rendez-vous d&apos;une heure, quel que soit le format (chat, audio, vidéo)
           </p>
         </div>
 
@@ -173,7 +173,7 @@ export default async function SubscriptionPage({
                     {c.hint}
                   </span>
                   <span className="block text-sm font-bold mt-2" style={{ color: "var(--kk-green-text)" }}>
-                    {SESSION_PRICING[c.value].single.toLocaleString("fr-FR")} FCFA la séance
+                    {SESSION_PRICING[c.value].single.toLocaleString("fr-FR")} FCFA la séance d&apos;une heure
                   </span>
                 </button>
               ))}
@@ -187,6 +187,9 @@ export default async function SubscriptionPage({
           <h2 className="text-lg font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
             Acheter des séances
           </h2>
+          <p className="text-sm font-semibold mb-1" style={{ color: "var(--kk-green-text)" }}>
+            Chaque séance dure 1 heure, en vidéo, en audio ou par messagerie.
+          </p>
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
             {paymentAvailable
               ? "Paiement par Mobile Money (Orange Money, Wave) via PayDunya."
@@ -252,7 +255,7 @@ export default async function SubscriptionPage({
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <div className="rounded-2xl p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
-                À l&apos;unité
+                À l&apos;unité · 1 séance d&apos;1 h
               </p>
               <p className="font-bold text-2xl mb-4" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
                 {pricing.single.toLocaleString("fr-FR")} FCFA
@@ -273,7 +276,7 @@ export default async function SubscriptionPage({
                 </div>
               )}
               <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--kk-muted)" }}>
-                Pack 3 séances
+                Pack 3 séances d&apos;1 h
               </p>
               <p className="font-bold text-2xl mb-4 flex items-baseline gap-2" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
                 {pricing.pack3Was && (

@@ -139,7 +139,7 @@ export function ManualPaymentForm({
                   border: active ? "none" : "1px solid var(--kk-border-mid)",
                 }}
               >
-                {p === "single" ? "1 séance" : "Pack 3 séances"}
+                {p === "single" ? "1 séance (1 h)" : "Pack 3 séances (1 h chacune)"}
                 <span className="block text-xs font-semibold mt-0.5" style={{ opacity: 0.9 }}>
                   {fcfa(p === "single" ? singleAmount : pack3Amount)}
                 </span>
