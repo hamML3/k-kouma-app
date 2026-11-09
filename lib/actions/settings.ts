@@ -7,7 +7,6 @@ import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { sendCommissionTermsChangedEmail } from "@/lib/email";
 import { normalizeMerchantCode } from "@/lib/orangeMoney";
-import { sendTelegramTestMessage, telegramStatus } from "@/lib/telegram";
 
 async function requireAdmin(): Promise<{ id: number; email: string }> {
   const session = await auth();
@@ -196,25 +195,4 @@ export async function updateOrangeMoneySettingsAction(formData: FormData): Promi
   revalidatePath("/admin/settings");
   revalidatePath("/subscription");
   redirect("/admin/settings?saved=orange_money");
-}
-
-/**
- * Bouton « Envoyer un message de test » des alertes Telegram. La
- * configuration vient des variables d'environnement du serveur, jamais du
- * formulaire : cette action n'en lit aucun champ.
- */
-export async function sendTelegramTestAction(): Promise<void> {
-  const admin = await requireAdmin();
-
-  const status = telegramStatus();
-  const delivered = status.state === "configured" ? await sendTelegramTestMessage() : false;
-
-  await logAudit({
-    actor: admin,
-    action: "admin.settings.telegram_test",
-    metadata: { state: status.state, delivered },
-  });
-
-  if (status.state !== "configured") redirect("/admin/settings?error=telegram_unconfigured");
-  redirect(delivered ? "/admin/settings?saved=telegram_test" : "/admin/settings?error=telegram_failed");
 }

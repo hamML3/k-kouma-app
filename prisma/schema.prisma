@@ -31,6 +31,13 @@ model User {
   // compte (voir prisma/backfill-moderator-permissions.ts pour les comptes
   // modérateurs créés avant cette colonne).
   permissions       Json?
+  // Conversation Telegram reliée par un membre du staff (/admin/compte) pour
+  // recevoir les alertes de l'équipe. Le code, à usage unique et valable
+  // 15 minutes, est transmis au bot par le lien t.me/<bot>?start=<code>.
+  telegramChatId        String?   @map("telegram_chat_id") @db.VarChar(32)
+  telegramLinkedAt      DateTime? @map("telegram_linked_at")
+  telegramLinkCode      String?   @unique @map("telegram_link_code") @db.VarChar(64)
+  telegramLinkExpiresAt DateTime? @map("telegram_link_expires_at")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
 

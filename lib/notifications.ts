@@ -71,37 +71,40 @@ async function notifyMany(userIds: number[], content: NotificationContent): Prom
 }
 
 /**
- * Prévient les admins et les modérateurs titulaires de cette permission, plus
- * le groupe Telegram de l'équipe si ce type d'événement y est autorisé.
+ * Prévient les admins et les modérateurs titulaires de cette permission :
+ * dans l'application, et sur Telegram pour ceux qui l'ont relié, si ce type
+ * d'événement y est autorisé (lib/telegram.ts).
  */
 export async function notifyStaff(permission: Permission, content: NotificationContent): Promise<void> {
-  scheduleStaffAlert(content);
+  let staff: { id: number; role: string; permissions: unknown; telegramChatId: string | null }[] = [];
   try {
-    const staff = await prisma.user.findMany({
-      where: { role: { in: ["admin", "moderator"] }, status: "active" },
-      select: { id: true, role: true, permissions: true },
-    });
-    await notifyMany(
-      staff.filter((u) => hasPermission(u.role, u.permissions, permission)).map((u) => u.id),
-      content
-    );
+    staff = (
+      await prisma.user.findMany({
+        where: { role: { in: ["admin", "moderator"] }, status: "active" },
+        select: { id: true, role: true, permissions: true, telegramChatId: true },
+      })
+    ).filter((u) => hasPermission(u.role, u.permissions, permission));
   } catch (err) {
     console.error(`[notification:${content.type}] destinataires introuvables:`, err);
   }
+  // Même sans destinataire en base, TELEGRAM_CHAT_ID (s'il existe) reçoit l'alerte.
+  scheduleStaffAlert(content, staff.map((u) => u.telegramChatId));
+  await notifyMany(staff.map((u) => u.id), content);
 }
 
 /** La publication d'articles n'est pas une permission déléguable : seuls les admins la reçoivent. */
 export async function notifyAdmins(content: NotificationContent): Promise<void> {
-  scheduleStaffAlert(content);
+  let admins: { id: number; telegramChatId: string | null }[] = [];
   try {
-    const admins = await prisma.user.findMany({
+    admins = await prisma.user.findMany({
       where: { role: "admin", status: "active" },
-      select: { id: true },
+      select: { id: true, telegramChatId: true },
     });
-    await notifyMany(admins.map((u) => u.id), content);
   } catch (err) {
     console.error(`[notification:${content.type}] destinataires introuvables:`, err);
   }
+  scheduleStaffAlert(content, admins.map((u) => u.telegramChatId));
+  await notifyMany(admins.map((u) => u.id), content);
 }
 
 /** Le compteur de la cloche ne doit jamais faire tomber la page qui l'affiche. */

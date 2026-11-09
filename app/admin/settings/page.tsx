@@ -8,9 +8,9 @@ import {
   updateFeatureTogglesAction,
   updateInvoiceSettingsAction,
   updateOrangeMoneySettingsAction,
-  sendTelegramTestAction,
 } from "@/lib/actions/settings";
 import { telegramStatus } from "@/lib/telegram";
+import Link from "next/link";
 import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
 
@@ -35,6 +35,9 @@ export default async function AdminSettingsPage({
   const merchantCodeFromEnv = !settings?.orangeMoneyMerchantCode && orangeMoney.merchantCode !== null;
   const paydunyaActive = isPaydunyaConfigured();
   const telegram = telegramStatus();
+  const linkedStaff = await prisma.user.count({
+    where: { role: { in: ["admin", "moderator"] }, status: "active", telegramChatId: { not: null } },
+  });
   const showLifeCoachCard = settings?.showLifeCoachCard ?? true;
 
   return (
@@ -53,12 +56,7 @@ export default async function AdminSettingsPage({
           Enregistré. Les thérapeutes concernés ont été prévenus par email.
         </div>
       )}
-      {saved === "telegram_test" && (
-        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
-          Message de test envoyé. Vérifiez qu&apos;il est bien arrivé dans le groupe Telegram de l&apos;équipe.
-        </div>
-      )}
-      {saved && saved !== "commission" && saved !== "telegram_test" && (
+      {saved && saved !== "commission" && (
         <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
           Enregistré.
         </div>
@@ -69,16 +67,6 @@ export default async function AdminSettingsPage({
       {error === "invalid" && (
         <div className="kk-error mb-6">Pourcentage invalide (doit être entre 0 et 100).</div>
       )}
-      {error === "telegram_unconfigured" && (
-        <div className="kk-error mb-6">Alertes Telegram non configurées sur le serveur : aucun message envoyé.</div>
-      )}
-      {error === "telegram_failed" && (
-        <div className="kk-error mb-6">
-          Telegram a refusé ou n&apos;a pas reçu le message. Vérifiez le jeton du bot, l&apos;identifiant du groupe et
-          que le bot fait bien partie du groupe.
-        </div>
-      )}
-
       <div className="grid sm:grid-cols-2 gap-6 items-start">
         <div className="kk-card p-6">
           <p className="font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
@@ -280,28 +268,30 @@ export default async function AdminSettingsPage({
             Alertes Telegram
           </p>
           <p className="text-xs mb-4" style={{ color: "var(--kk-mid)" }}>
-            Message court dans le groupe Telegram de l&apos;équipe quand une action est attendue (paiement à
-            vérifier, candidature, article, signalement…). Aucune donnée de santé ni d&apos;identité de patient n&apos;y
-            est envoyée. Se règle dans le fichier .env du serveur (TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID).
+            Message court sur Telegram quand une action est attendue (paiement à vérifier, candidature, article,
+            signalement…), envoyé à chaque membre de l&apos;équipe qui a relié son Telegram dans « Mon compte ».
+            Aucune donnée de santé ni d&apos;identité de patient n&apos;y est envoyée. Le bot se règle dans le fichier
+            .env du serveur : TELEGRAM_BOT_TOKEN et TELEGRAM_BOT_USERNAME.
           </p>
 
           <p className="text-sm font-semibold mb-4" style={{ color: "var(--kk-mid)" }}>
-            {telegram.state === "configured" && <>Configuré : groupe se terminant par {telegram.chatIdHint}.</>}
+            {telegram.state === "configured" &&
+              (telegram.botUsername ? (
+                <>
+                  Bot @{telegram.botUsername} configuré ·{" "}
+                  {linkedStaff === 0 ? "aucun membre relié" : `${linkedStaff} membre${linkedStaff > 1 ? "s" : ""} relié${linkedStaff > 1 ? "s" : ""}`}
+                  {telegram.fallbackChatHint && <> · destinataire fixe se terminant par {telegram.fallbackChatHint}</>}.
+                </>
+              ) : (
+                <>Jeton configuré, mais TELEGRAM_BOT_USERNAME manque : personne ne peut relier son Telegram.</>
+              ))}
             {telegram.state === "missing" && <>Non configuré : aucune alerte n&apos;est envoyée.</>}
-            {telegram.state === "invalid" && (
-              <>Configuration invalide : le jeton du bot ou l&apos;identifiant du groupe n&apos;a pas le bon format.</>
-            )}
+            {telegram.state === "invalid" && <>Configuration invalide : {telegram.problem}</>}
           </p>
 
-          <form action={sendTelegramTestAction}>
-            <button
-              type="submit"
-              className="kk-btn-purple px-5 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={telegram.state !== "configured"}
-            >
-              Envoyer un message de test
-            </button>
-          </form>
+          <Link href="/admin/compte" className="kk-btn-purple inline-block px-5 py-2.5 text-sm">
+            Relier mon Telegram
+          </Link>
         </div>
       </div>
     </>

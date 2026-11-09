@@ -2,15 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   adminUrl,
   escapeTelegramHtml,
+  fetchStartMessages,
   scheduleStaffAlert,
   sendStaffAlert,
   sendTelegramMessage,
   staffAlertMessage,
+  telegramRecipients,
+  telegramStartLink,
   telegramStatus,
 } from "./telegram";
 
 // Jeton factice au bon format : aucun appel réel n'est fait (fetch est simulé).
 const FAKE_TOKEN = "123456789:AAFakeTokenForTestsOnly_0123456789abc";
+const STAFF_CHAT = "987654321";
 const FAKE_CHAT_ID = "-1001234567890";
 
 function okResponse() {
@@ -19,11 +23,11 @@ function okResponse() {
 
 function configure() {
   vi.stubEnv("TELEGRAM_BOT_TOKEN", FAKE_TOKEN);
-  vi.stubEnv("TELEGRAM_CHAT_ID", FAKE_CHAT_ID);
+  vi.stubEnv("TELEGRAM_BOT_USERNAME", "KKoumaAlertesBot");
 }
 
-function sentPayload(fetchMock: ReturnType<typeof vi.fn>) {
-  const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+function sentPayload(fetchMock: ReturnType<typeof vi.fn>, call = 0) {
+  const [, init] = fetchMock.mock.calls[call] as [string, RequestInit];
   return JSON.parse(init.body as string) as { chat_id: string; text: string; parse_mode: string };
 }
 
@@ -32,6 +36,7 @@ let errorSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   vi.stubEnv("TELEGRAM_BOT_TOKEN", "");
+  vi.stubEnv("TELEGRAM_BOT_USERNAME", "");
   vi.stubEnv("TELEGRAM_CHAT_ID", "");
   vi.stubEnv("NEXTAUTH_URL", "https://k-kouma.test");
   fetchMock = vi.fn(async () => okResponse());
@@ -47,40 +52,109 @@ afterEach(() => {
 
 describe("sans configuration", () => {
   it("n'appelle jamais Telegram et ne logue rien", async () => {
-    expect(await sendTelegramMessage("test")).toBe(false);
-    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" })).toBe(false);
-    scheduleStaffAlert({ type: "report.filed", link: "/admin/reports" });
+    expect(await sendTelegramMessage("test", STAFF_CHAT)).toBe(false);
+    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" }, [STAFF_CHAT])).toBe(0);
+    scheduleStaffAlert({ type: "report.filed", link: "/admin/reports" }, [STAFF_CHAT]);
     await new Promise((r) => setTimeout(r, 0));
     expect(fetchMock).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
     expect(telegramStatus()).toEqual({ state: "missing" });
   });
 
-  it("une seule des deux variables ne suffit pas", async () => {
-    vi.stubEnv("TELEGRAM_BOT_TOKEN", FAKE_TOKEN);
-    expect(await sendTelegramMessage("test")).toBe(false);
-    vi.stubEnv("TELEGRAM_BOT_TOKEN", "");
-    vi.stubEnv("TELEGRAM_CHAT_ID", FAKE_CHAT_ID);
-    expect(await sendTelegramMessage("test")).toBe(false);
+  it("sans destinataire relié ni TELEGRAM_CHAT_ID, rien ne part", async () => {
+    configure();
+    scheduleStaffAlert({ type: "report.filed", link: "/admin/reports" }, [null, undefined]);
+    await new Promise((r) => setTimeout(r, 0));
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("un jeton mal formé est traité comme absent (il ne doit pas modifier l'URL appelée)", async () => {
     vi.stubEnv("TELEGRAM_BOT_TOKEN", "123:abc/../../evil?x=");
-    vi.stubEnv("TELEGRAM_CHAT_ID", FAKE_CHAT_ID);
-    expect(await sendTelegramMessage("test")).toBe(false);
+    expect(await sendTelegramMessage("test", STAFF_CHAT)).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(telegramStatus()).toEqual({ state: "invalid" });
+    expect(telegramStatus().state).toBe("invalid");
   });
 });
 
 describe("telegramStatus", () => {
-  it("ne révèle que la fin du chat id, jamais le jeton", () => {
+  it("jeton et nom du bot suffisent ; le jeton n'est jamais révélé", () => {
     configure();
     const status = telegramStatus();
-    expect(status).toEqual({ state: "configured", chatIdHint: "…7890" });
+    expect(status).toEqual({ state: "configured", botUsername: "KKoumaAlertesBot", fallbackChatHint: null });
     expect(JSON.stringify(status)).not.toContain(FAKE_TOKEN);
-    expect(JSON.stringify(status)).not.toContain(FAKE_CHAT_ID);
+  });
+
+  it("ignore les guillemets en trop laissés par un copier-coller, et l'@ du nom", () => {
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", `“${FAKE_TOKEN}”`);
+    vi.stubEnv("TELEGRAM_BOT_USERNAME", '"@KKoumaAlertesBot"');
+    expect(telegramStatus()).toMatchObject({ state: "configured", botUsername: "KKoumaAlertesBot" });
+  });
+
+  it("signale un nom de bot ou un TELEGRAM_CHAT_ID invalide", () => {
+    configure();
+    vi.stubEnv("TELEGRAM_BOT_USERNAME", "https://t.me/x");
+    expect(telegramStatus().state).toBe("invalid");
+    configure();
+    vi.stubEnv("TELEGRAM_CHAT_ID", "kkouma equipe");
+    expect(telegramStatus().state).toBe("invalid");
+  });
+
+  it("ne montre que la fin d'un TELEGRAM_CHAT_ID facultatif", () => {
+    configure();
+    vi.stubEnv("TELEGRAM_CHAT_ID", FAKE_CHAT_ID);
+    expect(telegramStatus()).toMatchObject({ fallbackChatHint: "…7890" });
+  });
+});
+
+describe("liaison d'un compte", () => {
+  it("construit le lien t.me avec le code", () => {
+    configure();
+    expect(telegramStartLink("abcDEF123_-xyz0987654")).toBe("https://t.me/KKoumaAlertesBot?start=abcDEF123_-xyz0987654");
+    vi.stubEnv("TELEGRAM_BOT_USERNAME", "");
+    expect(telegramStartLink("abc")).toBeNull();
+  });
+
+  it("ne retient que les « /start <code> » reçus en privé", async () => {
+    configure();
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          result: [
+            { message: { text: "/start abcdefghijklmnopqrstuvwx", chat: { id: 111111111, type: "private" } } },
+            { message: { text: "/start abcdefghijklmnopqrstuvwx", chat: { id: -100222, type: "supergroup" } } },
+            { message: { text: "bonjour", chat: { id: 333333333, type: "private" } } },
+            { message: { text: "/start <script>", chat: { id: 444444444, type: "private" } } },
+            { edited_message: { text: "/start zzzzzzzzzzzzzzzzzzzzzz" } },
+          ],
+        }),
+        { status: 200 }
+      )
+    );
+    expect(await fetchStartMessages()).toEqual({
+      ok: true,
+      messages: [{ chatId: "111111111", code: "abcdefghijklmnopqrstuvwx" }],
+    });
+  });
+
+  it("signale un bot déjà utilisé par une autre application (webhook)", async () => {
+    configure();
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: false }), { status: 409 }));
+    expect(await fetchStartMessages()).toEqual({ ok: false, reason: "webhook" });
+  });
+});
+
+describe("destinataires", () => {
+  it("dédoublonne, écarte les valeurs invalides et ajoute TELEGRAM_CHAT_ID", () => {
+    configure();
+    vi.stubEnv("TELEGRAM_CHAT_ID", FAKE_CHAT_ID);
+    expect(telegramRecipients([STAFF_CHAT, STAFF_CHAT, null, "pas un id", undefined])).toEqual([STAFF_CHAT, FAKE_CHAT_ID]);
+  });
+
+  it("envoie l'alerte à chaque membre relié", async () => {
+    configure();
+    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" }, [STAFF_CHAT, "555555555"])).toBe(2);
+    expect([sentPayload(fetchMock, 0).chat_id, sentPayload(fetchMock, 1).chat_id].sort()).toEqual(["555555555", STAFF_CHAT]);
   });
 });
 
@@ -109,22 +183,22 @@ describe("liste blanche des événements", () => {
     configure();
     for (const type of ["message.received", "appointment.booked", "toString", "__proto__", "constructor"]) {
       expect(staffAlertMessage({ type })).toBeNull();
-      expect(await sendStaffAlert({ type, link: "/admin" })).toBe(false);
+      expect(await sendStaffAlert({ type, link: "/admin" }, [STAFF_CHAT])).toBe(0);
     }
-    scheduleStaffAlert({ type: "message.received", link: "/admin" });
+    scheduleStaffAlert({ type: "message.received", link: "/admin" }, [STAFF_CHAT]);
     await new Promise((r) => setTimeout(r, 0));
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("un type listé part avec parse_mode HTML vers le bon chat", async () => {
     configure();
-    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" })).toBe(true);
+    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" }, [STAFF_CHAT])).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(`https://api.telegram.org/bot${FAKE_TOKEN}/sendMessage`);
     expect(init.signal).toBeInstanceOf(AbortSignal);
     const payload = sentPayload(fetchMock);
-    expect(payload.chat_id).toBe(FAKE_CHAT_ID);
+    expect(payload.chat_id).toBe(STAFF_CHAT);
     expect(payload.parse_mode).toBe("HTML");
     expect(payload.text).toContain("Nouveau signalement à examiner");
     expect(payload.text).toContain('<a href="https://k-kouma.test/admin/reports">');
@@ -180,7 +254,7 @@ describe("adminUrl", () => {
     configure();
     vi.stubEnv("NEXTAUTH_URL", "");
     expect(adminUrl("/admin")).toBeNull();
-    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" })).toBe(true);
+    expect(await sendStaffAlert({ type: "report.filed", link: "/admin/reports" }, [STAFF_CHAT])).toBe(1);
     expect(sentPayload(fetchMock).text).not.toContain("<a ");
   });
 });
@@ -189,7 +263,7 @@ describe("robustesse", () => {
   it("ne lève pas si fetch échoue, et ne logue jamais le jeton", async () => {
     configure();
     fetchMock.mockRejectedValueOnce(new TypeError(`fetch failed for https://api.telegram.org/bot${FAKE_TOKEN}/x`));
-    await expect(sendStaffAlert({ type: "report.filed" })).resolves.toBe(false);
+    await expect(sendStaffAlert({ type: "report.filed" }, [STAFF_CHAT])).resolves.toBe(0);
     expect(errorSpy).toHaveBeenCalled();
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(FAKE_TOKEN);
   });
@@ -197,7 +271,7 @@ describe("robustesse", () => {
   it("ne lève pas si la requête expire", async () => {
     configure();
     fetchMock.mockRejectedValueOnce(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
-    await expect(sendTelegramMessage("test")).resolves.toBe(false);
+    await expect(sendTelegramMessage("test", STAFF_CHAT)).resolves.toBe(false);
     expect(JSON.stringify(errorSpy.mock.calls)).toContain("TimeoutError");
   });
 
@@ -212,7 +286,7 @@ describe("robustesse", () => {
           init.signal?.addEventListener("abort", () => reject(init.signal?.reason));
         })
     );
-    await expect(sendTelegramMessage("test")).resolves.toBe(false);
+    await expect(sendTelegramMessage("test", STAFF_CHAT)).resolves.toBe(false);
     expect(timeoutSpy).toHaveBeenCalledWith(5_000);
     expect(JSON.stringify(errorSpy.mock.calls)).toContain("TimeoutError");
   });
@@ -224,7 +298,7 @@ describe("robustesse", () => {
         status: 400,
       })
     );
-    await expect(sendTelegramMessage("test")).resolves.toBe(false);
+    await expect(sendTelegramMessage("test", STAFF_CHAT)).resolves.toBe(false);
     expect(JSON.stringify(errorSpy.mock.calls)).toContain("chat not found");
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(FAKE_TOKEN);
   });
@@ -232,13 +306,13 @@ describe("robustesse", () => {
   it("ne lève pas si la réponse d'erreur n'est pas du JSON", async () => {
     configure();
     fetchMock.mockResolvedValueOnce(new Response("<html>502</html>", { status: 502 }));
-    await expect(sendTelegramMessage("test")).resolves.toBe(false);
+    await expect(sendTelegramMessage("test", STAFF_CHAT)).resolves.toBe(false);
   });
 
   it("hors requête Next.js, scheduleStaffAlert envoie en tâche de fond sans lever", async () => {
     configure();
     fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
-    expect(() => scheduleStaffAlert({ type: "therapist.registered", link: "/admin/therapists/7" })).not.toThrow();
+    expect(() => scheduleStaffAlert({ type: "therapist.registered", link: "/admin/therapists/7" }, [STAFF_CHAT])).not.toThrow();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(errorSpy).toHaveBeenCalled());
   });
