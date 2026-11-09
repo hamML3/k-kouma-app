@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { BuyButton, ManualPaymentForm } from "./_client";
-import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
+import { SESSION_PRICING, isTherapyType, resolveTherapyType, type TherapyType } from "@/lib/pricing";
+import { chooseTherapyTypeAction } from "@/lib/actions/payments";
+import { getPlatformSettings } from "@/lib/platformSettings";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
 import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
 
@@ -13,7 +15,7 @@ export const metadata = { title: "Mes séances — K-Kouma" };
 export default async function SubscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; canceled?: string; error?: string }>;
+  searchParams: Promise<{ paid?: string; canceled?: string; error?: string; type?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -25,7 +27,7 @@ export default async function SubscriptionPage({
   const [profile, payments, sessionsUsed] = await Promise.all([
     prisma.patientProfile.findUnique({
       where: { userId },
-      select: { sessionCredits: true, onboardingAnswers: true },
+      select: { sessionCredits: true, onboardingAnswers: true, selectedTherapyType: true },
     }),
     prisma.payment.findMany({
       where: { patientId: userId },
@@ -42,7 +44,23 @@ export default async function SubscriptionPage({
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
   const answers = profile?.onboardingAnswers as { therapyType?: string } | null;
-  const therapyType = resolveTherapyType(answers);
+  const therapyType = resolveTherapyType(answers, profile?.selectedTherapyType);
+  // Sans questionnaire, le patient indique d'abord quel type de séance il veut,
+  // pour payer le bon tarif ; il peut changer d'avis tant qu'il n'a pas rempli
+  // le questionnaire (qui l'emporte ensuite).
+  const typeFromQuestionnaire = isTherapyType(answers?.therapyType);
+  const needsTypeChoice =
+    !typeFromQuestionnaire && (!isTherapyType(profile?.selectedTherapyType) || params.type === "changer");
+  const settings = await getPlatformSettings();
+  const coachingOffered =
+    (settings?.showLifeCoachCard ?? true) &&
+    (await prisma.therapistProfile.count({ where: { practitionerKind: "coach", isVerified: true } })) > 0;
+  const typeChoices: { value: TherapyType; hint: string }[] = [
+    { value: "individuelle", hint: "Pour vous, en tête-à-tête avec un psychologue" },
+    { value: "couple", hint: "À deux, pour votre relation" },
+    { value: "enfant", hint: "Pour un adolescent ou un enfant" },
+    ...(coachingOffered ? [{ value: "coaching" as const, hint: "Objectifs personnels ou professionnels, avec un coach" }] : []),
+  ];
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
   const paymentAvailable = isPaydunyaConfigured();
@@ -126,6 +144,45 @@ export default async function SubscriptionPage({
         </div>
 
         {/* Buy */}
+        {needsTypeChoice && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
+              Quel type de séance souhaitez-vous ?
+            </h2>
+            <p className="text-sm mb-4" style={{ color: "var(--kk-muted)" }}>
+              Le tarif en dépend. Vous pourrez le modifier tant que vous n&apos;avez pas rempli le{" "}
+              <Link href="/onboarding" className="underline font-semibold">questionnaire</Link>.
+            </p>
+            <form action={chooseTherapyTypeAction} className="grid sm:grid-cols-2 gap-3">
+              {typeChoices.map((c) => (
+                <button
+                  key={c.value}
+                  type="submit"
+                  name="therapyType"
+                  value={c.value}
+                  className="rounded-2xl p-4 text-left transition-all duration-150 hover:-translate-y-0.5"
+                  style={{
+                    background: "#fff",
+                    border: c.value === profile?.selectedTherapyType ? "2px solid var(--kk-purple)" : "1.5px solid var(--kk-border)",
+                  }}
+                >
+                  <span className="block font-bold" style={{ color: "var(--kk-dark)" }}>
+                    {c.value === "coaching" ? SESSION_PRICING[c.value].label : `Thérapie ${SESSION_PRICING[c.value].label.toLowerCase()}`}
+                  </span>
+                  <span className="block text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                    {c.hint}
+                  </span>
+                  <span className="block text-sm font-bold mt-2" style={{ color: "var(--kk-green-text)" }}>
+                    {SESSION_PRICING[c.value].single.toLocaleString("fr-FR")} FCFA la séance
+                  </span>
+                </button>
+              ))}
+            </form>
+          </div>
+        )}
+
+        {!needsTypeChoice && (
+        <>
         <div className="mb-6">
           <h2 className="text-lg font-bold mb-1" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}>
             Acheter des séances
@@ -137,6 +194,18 @@ export default async function SubscriptionPage({
               ? "Paiement par Orange Money, vérifié manuellement par notre équipe."
               : "Paiement en ligne temporairement indisponible."}
           </p>
+          {!typeFromQuestionnaire && (
+            <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+              Type de séance :{" "}
+              <strong style={{ color: "var(--kk-dark)" }}>
+                {therapyType === "coaching" ? pricing.label : `Thérapie ${pricing.label.toLowerCase()}`}
+              </strong>{" "}
+              ·{" "}
+              <Link href="/subscription?type=changer" className="underline font-semibold">
+                Modifier
+              </Link>
+            </p>
+          )}
         </div>
 
         {!paymentAvailable && !manualOrangeMoneyEnabled && (
@@ -217,6 +286,9 @@ export default async function SubscriptionPage({
               <BuyButton pack="pack3" label="Acheter le pack de 3" className="kk-btn-purple w-full text-sm" />
             </div>
           </div>
+        )}
+
+        </>
         )}
 
         {/* Payment history */}

@@ -42,3 +42,19 @@ describe("coaching", () => {
     expect(resolveTherapyType({ therapyType: "coaching" })).toBe("coaching");
   });
 });
+
+describe("resolveTherapyType avec un type choisi à l'achat", () => {
+  it("prend le type choisi quand le questionnaire n'est pas rempli", () => {
+    expect(resolveTherapyType(null, "couple")).toBe("couple");
+    expect(resolveTherapyType({}, "enfant")).toBe("enfant");
+  });
+
+  it("le questionnaire l'emporte sur le type choisi", () => {
+    expect(resolveTherapyType({ therapyType: "individuelle" }, "couple")).toBe("individuelle");
+  });
+
+  it("ignore une valeur inconnue et retombe sur individuelle", () => {
+    expect(resolveTherapyType(null, "vip")).toBe("individuelle");
+    expect(resolveTherapyType(null, null)).toBe("individuelle");
+  });
+});

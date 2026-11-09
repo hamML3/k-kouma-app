@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { canChooseCoach } from "./practitioners";
+import { canChooseCoach, coachNeedsQuestionnaire } from "./practitioners";
 
 describe("canChooseCoach", () => {
   it("autorise un adulte sans signal de risque", () => {
     expect(canChooseCoach({ safety: "non", therapyType: "individuelle" })).toBe(true);
-    expect(canChooseCoach({ therapyType: "couple" })).toBe(true);
+    expect(canChooseCoach({ safety: "non", therapyType: "couple" })).toBe(true);
   });
 
-  it("autorise un patient qui n'a pas encore répondu au questionnaire", () => {
-    expect(canChooseCoach(null)).toBe(true);
-    expect(canChooseCoach(undefined)).toBe(true);
+  it("refuse tant que la question de sécurité n'a pas de réponse", () => {
+    expect(canChooseCoach(null)).toBe(false);
+    expect(canChooseCoach(undefined)).toBe(false);
+    expect(canChooseCoach({ therapyType: "couple" })).toBe(false);
+    expect(coachNeedsQuestionnaire(null)).toBe(true);
+    expect(coachNeedsQuestionnaire({ safety: "oui" })).toBe(false);
   });
 
   it("écarte tout signal de risque", () => {

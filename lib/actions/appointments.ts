@@ -292,7 +292,7 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
       status: true,
       type: true,
       fundedByPayment: { select: { amount: true, sessionsCount: true } },
-      patient: { select: { patientProfile: { select: { onboardingAnswers: true } } } },
+      patient: { select: { patientProfile: { select: { onboardingAnswers: true, selectedTherapyType: true } } } },
     },
   });
 
@@ -327,7 +327,12 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
   // deuxième cas ne devrait concerner que des crédits antérieurs à ce système.
   const sessionPrice = appointment.fundedByPayment
     ? Number(appointment.fundedByPayment.amount) / appointment.fundedByPayment.sessionsCount
-    : SESSION_PRICING[resolveTherapyType(appointment.patient?.patientProfile?.onboardingAnswers as { therapyType?: string } | null)].single;
+    : SESSION_PRICING[
+        resolveTherapyType(
+          appointment.patient?.patientProfile?.onboardingAnswers as { therapyType?: string } | null,
+          appointment.patient?.patientProfile?.selectedTherapyType
+        )
+      ].single;
 
   const commissionPercent = effectiveCommissionPercent(
     therapistProfile?.commissionPercent ? Number(therapistProfile.commissionPercent) : null,

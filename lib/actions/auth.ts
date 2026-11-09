@@ -66,7 +66,7 @@ export async function loginAction(
       ? "/admin"
       : dbUser?.role === "therapist"
       ? "/dashboard"
-      : "/dashboard"; // patients go to /dashboard then /onboarding if needed
+      : "/dashboard"; // patients : tableau de bord, aucune étape imposée
 
   try {
     await signIn("credentials", { email, password, redirectTo });
@@ -144,8 +144,10 @@ export async function registerPatientAction(
 
   await dispatchVerificationEmail(user.id, email, nickname);
 
+  // Le patient arrive directement sur son tableau de bord : le questionnaire
+  // et le choix du psychologue y sont proposés, jamais imposés.
   try {
-    await signIn("credentials", { email, password, redirectTo: "/onboarding" });
+    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
   } catch (error) {
     throw error;
   }

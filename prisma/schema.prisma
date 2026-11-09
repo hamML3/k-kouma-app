@@ -147,6 +147,10 @@ model PatientProfile {
   nickname            String    @db.VarChar(50)
   avatarUrl           String?   @map("avatar_url") @db.VarChar(255)
   onboardingAnswers   Json?     @map("onboarding_answers")
+  // Type de séance choisi sur la page Mes séances par un patient qui n'a pas
+  // rempli le questionnaire, pour payer le bon tarif. Celui du questionnaire,
+  // s'il existe, l'emporte (lib/pricing.ts resolveTherapyType).
+  selectedTherapyType String?   @map("selected_therapy_type") @db.VarChar(20)
   timezone            String    @default("UTC") @db.VarChar(50)
   // Nombre de séances payées et non encore consommées. Incrémenté quand un
   // paiement passe à "completed", décrémenté à chaque réservation confirmée

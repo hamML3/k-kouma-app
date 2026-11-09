@@ -27,5 +27,8 @@ export async function saveOnboardingAnswers(answers: OnboardingAnswers): Promise
     data: { onboardingAnswers: answers },
   });
 
-  redirect("/therapists");
+  // Le patient vient de répondre pour être orienté : on lui montre tout de
+  // suite les recommandations, avec un bandeau qui rappelle que rien ne presse
+  // (choix possible plus tard depuis le tableau de bord).
+  redirect("/therapists?questionnaire=1");
 }

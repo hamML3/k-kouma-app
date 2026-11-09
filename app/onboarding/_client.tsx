@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { saveOnboardingAnswers, type OnboardingAnswers } from "@/lib/actions/onboarding";
 import { Logo } from "@/components/Logo";
 import { Icon, type IconName } from "@/components/Icon";
@@ -285,8 +286,17 @@ export default function OnboardingClient({ userId, coachingAvailable }: { userId
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--kk-bg)" }}>
       {/* Header */}
-      <header className="px-5 py-4 flex items-center gap-3">
-        <Logo size={24} />
+      <header className="px-5 py-4 flex items-center justify-between gap-3">
+        <Logo href="/dashboard" size={24} />
+        {/* Le questionnaire n'est jamais obligatoire : le brouillon reste dans
+            ce navigateur, le patient pourra reprendre plus tard. */}
+        <Link
+          href="/dashboard"
+          className="text-xs font-semibold text-right"
+          style={{ color: "var(--kk-muted)" }}
+        >
+          Plus tard — retour au tableau de bord
+        </Link>
       </header>
 
       {/* Progress bar */}

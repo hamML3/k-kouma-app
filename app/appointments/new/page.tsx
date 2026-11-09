@@ -29,7 +29,7 @@ export default async function NewAppointmentPage({
     }),
     prisma.patientProfile.findUnique({
       where: { userId: Number(session.user.id) },
-      select: { id: true, sessionCredits: true, onboardingAnswers: true, timezone: true },
+      select: { id: true, sessionCredits: true, onboardingAnswers: true, selectedTherapyType: true, timezone: true },
     }),
     prisma.patientTherapistAssignment.findFirst({
       where: { patientId: Number(session.user.id), therapistId: therapistUserId, status: "active" },
@@ -46,7 +46,7 @@ export default async function NewAppointmentPage({
   // Le prix affiché est toujours le tarif catalogue plateforme (lib/pricing.ts)
   // — les thérapeutes n'ont plus de tarif propre, voir lib/commission.ts.
   const answers = patientProfile.onboardingAnswers as { therapyType?: string } | null;
-  const rate = amountFor(resolveTherapyType(answers), "single");
+  const rate = amountFor(resolveTherapyType(answers, patientProfile.selectedTherapyType), "single");
 
   const { configured, slots } = await getBookableSlots(therapistId);
 

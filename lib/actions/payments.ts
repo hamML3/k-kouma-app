@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createInvoice, isPaydunyaConfigured } from "@/lib/paydunya";
-import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, resolveTherapyType } from "@/lib/pricing";
+import { SESSION_PRICING, CURRENCY, sessionsCountFor, amountFor, resolveTherapyType, isTherapyType } from "@/lib/pricing";
+import { getPlatformSettings } from "@/lib/platformSettings";
 import { declareManualPaymentSchema } from "@/lib/validators/payments";
 import { isMaintenanceModeEnabled } from "@/lib/platformSettings";
 import { isOrangeMoneyManualEnabled, MAX_PENDING_MANUAL_PAYMENTS } from "@/lib/orangeMoney";
@@ -47,16 +48,15 @@ export async function buySessionsAction(
     where: { id: patientId },
     select: {
       email: true,
-      patientProfile: { select: { nickname: true, onboardingAnswers: true } },
+      patientProfile: { select: { nickname: true, onboardingAnswers: true, selectedTherapyType: true } },
     },
   });
   if (!patient) return { error: "Compte introuvable." };
 
-  // Le type de thérapie est celui choisi par le patient à l'onboarding — jamais
-  // une valeur envoyée par le formulaire, pour éviter de payer un pack "enfant"
-  // moins cher tout en réservant des séances "couple".
+  // Le type de thérapie vient du questionnaire ou du choix enregistré sur la
+  // page Mes séances — jamais d'une valeur envoyée par ce formulaire d'achat.
   const answers = patient.patientProfile?.onboardingAnswers as { therapyType?: string } | null;
-  const therapyType = resolveTherapyType(answers);
+  const therapyType = resolveTherapyType(answers, patient.patientProfile?.selectedTherapyType);
 
   const amount = amountFor(therapyType, pack);
   const sessionsCount = sessionsCountFor(pack);
@@ -150,11 +150,11 @@ export async function declareManualPaymentAction(
 
   const patient = await prisma.user.findUnique({
     where: { id: patientId },
-    select: { patientProfile: { select: { onboardingAnswers: true } } },
+    select: { patientProfile: { select: { onboardingAnswers: true, selectedTherapyType: true } } },
   });
 
   const answers = patient?.patientProfile?.onboardingAnswers as { therapyType?: string } | null;
-  const therapyType = resolveTherapyType(answers);
+  const therapyType = resolveTherapyType(answers, patient?.patientProfile?.selectedTherapyType);
   const amount = amountFor(therapyType, parsed.data.pack);
   const sessionsCount = sessionsCountFor(parsed.data.pack);
 
@@ -191,4 +191,25 @@ export async function declareManualPaymentAction(
 
   revalidatePath("/subscription");
   return { success: true };
+}
+
+/**
+ * Patient sans questionnaire : type de séance choisi sur la page Mes séances,
+ * qui fixe son tarif (lib/pricing.ts resolveTherapyType). Sans effet si le
+ * questionnaire a déjà donné un type : c'est lui qui fait foi.
+ */
+export async function chooseTherapyTypeAction(formData: FormData): Promise<void> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "patient") redirect("/login");
+
+  const value = formData.get("therapyType");
+  if (!isTherapyType(value)) redirect("/subscription");
+  if (value === "coaching" && !((await getPlatformSettings())?.showLifeCoachCard ?? true)) redirect("/subscription");
+
+  await prisma.patientProfile.update({
+    where: { userId: Number(session.user.id) },
+    data: { selectedTherapyType: value },
+  });
+  revalidatePath("/subscription");
+  redirect("/subscription");
 }

@@ -56,6 +56,7 @@ export default async function DashboardPage() {
     session.user.email;
 
   const isTherapist = user?.role === "therapist";
+  const isPatient = user?.role === "patient";
   const isVerified = user?.therapistProfile?.isVerified ?? false;
   const needsOnboarding =
     !isTherapist && !user?.patientProfile?.onboardingAnswers;
@@ -137,8 +138,8 @@ export default async function DashboardPage() {
   // Message de bienvenue personnalisé, adapté à l'étape du parcours du patient.
   const welcomeMessage = isTherapist
     ? "Bienvenue sur votre espace K-Kouma."
-    : needsOnboarding
-    ? "Content de vous compter parmi nous. Prenons quelques minutes pour mieux vous connaître."
+    : needsOnboarding && !assignedTherapist
+    ? "Content de vous compter parmi nous. Votre espace est prêt : avancez à votre rythme."
     : assignedTherapist
     ? "Heureux de vous revoir. Votre psychologue est là pour vous, à votre rythme."
     : "Votre profil est prêt — il ne reste plus qu'à trouver le psychologue qui vous correspond.";
@@ -175,29 +176,6 @@ export default async function DashboardPage() {
         {/* Email verification nudge */}
         {!user?.emailVerifiedAt && <ResendVerificationBanner />}
 
-        {/* Onboarding nudge for patients */}
-        {needsOnboarding && (
-          <div
-            className="rounded-2xl p-5 mb-7 flex items-center justify-between gap-4 flex-wrap"
-            style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB" }}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-2xl shrink-0" aria-hidden>📝</span>
-              <div>
-                <p className="font-bold mb-0.5" style={{ color: "var(--kk-purple-text)" }}>
-                  Complétez votre profil
-                </p>
-                <p className="text-sm" style={{ color: "#6B5B96" }}>
-                  Répondez à quelques questions pour trouver le psychologue idéal.
-                </p>
-              </div>
-            </div>
-            <Link href="/onboarding" className="kk-btn-purple shrink-0 text-sm px-5 py-2.5">
-              Commencer →
-            </Link>
-          </div>
-        )}
-
         {/* Welcome */}
         <div className="mb-7">
           <p className="text-sm font-semibold capitalize" style={{ color: "var(--kk-gold-text)" }}>
@@ -213,6 +191,68 @@ export default async function DashboardPage() {
             {welcomeMessage}
           </p>
         </div>
+
+        {/* Patient sans psychologue : questionnaire puis choix mis en avant,
+            jamais imposés (le tableau de bord reste entièrement accessible). */}
+        {isPatient && !assignedTherapist && (
+          <div
+            className="rounded-2xl p-6 mb-6"
+            style={{
+              background: "var(--kk-purple-light)",
+              border: "1px solid #C8BCEB",
+              boxShadow: "0 6px 24px rgba(142,124,184,0.12)",
+            }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--kk-purple-text)" }}>
+              {needsOnboarding ? "Première étape conseillée" : "Vos recommandations sont prêtes"}
+            </p>
+            <h2
+              className="text-xl font-bold mb-1"
+              style={{ fontFamily: "var(--font-lora)", color: "var(--kk-dark)" }}
+            >
+              Trouvez le psychologue qui vous correspond
+            </h2>
+            <p className="text-sm mb-5" style={{ color: "#6B5B96" }}>
+              {needsOnboarding
+                ? "Répondez à quelques questions (environ 3 minutes) : nous vous proposons les professionnels les plus adaptés à votre situation."
+                : "D'après vos réponses au questionnaire, nous avons classé les professionnels par compatibilité avec votre profil."}
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                href={needsOnboarding ? "/onboarding" : "/therapists"}
+                className="kk-btn-purple text-sm px-5 py-2.5"
+              >
+                {needsOnboarding ? "Répondre au questionnaire →" : "Voir mes recommandations →"}
+              </Link>
+              {needsOnboarding && (
+                <Link href="/therapists" className="text-sm font-semibold" style={{ color: "var(--kk-purple-text)" }}>
+                  Parcourir tous les psychologues
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Psychologue déjà choisi sans questionnaire : simple suggestion
+            (le type de thérapie, donc le tarif, en dépend). */}
+        {isPatient && assignedTherapist && needsOnboarding && (
+          <div
+            className="rounded-2xl p-4 mb-6 flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
+                Complétez votre questionnaire
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--kk-muted)" }}>
+                Quelques questions pour préciser le type d&apos;accompagnement dont vous avez besoin.
+              </p>
+            </div>
+            <Link href="/onboarding" className="kk-btn-outline shrink-0 text-sm px-5 py-2">
+              Répondre →
+            </Link>
+          </div>
+        )}
 
         {/* Therapist: pending requests + today's schedule + payout summary */}
         {isTherapist && isVerified && (

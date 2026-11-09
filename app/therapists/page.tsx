@@ -1,4 +1,4 @@
-import { PRACTITIONER_LABELS, PRACTITIONER_TITLES, canChooseCoach } from "@/lib/practitioners";
+import { PRACTITIONER_LABELS, PRACTITIONER_TITLES, canChooseCoach, coachNeedsQuestionnaire } from "@/lib/practitioners";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -48,7 +48,7 @@ function InitialsAvatar({ name, color }: { name: string; color: string }) {
 export default async function TherapistsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ specialty?: string; chosen?: string; error?: string }>;
+  searchParams: Promise<{ specialty?: string; chosen?: string; error?: string; questionnaire?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -56,6 +56,7 @@ export default async function TherapistsPage({
   const params = await searchParams;
   const selectedFilter = params.specialty ?? "Tous";
   const justChosen = params.chosen === "1";
+  const justAnswered = params.questionnaire === "1";
   const error = params.error;
   const userId = Number(session.user.id);
   const isPatient = session.user.role === "patient";
@@ -88,6 +89,9 @@ export default async function TherapistsPage({
   // Un coach n'est jamais proposé à un patient qui a besoin d'un suivi clinique.
   const eligible = canChooseCoach(answers) ? therapists : therapists.filter((t) => t.practitionerKind !== "coach");
   const hasCoaches = eligible.some((t) => t.practitionerKind === "coach");
+  // Coachs masqués seulement parce que le questionnaire n'est pas rempli.
+  const coachesAwaitQuestionnaire =
+    isPatient && coachNeedsQuestionnaire(answers) && therapists.some((t) => t.practitionerKind === "coach");
 
   // Score every therapist
   const scored = eligible.map((t) => {
@@ -139,6 +143,33 @@ export default async function TherapistsPage({
           </div>
         )}
 
+        {/* Juste après le questionnaire : recommandations proposées, pas imposées */}
+        {justAnswered && isPatient && hasAnswers && !assignedTherapistId && (
+          <div
+            className="rounded-2xl p-4 mb-6 flex items-center justify-between gap-4 flex-wrap"
+            style={{ background: "var(--kk-green-light)", border: "1px solid #C2D9BC" }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-xl" aria-hidden>✓</span>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "var(--kk-green-text)" }}>
+                  Merci, vos réponses sont enregistrées.
+                </p>
+                <p className="text-xs" style={{ color: "var(--kk-mid)" }}>
+                  Voici les professionnels qui vous correspondent le mieux. Rien ne presse : vous pourrez choisir plus tard depuis votre tableau de bord.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/dashboard"
+              className="shrink-0 text-xs font-bold px-4 py-2 rounded-full"
+              style={{ background: "#fff", color: "var(--kk-green-text)", border: "1px solid #C2D9BC" }}
+            >
+              Tableau de bord
+            </Link>
+          </div>
+        )}
+
         {error === "slot_taken" && (
           <div
             className="rounded-2xl p-4 mb-6 flex items-center gap-3"
@@ -165,9 +196,31 @@ export default async function TherapistsPage({
           </div>
         )}
 
+        {coachesAwaitQuestionnaire && (
+          <div
+            className="rounded-2xl p-4 mb-6 text-sm flex items-center justify-between gap-3 flex-wrap"
+            style={{ background: "var(--kk-purple-light)", border: "1px solid #C8BCEB", color: "var(--kk-dark)" }}
+          >
+            <span>
+              Vous cherchez un <strong>coach de vie</strong> ? Les coachs vous sont proposés une fois le questionnaire
+              rempli : il nous permet de vérifier qu&apos;un coach est adapté à votre situation.
+            </span>
+            <Link href="/onboarding" className="kk-btn-purple shrink-0 text-xs px-4 py-2">
+              Répondre au questionnaire
+            </Link>
+          </div>
+        )}
+
         {error === "coach" && (
           <div className="kk-error mb-6">
-            D&apos;après vos réponses au questionnaire, un suivi par un psychologue est plus adapté. Choisissez un psychologue dans la liste.
+            {coachNeedsQuestionnaire(answers) ? (
+              <>
+                Pour être accompagné par un coach, répondez d&apos;abord au{" "}
+                <Link href="/onboarding" className="underline">questionnaire</Link>. En attendant, vous pouvez choisir un psychologue.
+              </>
+            ) : (
+              <>D&apos;après vos réponses au questionnaire, un suivi par un psychologue est plus adapté. Choisissez un psychologue dans la liste.</>
+            )}
           </div>
         )}
 

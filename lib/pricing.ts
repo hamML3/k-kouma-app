@@ -31,13 +31,28 @@ export function amountFor(therapyType: TherapyType, pack: "single" | "pack3"): n
   return pack === "pack3" ? entry.pack3 : entry.single;
 }
 
+const THERAPY_TYPES: TherapyType[] = ["individuelle", "couple", "enfant", "coaching"];
+
+export function isTherapyType(value: unknown): value is TherapyType {
+  return typeof value === "string" && (THERAPY_TYPES as string[]).includes(value);
+}
+
 /**
- * Le type de thérapie facturé est toujours celui choisi par le patient à
- * l'onboarding — jamais une valeur reconstruite ailleurs — pour que
- * l'affichage du prix (réservation) et le montant réellement débité
- * (paiement) restent la même source de vérité.
+ * Type de séance qui fixe le tarif : celui du questionnaire, sinon celui
+ * choisi sur la page Mes séances (PatientProfile.selectedTherapyType), sinon
+ * « individuelle ». Toujours lu en base, jamais depuis un formulaire d'achat,
+ * pour que le prix affiché et le montant débité restent la même source de
+ * vérité.
  */
-export function resolveTherapyType(answers: { therapyType?: string } | null | undefined): TherapyType {
+export function resolveTherapyType(
+  answers: { therapyType?: string } | null | undefined,
+  selected?: string | null
+): TherapyType {
+  if (!isTherapyType(answers?.therapyType) && isTherapyType(selected)) return selected;
+  return resolveAnswersTherapyType(answers);
+}
+
+function resolveAnswersTherapyType(answers: { therapyType?: string } | null | undefined): TherapyType {
   return answers?.therapyType === "couple" || answers?.therapyType === "enfant" || answers?.therapyType === "coaching"
     ? answers.therapyType
     : "individuelle";
