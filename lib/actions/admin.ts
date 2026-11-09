@@ -12,6 +12,7 @@ import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/l
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
 import { markTherapistEarningsPaid } from "@/lib/payouts";
 import { completePendingPayment } from "@/lib/payments";
+import { scheduleInvoiceEmail } from "@/lib/invoices";
 import { createNotification } from "@/lib/notifications";
 import {
   MANUAL_PAYMENT_REJECTION_REASONS,
@@ -305,6 +306,7 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
   }
 
   if (!(await completePendingPayment(payment))) redirect("/admin/finances");
+  scheduleInvoiceEmail(paymentId);
 
   await logAudit({
     actor: admin,
@@ -323,7 +325,7 @@ export async function confirmManualPaymentAction(formData: FormData): Promise<vo
     userId: payment.patientId,
     type: "payment.confirmed",
     title: "Paiement validé",
-    body: `${payment.sessionsCount} séance${payment.sessionsCount > 1 ? "s" : ""} ajoutée${payment.sessionsCount > 1 ? "s" : ""} à votre compte.`,
+    body: `${payment.sessionsCount} séance${payment.sessionsCount > 1 ? "s" : ""} ajoutée${payment.sessionsCount > 1 ? "s" : ""} à votre compte. Votre facture vous est envoyée par e-mail.`,
     link: "/subscription",
   });
 

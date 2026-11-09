@@ -11,6 +11,8 @@ const PUBLIC_PREFIXES = [
   "/security",
   "/legal",
   "/quiz",
+  // Images des articles du blog, publiques comme lui.
+  "/media/articles",
   "/api/auth",
   "/api/therapists",
   "/api/platform-banner",

@@ -294,6 +294,8 @@ model Payment {
   sessionsRemaining Int           @default(0) @map("sessions_remaining")
   // Numéro de facture, continu et attribué à l'encaissement (lib/payments.ts).
   invoiceNumber     Int?          @unique @map("invoice_number")
+  // Dernier envoi réussi de la facture par e-mail au patient (lib/invoices.ts).
+  invoiceEmailedAt  DateTime?     @map("invoice_emailed_at")
   createdAt         DateTime      @default(now()) @map("created_at")
   paidAt            DateTime?     @map("paid_at")
 

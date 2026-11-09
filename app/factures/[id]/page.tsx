@@ -1,29 +1,22 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { Logo } from "@/components/Logo";
 import { PrintButton } from "@/components/PrintButton";
 import { LEGAL_ENTITY } from "@/lib/legalEntity";
-import { formatInvoiceNumber } from "@/lib/payments";
-import { getPlatformSettings } from "@/lib/platformSettings";
+import { loadInvoice } from "@/lib/invoices";
+import { emailMyInvoiceAction } from "@/lib/actions/invoices";
 
 export const metadata = { title: "Facture — K-Kouma" };
 
-const PROVIDER_LABELS: Record<string, string> = {
-  paydunya: "PayDunya",
-  orange_money_manual: "Orange Money",
-};
-
-const THERAPY_LABELS: Record<string, string> = {
-  individuelle: "Thérapie individuelle",
-  couple: "Thérapie de couple",
-  enfant: "Adolescent / Enfant",
-  coaching: "Coaching de vie",
-};
-
-export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InvoicePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ email?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
@@ -32,23 +25,15 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   if (!Number.isInteger(paymentId)) notFound();
 
   // notFound plutôt qu'un refus : on ne confirme pas qu'un paiement existe.
-  const payment = await prisma.payment.findFirst({
-    where: { id: paymentId, patientId: Number(session.user.id), status: "completed", invoiceNumber: { not: null } },
-    include: { patient: { select: { email: true, patientProfile: { select: { nickname: true } } } } },
-  });
-  if (!payment || payment.invoiceNumber === null) notFound();
+  const invoice = await loadInvoice(paymentId, Number(session.user.id));
+  if (!invoice) notFound();
 
-  const settings = await getPlatformSettings();
-  const paidAt = payment.paidAt ?? payment.createdAt;
-  const amount = `${Number(payment.amount).toLocaleString("fr-FR")} ${payment.currency}`;
-  const designation = `${THERAPY_LABELS[payment.therapyType] ?? "Séance"}, ${
-    payment.sessionsCount === 1 ? "1 séance" : `pack de ${payment.sessionsCount} séances`
-  }`;
+  const { email: sent } = await searchParams;
   const details: [string, string][] = [
-    ["Date", paidAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })],
-    ["Paiement", PROVIDER_LABELS[payment.provider] ?? payment.provider],
+    ["Date", invoice.date],
+    ["Paiement", invoice.provider],
   ];
-  if (payment.providerRef) details.push(["Référence", payment.providerRef]);
+  if (invoice.reference) details.push(["Référence", invoice.reference]);
 
   return (
     <div className="min-h-screen print:min-h-0" style={{ background: "var(--kk-bg)" }}>
@@ -61,8 +46,31 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           <Link href="/subscription" className="text-sm font-semibold whitespace-nowrap" style={{ color: "var(--kk-muted)" }}>
             ← Abonnement
           </Link>
-          <PrintButton className="kk-btn-outline whitespace-nowrap">Imprimer / PDF</PrintButton>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <form action={emailMyInvoiceAction}>
+              <input type="hidden" name="paymentId" value={invoice.paymentId} />
+              <button type="submit" className="kk-btn-outline whitespace-nowrap">
+                Recevoir par e-mail
+              </button>
+            </form>
+            <PrintButton className="kk-btn-outline whitespace-nowrap">Imprimer / PDF</PrintButton>
+          </div>
         </div>
+        {sent === "sent" && (
+          <div className="rounded-2xl p-4 mb-5 text-sm font-semibold print:hidden" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
+            Facture envoyée à {invoice.clientEmail}.
+          </div>
+        )}
+        {sent === "failed" && (
+          <div className="kk-error mb-5 print:hidden">
+            L&apos;envoi n&apos;a pas abouti. Réessayez plus tard, ou imprimez la facture.
+          </div>
+        )}
+        {sent === "limit" && (
+          <div className="kk-error mb-5 print:hidden">
+            Vous avez demandé plusieurs envois récemment. Réessayez dans un moment.
+          </div>
+        )}
 
         <div className="kk-card p-6 sm:p-8 print:shadow-none">
           <div className="flex items-start justify-between gap-4 mb-6">
@@ -72,7 +80,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 Facture
               </h1>
               <p className="text-sm font-semibold" style={{ color: "var(--kk-mid)" }}>
-                {formatInvoiceNumber(payment.invoiceNumber, paidAt)}
+                {invoice.number}
               </p>
             </div>
           </div>
@@ -98,10 +106,10 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 Client
               </p>
               <p className="font-semibold" style={{ color: "var(--kk-dark)" }}>
-                {payment.patient.patientProfile?.nickname ?? payment.patient.email}
+                {invoice.clientName}
               </p>
               <p className="text-xs mt-0.5 [overflow-wrap:anywhere]" style={{ color: "var(--kk-mid)" }}>
-                {payment.patient.email}
+                {invoice.clientEmail}
               </p>
             </div>
           </div>
@@ -133,9 +141,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             </thead>
             <tbody style={{ color: "var(--kk-dark)" }}>
               <tr>
-                <td className="py-3">{designation}</td>
+                <td className="py-3">{invoice.designation}</td>
                 <td className="py-3 pl-3 text-right">1</td>
-                <td className="py-3 pl-3 text-right whitespace-nowrap">{amount}</td>
+                <td className="py-3 pl-3 text-right whitespace-nowrap">{invoice.amount}</td>
               </tr>
             </tbody>
           </table>
@@ -145,13 +153,13 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               Total payé
             </span>
             <span className="text-xl font-bold" style={{ fontFamily: "var(--font-lora)", color: "var(--kk-green-text)" }}>
-              {amount}
+              {invoice.amount}
             </span>
           </div>
 
-          {settings?.invoiceTaxNote && (
+          {invoice.taxNote && (
             <p className="text-xs mt-6" style={{ color: "var(--kk-muted)" }}>
-              {settings.invoiceTaxNote}
+              {invoice.taxNote}
             </p>
           )}
         </div>

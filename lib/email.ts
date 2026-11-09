@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { LEGAL_ENTITY } from "@/lib/legalEntity";
+import type { InvoiceView } from "@/lib/invoices";
 
 const FROM = process.env.EMAIL_FROM ?? "K-Kouma <noreply@k-kouma.com>";
 const APP_URL = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
@@ -222,6 +224,49 @@ export async function sendSessionReminderEmail(to: string, name: string, otherNa
     from: FROM,
     to,
     subject: "Rappel : votre séance K-Kouma approche",
+    html,
+  });
+}
+
+/** Patient : sa facture, après encaissement ou à sa demande depuis son espace. */
+export async function sendInvoiceEmail(to: string, invoice: InvoiceView) {
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:4px 0;color:#8A9183;font-size:13px;">${label}</td><td style="padding:4px 0;text-align:right;font-size:13px;font-weight:700;color:#2C342E;">${esc(value)}</td></tr>`;
+  const html = wrapper(
+    `Facture ${esc(invoice.number)}`,
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(invoice.clientName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Merci pour votre paiement. Voici votre facture.</p>
+     <table role="presentation" style="width:100%;border-collapse:collapse;margin:16px 0 8px;">
+       ${row("Numéro", invoice.number)}
+       ${row("Date", invoice.date)}
+       ${row("Paiement", invoice.provider)}
+       ${invoice.reference ? row("Référence", invoice.reference) : ""}
+     </table>
+     <table role="presentation" style="width:100%;border-collapse:collapse;border-top:1px solid #EDE8DC;border-bottom:1px solid #EDE8DC;margin:8px 0;">
+       <tr>
+         <td style="padding:12px 0;font-size:14px;color:#2C342E;">${esc(invoice.designation)}</td>
+         <td style="padding:12px 0;font-size:14px;text-align:right;white-space:nowrap;color:#2C342E;">${esc(invoice.amount)}</td>
+       </tr>
+     </table>
+     <table role="presentation" style="width:100%;border-collapse:collapse;">
+       <tr>
+         <td style="padding:8px 0;font-size:15px;font-weight:700;color:#2C342E;">Total payé</td>
+         <td style="padding:8px 0;font-size:17px;font-weight:700;text-align:right;color:#486946;white-space:nowrap;">${esc(invoice.amount)}</td>
+       </tr>
+     </table>
+     ${button(`${APP_URL}/factures/${invoice.paymentId}`, "Voir et imprimer la facture")}
+     <p style="font-size:12px;line-height:1.6;color:#8A9183;margin-top:24px;">
+       Émise par ${esc(LEGAL_ENTITY.name)}, ${esc(LEGAL_ENTITY.address)}<br>
+       RCCM : ${esc(LEGAL_ENTITY.rccm)} · NIF : ${esc(LEGAL_ENTITY.nif)}<br>
+       ${esc(LEGAL_ENTITY.phone)} · ${esc(LEGAL_ENTITY.email)}
+       ${invoice.taxNote ? `<br>${esc(invoice.taxNote)}` : ""}
+     </p>`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: `Votre facture ${invoice.number} — K-Kouma`,
     html,
   });
 }

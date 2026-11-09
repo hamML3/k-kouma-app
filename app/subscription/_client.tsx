@@ -248,8 +248,11 @@ export function ManualPaymentForm({
             autoComplete="off"
             spellCheck={false}
             className="kk-input"
-            placeholder="Indiquée dans le SMS d'Orange Money"
+            placeholder="Ex. ID:PP261125.123.C34567"
           />
+          <p className="text-xs mt-1" style={{ color: "var(--kk-muted)" }}>
+            Recopiez la référence du SMS d&apos;Orange Money, qui commence par « ID: ».
+          </p>
           <FieldError messages={state.fieldErrors?.reference} />
         </div>
 

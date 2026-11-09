@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { proposeArticleSchema } from "@/lib/validators/articles";
+import { ArticleImageError, deleteArticleImage, saveArticleImage } from "@/lib/articleImages";
 
 export type ProposeArticleState = {
   error?: string;
@@ -107,7 +108,6 @@ export async function proposeArticleAction(
     title: (formData.get("title") as string) ?? "",
     excerpt: (formData.get("excerpt") as string) ?? "",
     body: (formData.get("body") as string) ?? "",
-    imageUrl: (formData.get("imageUrl") as string) ?? "",
   };
 
   const parsed = proposeArticleSchema.safeParse(raw);
@@ -115,34 +115,52 @@ export async function proposeArticleAction(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const { title, excerpt, body, imageUrl } = parsed.data;
+  const { title, excerpt, body } = parsed.data;
   const isAdmin = author.role === "admin";
 
   const editId = Number(formData.get("articleId")) || null;
-  if (editId) {
-    const existing = await prisma.submittedArticle.findUnique({ where: { id: editId } });
-    // L'auteur ne modifie que ses propres propositions non publiées.
-    if (!existing || existing.authorId !== author.id || existing.status === "published") {
-      return { error: "Cet article ne peut plus être modifié." };
+  const existing = editId ? await prisma.submittedArticle.findUnique({ where: { id: editId } }) : null;
+  // L'auteur ne modifie que ses propres propositions non publiées.
+  if (editId && (!existing || existing.authorId !== author.id || existing.status === "published")) {
+    return { error: "Cet article ne peut plus être modifié." };
+  }
+
+  // Image choisie sur l'ordinateur ou le téléphone, enregistrée seulement une
+  // fois le reste du formulaire validé.
+  const upload = formData.get("image");
+  let newImageUrl: string | null = null;
+  if (upload instanceof File && upload.size > 0) {
+    try {
+      newImageUrl = await saveArticleImage(upload);
+    } catch (err) {
+      if (err instanceof ArticleImageError) return { fieldErrors: { image: [err.message] } };
+      console.error("[articles] image non enregistrée:", err);
+      return { fieldErrors: { image: ["L'image n'a pas pu être enregistrée. Réessayez."] } };
     }
+  }
+
+  if (existing) {
+    const removeImage = formData.get("removeImage") === "on";
+    const imageUrl = newImageUrl ?? (removeImage ? null : existing.imageUrl);
     await prisma.submittedArticle.update({
-      where: { id: editId },
+      where: { id: existing.id },
       data: {
         title,
         excerpt,
         body,
-        imageUrl: imageUrl || null,
+        imageUrl,
         status: isAdmin ? "published" : "pending",
         reviewNote: null,
         reviewedById: isAdmin ? author.id : null,
         reviewedAt: isAdmin ? new Date() : null,
       },
     });
+    if (imageUrl !== existing.imageUrl) await deleteArticleImage(existing.imageUrl);
     await logAudit({
       actor: author,
       action: isAdmin ? "article.publish" : "article.resubmit",
       targetType: "submitted_article",
-      targetId: editId,
+      targetId: existing.id,
       metadata: { title, slug: existing.slug },
     });
     if (!isAdmin) {
@@ -176,7 +194,7 @@ export async function proposeArticleAction(
       title,
       excerpt,
       body,
-      imageUrl: imageUrl || null,
+      imageUrl: newImageUrl,
       status: isAdmin ? "published" : "pending",
       ...(isAdmin && { reviewedById: author.id, reviewedAt: new Date() }),
     },

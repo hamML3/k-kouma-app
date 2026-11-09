@@ -1,4 +1,5 @@
 import { completePendingPayment } from "@/lib/payments";
+import { scheduleInvoiceEmail } from "@/lib/invoices";
 import { prisma } from "@/lib/prisma";
 import { confirmInvoice } from "@/lib/paydunya";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, status: confirmation.status });
   }
 
-  await completePendingPayment(payment);
+  if (await completePendingPayment(payment)) scheduleInvoiceEmail(payment.id);
 
   return NextResponse.json({ ok: true });
 }

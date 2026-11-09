@@ -2,12 +2,13 @@ import { z } from "zod";
 
 export const declareManualPaymentSchema = z.object({
   pack: z.enum(["single", "pack3"]),
-  // Les références Orange Money sont recopiées à la main depuis un SMS : on
-  // retire les espaces et on met en majuscules, pour qu'une même référence ne
-  // puisse pas être déclarée deux fois sous deux écritures différentes.
+  // Les références Orange Money sont recopiées à la main depuis un SMS, où
+  // elles apparaissent sous la forme « ID:PP261125.123.C34567 ». On retire
+  // espaces et préfixe « ID: », et on met en majuscules, pour qu'une même
+  // référence ne puisse pas être déclarée deux fois sous deux écritures.
   reference: z
     .string()
-    .transform((s) => s.replace(/\s+/g, "").toUpperCase())
+    .transform((s) => s.replace(/\s+/g, "").toUpperCase().replace(/^ID:/, ""))
     .pipe(
       z
         .string()

@@ -15,6 +15,13 @@ describe("declareManualPaymentSchema", () => {
     expect(r.success && r.data.reference).toBe("CI241109.1532.B12345");
   });
 
+  it("accepte la référence recopiée telle qu'écrite dans le SMS, préfixe « ID: » compris", () => {
+    const r = parse({ reference: "ID:PP261125.123.C34567" });
+    expect(r.success && r.data.reference).toBe("PP261125.123.C34567");
+    const r2 = parse({ reference: "id: pp261125.123.c34567" });
+    expect(r2.success && r2.data.reference).toBe("PP261125.123.C34567");
+  });
+
   it("refuse une référence trop courte ou avec des caractères inattendus", () => {
     expect(parse({ reference: "AB" }).success).toBe(false);
     expect(parse({ reference: "<script>" }).success).toBe(false);
