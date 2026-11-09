@@ -34,7 +34,7 @@ const TIMEZONES = [
 ];
 
 const ERRORS: Record<string, string> = {
-  range: "Plage invalide : elle doit durer au moins 45 minutes, le temps d'une séance.",
+  range: "Plage invalide : elle doit durer au moins 1 heure, le temps d'une séance.",
   overlap: "Cette plage chevauche une plage déjà saisie ce jour-là.",
   dates: "Dates invalides : la fin doit être le même jour ou après le début.",
   timezone: "Fuseau horaire inconnu.",
@@ -77,7 +77,7 @@ export default async function AvailabilityPage({
             Mes disponibilités
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--kk-muted)" }}>
-            Vos patients réservent une séance de 45 minutes, une par heure, dans ces plages. Tant qu&apos;aucune plage
+            Vos patients réservent des séances d&apos;une heure, avec 15 minutes de pause entre deux, dans ces plages. Tant qu&apos;aucune plage
             n&apos;est saisie, ils peuvent proposer n&apos;importe quel horaire.
           </p>
         </div>

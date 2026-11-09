@@ -270,3 +270,75 @@ export async function sendInvoiceEmail(to: string, invoice: InvoiceView) {
     html,
   });
 }
+
+/** L'autre partie propose une nouvelle date pour un rendez-vous en attente. */
+export async function sendAppointmentProposalEmail(to: string, recipientName: string, fromName: string, scheduledAt: Date) {
+  const html = wrapper(
+    "Nouvelle date proposée",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(recipientName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;"><strong>${esc(fromName)}</strong> propose une nouvelle date pour votre séance : <strong>${formatDateTime(scheduledAt)}</strong>.</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous pouvez l'accepter ou proposer une autre date.</p>
+     ${button(`${APP_URL}/appointments`, "Répondre")}`
+  );
+  return client().emails.send({ from: FROM, to, subject: "Nouvelle date proposée pour votre séance — K-Kouma", html });
+}
+
+/** Masque une adresse pour l'afficher à l'ancien titulaire : « ka***@exemple.ml ». */
+export function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  return `${local.slice(0, 2)}***@${domain ?? ""}`;
+}
+
+/** Envoyé à la nouvelle adresse : le changement n'a lieu qu'au clic sur ce lien. */
+export async function sendEmailChangeConfirmationEmail(to: string, name: string, token: string) {
+  const link = `${APP_URL}/confirm-email?token=${encodeURIComponent(token)}`;
+  const html = wrapper(
+    "Confirmez votre nouvelle adresse e-mail",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Vous avez demandé à utiliser cette adresse pour votre compte K-Kouma. Confirmez-la en cliquant sur le bouton ci-dessous (lien valable 24 heures).</p>
+     ${button(link, "Confirmer cette adresse")}
+     <p style="font-size:12px;line-height:1.6;color:#8A9183;margin-top:20px;">Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : rien ne changera.</p>`
+  );
+  return client().emails.send({ from: FROM, to, subject: "Confirmez votre nouvelle adresse — K-Kouma", html });
+}
+
+/** Envoyé à l'ancienne adresse : alerte de sécurité, à la demande puis au changement effectif. */
+export async function sendEmailChangeNoticeEmail(to: string, name: string, newEmail: string, done: boolean) {
+  const html = wrapper(
+    done ? "Votre adresse e-mail a été modifiée" : "Demande de changement d'adresse e-mail",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(name)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">${
+       done
+         ? `L'adresse de votre compte K-Kouma est désormais <strong>${esc(maskEmail(newEmail))}</strong>. Vous ne recevrez plus nos messages à cette adresse.`
+         : `Une demande de changement d'adresse vers <strong>${esc(maskEmail(newEmail))}</strong> a été faite depuis votre compte. Elle ne prendra effet qu'une fois confirmée depuis la nouvelle adresse.`
+     }</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Si vous n'êtes pas à l'origine de ce changement, changez votre mot de passe et écrivez-nous immédiatement à contact@k-kouma.com.</p>`
+  );
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: done ? "Votre adresse e-mail a été modifiée — K-Kouma" : "Changement d'adresse e-mail demandé — K-Kouma",
+    html,
+  });
+}
+
+/**
+ * Avis sur un rendez-vous (accusé de réception, rappel, date acceptée,
+ * demande expirée…). `lines` est du texte brut : échappé ici.
+ */
+export async function sendAppointmentNoticeEmail(params: {
+  to: string;
+  name: string;
+  subject: string;
+  title: string;
+  lines: string[];
+  linkLabel?: string;
+}) {
+  const html = wrapper(
+    esc(params.title),
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(params.name)},</p>
+     ${params.lines.map((l) => `<p style="font-size:14px;line-height:1.6;color:#5C645B;">${esc(l)}</p>`).join("")}
+     ${button(`${APP_URL}/appointments`, params.linkLabel ?? "Voir mes rendez-vous")}`
+  );
+  return client().emails.send({ from: FROM, to: params.to, subject: `${params.subject} — K-Kouma`, html });
+}

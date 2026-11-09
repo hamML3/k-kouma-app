@@ -1,7 +1,22 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { cancelAppointmentAction } from "@/lib/actions/appointments";
+import {
+  acceptProposalAction,
+  cancelAppointmentAction,
+  confirmAppointmentAction,
+  proposeAppointmentTimeAction,
+} from "@/lib/actions/appointments";
+import { ProposeTimeForm } from "@/components/ProposeTimeForm";
+import { sessionPhase, sessionWindow } from "@/lib/sessionWindow";
+
+const PROPOSAL_NOTICES: Record<string, { text: string; ok: boolean }> = {
+  sent: { text: "Proposition envoyée. Vous serez prévenu de la réponse.", ok: true },
+  accepted: { text: "Date acceptée : votre séance est confirmée.", ok: true },
+  date: { text: "Choisissez une date au moins 2 heures à l'avance, dans les 60 prochains jours.", ok: false },
+  unavailable: { text: "Ce créneau ne fait pas partie des disponibilités du praticien. Choisissez un autre horaire.", ok: false },
+  conflict: { text: "Ce créneau chevauche une autre séance. Choisissez un autre horaire.", ok: false },
+};
 import Link from "next/link";
 import { ReviewForm } from "@/components/ReviewForm";
 import { AppHeader } from "@/components/AppHeader";
@@ -24,7 +39,15 @@ export const metadata = {
   title: "Mes rendez-vous — K-Kouma",
 };
 
-export default async function PatientAppointmentsPage() {
+export default async function PatientAppointmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ proposal?: string; error?: string }>;
+}) {
+  const params = await searchParams;
+  const notice =
+    PROPOSAL_NOTICES[params.proposal ?? ""] ??
+    (params.error?.startsWith("proposal_") ? PROPOSAL_NOTICES[params.error.slice("proposal_".length)] : undefined);
   const session = await auth();
   if (!session?.user) redirect("/login");
 
@@ -48,10 +71,12 @@ export default async function PatientAppointmentsPage() {
 
   // Une séance de messagerie reste active tant que le psychologue ne l'a pas
   // clôturée — elle n'est jamais "en retard" comme un appel programmé.
+  // Une séance reste « à venir » jusqu'à sa fin (début + durée), pas seulement
+  // jusqu'à son début : on doit pouvoir la rejoindre pendant qu'elle a lieu.
   const isActive = (a: (typeof appointments)[number]) =>
     a.status !== "canceled" &&
     a.status !== "completed" &&
-    (a.type === "text" || new Date(a.scheduledAt) > new Date());
+    (a.type === "text" || sessionWindow(a.scheduledAt, a.durationMinutes).endsAt > new Date());
 
   const upcoming = appointments.filter(isActive);
   const past = appointments.filter((a) => !isActive(a));
@@ -84,6 +109,15 @@ export default async function PatientAppointmentsPage() {
           )}
         </div>
 
+        {notice && (
+          <div
+            className="rounded-2xl p-4 mb-6 text-sm font-semibold"
+            style={notice.ok ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" } : { background: "#FFF1F0", color: "#9B2C20" }}
+          >
+            {notice.text}
+          </div>
+        )}
+
         {/* Upcoming */}
         {upcoming.length > 0 ? (
           <section className="mb-8">
@@ -92,17 +126,18 @@ export default async function PatientAppointmentsPage() {
             </h2>
             <div className="space-y-3">
               {upcoming.map((a) => {
-                const statusInfo = STATUS_LABELS[a.status] ?? STATUS_LABELS.pending;
+                const statusInfo =
+                  a.status === "pending" && a.proposedBy === "therapist"
+                    ? { ...STATUS_LABELS.pending, label: isTherapist ? "Proposition envoyée" : "Nouvelle date proposée" }
+                    : STATUS_LABELS[a.status] ?? STATUS_LABELS.pending;
                 const date = new Date(a.scheduledAt);
-                const now = new Date();
-                const msToStart = date.getTime() - now.getTime();
                 // Vidéo/audio : joignable seulement autour de l'horaire (30 min avant → 60 min après).
                 // Messagerie : joignable en continu tant que la séance est confirmée et non close.
+                // Vidéo/audio : la salle ouvre 15 minutes avant et ferme à la fin de l'heure.
                 const isJoinable =
                   a.status === "confirmed" &&
-                  (a.type === "text"
-                    ? true
-                    : a.webrtcRoomId && msToStart <= 30 * 60 * 1000 && msToStart >= -60 * 60 * 1000);
+                  (a.type === "text" ? true : Boolean(a.webrtcRoomId) && sessionPhase(a.scheduledAt, a.durationMinutes) === "open");
+                const awaitingMe = a.status === "pending" && (isTherapist ? a.proposedBy === "patient" : a.proposedBy === "therapist");
                 const joinHref = a.type === "text" ? `/appointments/${a.id}/chat` : `/appointments/${a.id}/room`;
 
                 const otherName = isTherapist
@@ -160,8 +195,41 @@ export default async function PatientAppointmentsPage() {
                       </div>
                     )}
 
+                    {a.status === "pending" && (
+                      <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--kk-border)" }}>
+                        <p className="text-xs font-semibold mb-3" style={{ color: awaitingMe ? "var(--kk-purple-text)" : "var(--kk-muted)" }}>
+                          {isTherapist
+                            ? awaitingMe
+                              ? "Le patient propose cette date : confirmez-la ou proposez-en une autre."
+                              : "Vous avez proposé cette date : en attente de la réponse du patient."
+                            : awaitingMe
+                            ? "Votre praticien propose cette date : acceptez-la ou proposez-en une autre."
+                            : "En attente de la confirmation de votre praticien."}
+                        </p>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {isTherapist && awaitingMe && (
+                            <form action={confirmAppointmentAction}>
+                              <input type="hidden" name="appointmentId" value={String(a.id)} />
+                              <button type="submit" className="text-xs font-bold px-4 py-2 rounded-full" style={{ background: "var(--kk-green)", color: "#fff" }}>
+                                Confirmer
+                              </button>
+                            </form>
+                          )}
+                          {!isTherapist && awaitingMe && (
+                            <form action={acceptProposalAction}>
+                              <input type="hidden" name="appointmentId" value={String(a.id)} />
+                              <button type="submit" className="text-xs font-bold px-4 py-2 rounded-full" style={{ background: "var(--kk-green)", color: "#fff" }}>
+                                Accepter cette date
+                              </button>
+                            </form>
+                          )}
+                          <ProposeTimeForm appointmentId={a.id} action={proposeAppointmentTimeAction} />
+                        </div>
+                      </div>
+                    )}
+
                     {!isTherapist && a.status === "pending" && (
-                      <div className="mt-4 pt-4 flex gap-2" style={{ borderTop: "1px solid var(--kk-border)" }}>
+                      <div className="mt-3 flex gap-2">
                         <form action={cancelAppointmentAction}>
                           <input type="hidden" name="appointmentId" value={String(a.id)} />
                           <button

@@ -42,12 +42,11 @@ describe("wallClock", () => {
 describe("generateSlots", () => {
   const options = { rules: MONDAY_9_TO_12, timeZone: "Africa/Bamako", from: SUNDAY_NOON, busy: [] };
 
-  it("offers hourly slots that fit the 45-minute session", () => {
+  it("offers one-hour sessions with a 15-minute break between them", () => {
     const slots = generateSlots({ ...options, days: 1 });
     expect(slots.map((s) => s.toISOString())).toEqual([
       "2026-11-02T09:00:00.000Z",
-      "2026-11-02T10:00:00.000Z",
-      "2026-11-02T11:00:00.000Z",
+      "2026-11-02T10:15:00.000Z",
     ]);
   });
 
@@ -57,7 +56,7 @@ describe("generateSlots", () => {
   });
 
   it("repeats every week up to the horizon", () => {
-    expect(generateSlots({ ...options, days: 14 })).toHaveLength(6);
+    expect(generateSlots({ ...options, days: 14 })).toHaveLength(4);
   });
 
   it("removes slots overlapping a busy period, even with a different start", () => {
@@ -67,14 +66,14 @@ describe("generateSlots", () => {
   });
 
   it("refuses slots in the past or too soon", () => {
-    const from = new Date("2026-11-02T08:30:00.000Z");
+    const from = new Date("2026-11-02T07:30:00.000Z");
     const slots = generateSlots({ ...options, from, days: 0 });
-    expect(slots.map((s) => s.getUTCHours())).toEqual([11]);
+    expect(slots.map((s) => s.toISOString())).toEqual(["2026-11-02T10:15:00.000Z"]);
   });
 
   it("deduplicates overlapping rules", () => {
     const rules = [...MONDAY_9_TO_12, ...MONDAY_9_TO_12];
-    expect(generateSlots({ ...options, rules, days: 1 })).toHaveLength(3);
+    expect(generateSlots({ ...options, rules, days: 1 })).toHaveLength(2);
   });
 
   it("uses the therapist's timezone", () => {

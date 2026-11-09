@@ -304,10 +304,19 @@ export async function verifyEmailToken(token: string): Promise<VerifyEmailResult
     return result.reason === "expired" ? "expired" : "invalid";
   }
 
-  await prisma.user.update({
+  const verified = await prisma.user.update({
     where: { id: result.userId },
     data: { emailVerifiedAt: new Date() },
+    select: { role: true },
   });
+  if (verified.role === "patient" || verified.role === "therapist") {
+    await alertStaffOnTelegram("manage_users", {
+      type: "email.verified",
+      title: "E-mail vérifié",
+      link: "/admin/users?email=verifie",
+      alert: { accountRole: verified.role === "therapist" ? "praticien" : "patient" },
+    });
+  }
 
   return "success";
 }

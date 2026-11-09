@@ -39,3 +39,13 @@ export function subscribeToAppointment(
   chatBus.on(event, onMessage);
   return () => chatBus.off(event, onMessage);
 }
+
+export function publishConversationMessage(conversationId: number, message: ChatMessage) {
+  chatBus.emit(`conversation:${conversationId}`, message);
+}
+
+export function subscribeToConversation(conversationId: number, onMessage: (message: ChatMessage) => void): () => void {
+  const event = `conversation:${conversationId}`;
+  chatBus.on(event, onMessage);
+  return () => chatBus.off(event, onMessage);
+}

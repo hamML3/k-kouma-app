@@ -50,6 +50,7 @@ export default function RoomClient({
   otherId,
   durationMinutes,
   appointmentId,
+  endsAt,
 }: {
   roomId: string;
   role: "patient" | "therapist";
@@ -60,6 +61,7 @@ export default function RoomClient({
   scheduledAt: string;
   durationMinutes: number;
   appointmentId: number;
+  endsAt: string;
 }) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -76,6 +78,9 @@ export default function RoomClient({
   const [isMuted, setIsMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(!videoEnabled);
   const [elapsed, setElapsed] = useState(0);
+  const [remaining, setRemaining] = useState(() => Math.max(0, Math.floor((new Date(endsAt).getTime() - Date.now()) / 1000)));
+  const [endedByTime, setEndedByTime] = useState(false);
+  const [timeWarning, setTimeWarning] = useState<string | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [isPendingCompletion, startCompletionTransition] = useTransition();
 
@@ -289,6 +294,25 @@ export default function RoomClient({
     return () => clearInterval(t);
   }, [connState]);
 
+  // ── Fin de séance : la séance dure une heure, l'appel s'arrête à l'heure prévue ──
+  const endCallRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    const end = new Date(endsAt).getTime();
+    const tick = () => {
+      const left = Math.max(0, Math.floor((end - Date.now()) / 1000));
+      setRemaining(left);
+      if (left <= 600 && left > 120) setTimeWarning("Il reste moins de 10 minutes de séance.");
+      else if (left <= 120 && left > 0) setTimeWarning("La séance se termine dans moins de 2 minutes.");
+      if (left === 0) {
+        setEndedByTime(true);
+        endCallRef.current();
+      }
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [endsAt]);
+
   // ── Controls ─────────────────────────────────────────────────────────────
   const toggleMute = () => {
     localStreamRef.current?.getAudioTracks().forEach((t) => {
@@ -317,6 +341,13 @@ export default function RoomClient({
 
     setConnState("ended");
   };
+  // Rafraîchi après chaque rendu : le minuteur de fin appelle toujours la version à jour.
+  useEffect(() => {
+    endCallRef.current = () => {
+      if (pcRef.current || localStreamRef.current) endCall();
+      else setConnState("ended");
+    };
+  });
 
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -336,6 +367,11 @@ export default function RoomClient({
           >
             Séance terminée
           </h2>
+          {endedByTime && (
+            <p className="text-sm mb-2" style={{ color: "rgba(255,255,255,0.75)" }}>
+              L&apos;heure de la séance est écoulée : l&apos;appel s&apos;est arrêté automatiquement.
+            </p>
+          )}
           <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
             Durée : {fmt(elapsed)}
           </p>
@@ -491,6 +527,18 @@ export default function RoomClient({
               style={{ background: "#FF4444", animation: "pulse 2s infinite" }}
             />
             <span className="text-xs font-bold text-white font-mono">{fmt(elapsed)}</span>
+            <span className="text-xs text-white/70">· reste {fmt(remaining)}</span>
+          </div>
+        )}
+
+        {/* Avertissement de fin de séance */}
+        {timeWarning && (
+          <div
+            role="status"
+            className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-xs font-bold text-center"
+            style={{ background: "rgba(197,138,61,0.95)", color: "#fff" }}
+          >
+            {timeWarning}
           </div>
         )}
 

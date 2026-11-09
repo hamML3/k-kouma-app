@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { sessionWindow } from "@/lib/sessionWindow";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import ChatClient from "./_client";
@@ -59,6 +60,8 @@ export default async function ChatPage({
       otherName={otherName || "Participant"}
       otherId={otherId}
       durationMinutes={appointment.durationMinutes}
+      opensAt={sessionWindow(appointment.scheduledAt, appointment.durationMinutes).opensAt.toISOString()}
+      endsAt={sessionWindow(appointment.scheduledAt, appointment.durationMinutes).endsAt.toISOString()}
       initialMessages={initialMessages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
     />
   );

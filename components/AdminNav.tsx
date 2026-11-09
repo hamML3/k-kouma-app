@@ -69,6 +69,18 @@ const NAV_LINKS: NavLink[] = [
     ),
   },
   {
+    href: "/admin/support",
+    label: "Support",
+    // Comme les signalements : les échanges avec le support peuvent être
+    // sensibles, la lecture est réservée à manage_support.
+    requiresPermission: "manage_support",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5v6a1.5 1.5 0 0 1-1.5 1.5H8l-3.5 3v-3H4.5A1.5 1.5 0 0 1 3 10.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/reviews",
     label: "Avis",
     requiresPermission: "manage_reports",

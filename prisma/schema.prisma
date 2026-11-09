@@ -12,34 +12,37 @@ datasource db {
 // =========================================================================
 
 model User {
-  id                Int        @id @default(autoincrement())
-  email             String     @unique @db.VarChar(180)
-  phoneNumber       String?    @unique @map("phone_number") @db.VarChar(20)
-  passwordHash      String     @map("password_hash") @db.VarChar(255)
+  id                    Int        @id @default(autoincrement())
+  email                 String     @unique @db.VarChar(180)
+  phoneNumber           String?    @unique @map("phone_number") @db.VarChar(20)
+  passwordHash          String     @map("password_hash") @db.VarChar(255)
   // Horodatage du dernier changement de mot de passe — permet d'invalider
   // les sessions JWT déjà émises (ex. appareil volé) dès qu'un mot de passe
   // est réinitialisé, sans avoir à gérer de liste de révocation.
-  passwordChangedAt DateTime?  @map("password_changed_at")
-  emailVerifiedAt   DateTime?  @map("email_verified_at")
-  phoneVerifiedAt   DateTime?  @map("phone_verified_at")
-  status            UserStatus @default(active)
-  role              UserRole   @default(patient)
+  passwordChangedAt     DateTime?  @map("password_changed_at")
+  emailVerifiedAt       DateTime?  @map("email_verified_at")
+  // Nouvelle adresse demandée depuis « Mon compte », en attente du clic sur
+  // le lien envoyé à cette adresse (VerificationToken de type email_change).
+  pendingEmail          String?    @map("pending_email") @db.VarChar(180)
+  phoneVerifiedAt       DateTime?  @map("phone_verified_at")
+  status                UserStatus @default(active)
+  role                  UserRole   @default(patient)
   // Permissions accordées à un compte "modérateur" (ignoré pour les autres
   // rôles) — tableau de clés Permission (lib/permissions.ts), ex.
   // ["manage_finances"]. NULL = aucune permission accordée. Remplace le jeu
   // de capacités fixe des modérateurs par un ensemble configurable par
   // compte (voir prisma/backfill-moderator-permissions.ts pour les comptes
   // modérateurs créés avant cette colonne).
-  permissions       Json?
+  permissions           Json?
   // Conversation Telegram reliée par un membre du staff (/admin/compte) pour
   // recevoir les alertes de l'équipe. Le code, à usage unique et valable
   // 15 minutes, est transmis au bot par le lien t.me/<bot>?start=<code>.
-  telegramChatId        String?   @map("telegram_chat_id") @db.VarChar(32)
-  telegramLinkedAt      DateTime? @map("telegram_linked_at")
-  telegramLinkCode      String?   @unique @map("telegram_link_code") @db.VarChar(64)
-  telegramLinkExpiresAt DateTime? @map("telegram_link_expires_at")
-  createdAt         DateTime   @default(now()) @map("created_at")
-  updatedAt         DateTime   @updatedAt @map("updated_at")
+  telegramChatId        String?    @map("telegram_chat_id") @db.VarChar(32)
+  telegramLinkedAt      DateTime?  @map("telegram_linked_at")
+  telegramLinkCode      String?    @unique @map("telegram_link_code") @db.VarChar(64)
+  telegramLinkExpiresAt DateTime?  @map("telegram_link_expires_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
 
   patientProfile      PatientProfile?
   therapistProfile    TherapistProfile?
@@ -51,16 +54,19 @@ model User {
   patientAppointments   Appointment[] @relation("PatientAppointments")
   therapistAppointments Appointment[] @relation("TherapistAppointments")
 
-  verificationTokens     VerificationToken[]
-  otpCodes               OtpCode[]
-  sentMessages           Message[]
-  payments               Payment[]
-  therapistEarnings      TherapistEarning[]
-  payoutRequests         PayoutRequest[]     @relation("PayoutRequestTherapist")
-  payoutRequestsReviewed PayoutRequest[]     @relation("PayoutRequestReviewer")
-  auditLogs              AuditLog[]
-  submittedArticles      SubmittedArticle[]  @relation("ArticleAuthor")
-  reviewedArticles       SubmittedArticle[]  @relation("ArticleReviewer")
+  verificationTokens       VerificationToken[]
+  otpCodes                 OtpCode[]
+  sentMessages             Message[]
+  conversationsOwned       Conversation[]        @relation("ConversationOwner")
+  conversationsAsTherapist Conversation[]        @relation("ConversationTherapist")
+  conversationMessages     ConversationMessage[] @relation("ConversationMessageSender")
+  payments                 Payment[]
+  therapistEarnings        TherapistEarning[]
+  payoutRequests           PayoutRequest[]       @relation("PayoutRequestTherapist")
+  payoutRequestsReviewed   PayoutRequest[]       @relation("PayoutRequestReviewer")
+  auditLogs                AuditLog[]
+  submittedArticles        SubmittedArticle[]    @relation("ArticleAuthor")
+  reviewedArticles         SubmittedArticle[]    @relation("ArticleReviewer")
 
   reportsFiled    Report[] @relation("ReportsFiled")
   reportsReceived Report[] @relation("ReportsReceived")
@@ -100,6 +106,7 @@ model VerificationToken {
 enum VerificationTokenType {
   email_verify
   password_reset
+  email_change
 }
 
 /// Code à 6 chiffres pour la vérification du numéro de téléphone, par SMS ou WhatsApp.
@@ -167,31 +174,31 @@ model PatientProfile {
 }
 
 model TherapistProfile {
-  id                        Int       @id @default(autoincrement())
-  userId                    Int       @unique @map("user_id")
-  firstName                 String    @map("first_name") @db.VarChar(100)
-  lastName                  String    @map("last_name") @db.VarChar(100)
-  specialties               String?   @db.Text
-  bio                       String?   @db.Text
-  profilePictureUrl         String?   @map("profile_picture_url") @db.VarChar(255)
-  isVerified                Boolean   @default(false) @map("is_verified")
-  languages                 String?   @db.VarChar(255)
-  diplomaUrl                String?   @map("diploma_url") @db.VarChar(512)
-  documentsJson             Json?     @map("documents_json")
-  rejectedAt                DateTime? @map("rejected_at")
+  id                        Int              @id @default(autoincrement())
+  userId                    Int              @unique @map("user_id")
+  firstName                 String           @map("first_name") @db.VarChar(100)
+  lastName                  String           @map("last_name") @db.VarChar(100)
+  specialties               String?          @db.Text
+  bio                       String?          @db.Text
+  profilePictureUrl         String?          @map("profile_picture_url") @db.VarChar(255)
+  isVerified                Boolean          @default(false) @map("is_verified")
+  languages                 String?          @db.VarChar(255)
+  diplomaUrl                String?          @map("diploma_url") @db.VarChar(512)
+  documentsJson             Json?            @map("documents_json")
+  rejectedAt                DateTime?        @map("rejected_at")
   // Commission K-Kouma sur les séances de ce thérapeute (pourcentage, ex.
   // 20.00 = 20%). NULL = utilise PlatformSettings.defaultCommissionPercent.
-  commissionPercent         Decimal?  @map("commission_percent") @db.Decimal(5, 2)
+  commissionPercent         Decimal?         @map("commission_percent") @db.Decimal(5, 2)
   // Dernier pourcentage explicitement accepté par le thérapeute (couverture
   // juridique) — comparé au pourcentage effectif à chaque connexion ; un
   // écart déclenche une nouvelle demande d'acceptation.
-  commissionAcceptedPercent Decimal?  @map("commission_accepted_percent") @db.Decimal(5, 2)
-  commissionAcceptedAt      DateTime? @map("commission_accepted_at")
+  commissionAcceptedPercent Decimal?         @map("commission_accepted_percent") @db.Decimal(5, 2)
+  commissionAcceptedAt      DateTime?        @map("commission_accepted_at")
   // Fuseau horaire IANA dans lequel le thérapeute saisit ses disponibilités
   // hebdomadaires (TherapistAvailability) — les créneaux sont recalculés en
   // UTC à partir de ces heures "murales", puis affichés au patient dans son
   // propre fuseau (PatientProfile.timezone). Voir lib/availability.ts.
-  timezone                  String    @default("Africa/Bamako") @db.VarChar(50)
+  timezone                  String           @default("Africa/Bamako") @db.VarChar(50)
   // Métier affiché aux patients. Un coach garde le rôle "therapist" (agenda,
   // commission, validation) mais n'est pas un professionnel de santé : voir
   // canChooseCoach dans lib/practitioners.ts.
@@ -209,36 +216,36 @@ enum PractitionerKind {
 }
 
 model PlatformSettings {
-  id                       Int      @id @default(1)
-  defaultCommissionPercent Decimal  @default(20.00) @map("default_commission_percent") @db.Decimal(5, 2)
+  id                        Int       @id @default(1)
+  defaultCommissionPercent  Decimal   @default(20.00) @map("default_commission_percent") @db.Decimal(5, 2)
   // Bannière globale affichée en haut du site (espace public et connecté) —
   // announcementActive=false ou texte vide : aucune bannière affichée. Le
   // texte est rendu tel quel (pas de mise en forme), dismissible par visiteur.
-  announcementText         String?  @map("announcement_text") @db.Text
-  announcementActive       Boolean  @default(false) @map("announcement_active")
+  announcementText          String?   @map("announcement_text") @db.Text
+  announcementActive        Boolean   @default(false) @map("announcement_active")
   // Mode maintenance : affiche un bandeau d'avertissement sur tout le site et
   // bloque les nouveaux achats de séances (lib/actions/payments.ts) — ne
   // touche jamais /admin, pour pouvoir le désactiver soi-même sans y être
   // bloqué.
-  maintenanceModeEnabled   Boolean  @default(false) @map("maintenance_mode_enabled")
+  maintenanceModeEnabled    Boolean   @default(false) @map("maintenance_mode_enabled")
   // Active/désactive le pont de paiement manuel Orange Money (lib/orangeMoney.ts)
   // sans retirer la variable d'environnement ni redéployer.
-  orangeMoneyManualEnabled Boolean  @default(true) @map("orange_money_manual_enabled")
+  orangeMoneyManualEnabled  Boolean   @default(true) @map("orange_money_manual_enabled")
   // Code marchand Orange Money saisi depuis /admin/settings. Prioritaire sur
   // ORANGE_MONEY_MERCHANT_CODE (.env), qui ne sert plus que de repli.
-  orangeMoneyMerchantCode  String?  @map("orange_money_merchant_code") @db.VarChar(30)
+  orangeMoneyMerchantCode   String?   @map("orange_money_merchant_code") @db.VarChar(30)
   // Nom affiché par Orange Money au moment de payer : le patient vérifie qu'il
   // paie bien K-Kouma avant de valider.
-  orangeMoneyMerchantName  String?  @map("orange_money_merchant_name") @db.VarChar(100)
+  orangeMoneyMerchantName   String?   @map("orange_money_merchant_name") @db.VarChar(100)
   // Affiche ou masque la carte "Coach de vie / Conseil" sur la page d'accueil publique.
-  showLifeCoachCard        Boolean  @default(true) @map("show_life_coach_card")
+  showLifeCoachCard         Boolean   @default(true) @map("show_life_coach_card")
   // Mention fiscale imprimée sur les factures (régime de TVA, exonération…).
-  invoiceTaxNote           String?  @map("invoice_tax_note") @db.VarChar(255)
+  invoiceTaxNote            String?   @map("invoice_tax_note") @db.VarChar(255)
   // Menu et commandes du bot Telegram activés (webhook déclaré) : les alertes
   // portent alors des boutons d'action (valider un paiement…).
   telegramCommandsEnabledAt DateTime? @map("telegram_commands_enabled_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
-  updatedById              Int?     @map("updated_by_id")
+  updatedAt                 DateTime  @updatedAt @map("updated_at")
+  updatedById               Int?      @map("updated_by_id")
 
   @@map("platform_settings")
 }
@@ -408,23 +415,29 @@ enum AssignmentStatus {
 }
 
 model Appointment {
-  id                Int               @id @default(autoincrement())
-  patientId         Int               @map("patient_id")
-  therapistId       Int               @map("therapist_id")
-  scheduledAt       DateTime          @map("scheduled_at")
-  durationMinutes   Int               @default(45) @map("duration_minutes")
-  status            AppointmentStatus @default(pending)
-  type              AppointmentType   @default(video)
-  webrtcRoomId      String?           @map("webrtc_room_id") @db.VarChar(100)
+  id                  Int               @id @default(autoincrement())
+  patientId           Int               @map("patient_id")
+  therapistId         Int               @map("therapist_id")
+  scheduledAt         DateTime          @map("scheduled_at")
+  durationMinutes     Int               @default(45) @map("duration_minutes")
+  status              AppointmentStatus @default(pending)
+  type                AppointmentType   @default(video)
+  webrtcRoomId        String?           @map("webrtc_room_id") @db.VarChar(100)
   // Paiement qui a fourni le crédit consommé par cette réservation (FIFO) —
   // permet de retrouver le prix réellement payé pour cette séance précise.
-  fundedByPaymentId Int?              @map("funded_by_payment_id")
+  fundedByPaymentId   Int?              @map("funded_by_payment_id")
   // Horodatage de l'envoi du rappel "séance dans ~24h" (email + notification
   // in-app, voir app/api/cron/session-reminders/route.ts). Posé *avant*
   // l'envoi : un rendez-vous déjà traité n'est jamais rappelé deux fois,
   // même si le cron plante en plein lot ou si deux exécutions se chevauchent.
-  reminderSentAt    DateTime?         @map("reminder_sent_at")
-  createdAt         DateTime          @default(now()) @map("created_at")
+  reminderSentAt      DateTime?         @map("reminder_sent_at")
+  // Rappel « votre séance commence bientôt », dans l'heure qui précède.
+  startReminderSentAt DateTime?         @map("start_reminder_sent_at")
+  // Pendant qu'un rendez-vous est en attente, qui a proposé la date actuelle :
+  // "patient" (demande initiale ou nouvelle date du patient) ou "therapist"
+  // (contre-proposition). L'autre partie accepte ou propose à son tour.
+  proposedBy          String            @default("patient") @map("proposed_by") @db.VarChar(10)
+  createdAt           DateTime          @default(now()) @map("created_at")
 
   patient         User              @relation("PatientAppointments", fields: [patientId], references: [id])
   therapist       User              @relation("TherapistAppointments", fields: [therapistId], references: [id])
@@ -502,6 +515,55 @@ model Message {
 
   @@index([appointmentId, createdAt])
   @@map("messages")
+}
+
+enum ConversationKind {
+  care
+  support
+}
+
+/// Messagerie hors séance, ouverte à toute heure : un patient et son praticien
+/// (care), ou un patient / praticien et l'équipe K-Kouma (support). Les
+/// messages sont chiffrés (lib/noteEncryption.ts, contexte lié à la
+/// conversation). `key` garantit une seule conversation par couple :
+/// "care:<patient>:<praticien>" ou "support:<utilisateur>".
+model Conversation {
+  id            Int              @id @default(autoincrement())
+  kind          ConversationKind
+  key           String           @unique @db.VarChar(64)
+  // Patient (care) ou personne qui écrit au support (support).
+  ownerId       Int              @map("owner_id")
+  // Praticien de la conversation (care seulement).
+  therapistId   Int?             @map("therapist_id")
+  ownerReadAt   DateTime?        @map("owner_read_at")
+  // Lu par le praticien (care) ou par l'équipe (support).
+  otherReadAt   DateTime?        @map("other_read_at")
+  lastMessageAt DateTime?        @map("last_message_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  owner     User                  @relation("ConversationOwner", fields: [ownerId], references: [id])
+  therapist User?                 @relation("ConversationTherapist", fields: [therapistId], references: [id])
+  messages  ConversationMessage[]
+
+  @@index([kind, lastMessageAt])
+  @@index([therapistId])
+  @@index([ownerId])
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id             Int      @id @default(autoincrement())
+  conversationId Int      @map("conversation_id")
+  senderId       Int      @map("sender_id")
+  // Chiffré : "enc:v1:…"
+  body           String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("ConversationMessageSender", fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("conversation_messages")
 }
 
 // =========================================================================

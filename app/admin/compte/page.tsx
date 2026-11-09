@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { CopyText } from "@/components/CopyText";
+import { ChangeEmailForm } from "@/components/ChangeEmailForm";
 import { telegramStartLink, telegramStatus } from "@/lib/telegram";
 import {
   confirmTelegramLinkAction,
@@ -40,7 +41,7 @@ export default async function AdminAccountPage({
   const user = isStaff
     ? await prisma.user.findUnique({
         where: { id: Number(session.user.id) },
-        select: { telegramChatId: true, telegramLinkedAt: true, telegramLinkCode: true, telegramLinkExpiresAt: true },
+        select: { email: true, pendingEmail: true, telegramChatId: true, telegramLinkedAt: true, telegramLinkCode: true, telegramLinkExpiresAt: true },
       })
     : null;
   const status = telegramStatus();
@@ -51,7 +52,8 @@ export default async function AdminAccountPage({
 
   return (
     <div className="max-w-lg space-y-6">
-      <ChangePasswordForm email={session.user.email ?? ""} />
+      <ChangePasswordForm email={user?.email ?? session.user.email ?? ""} />
+      <ChangeEmailForm currentEmail={user?.email ?? session.user.email ?? ""} pendingEmail={user?.pendingEmail ?? null} />
 
       {isStaff && (
         <div className="kk-card p-6">

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { isPublicPath } from "./publicRoutes";
 
 describe("isPublicPath", () => {
-  it.each(["/", "/login", "/register/therapist", "/blog/depression", "/legal/cgu", "/quiz", "/api/payments/paydunya/webhook", "/media/articles/x.jpg", "/api/telegram/webhook"])(
+  it.each(["/", "/login", "/register/therapist", "/blog/depression", "/legal/cgu", "/quiz", "/api/payments/paydunya/webhook", "/media/articles/x.jpg", "/api/telegram/webhook", "/confirm-email"])(
     "leaves %s public",
     (path) => expect(isPublicPath(path)).toBe(true)
   );

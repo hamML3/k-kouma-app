@@ -6,11 +6,14 @@ import { AppNavLinks, type NavLink } from "./AppNavLinks";
 import { NotificationBell } from "./NotificationBell";
 import { PlatformBanner } from "./PlatformBanner";
 import { getPlatformSettings } from "@/lib/platformSettings";
+import { auth } from "@/auth";
+import { unreadConversationCount } from "@/lib/conversations";
 
 const PATIENT_LINKS: NavLink[] = [
   { href: "/dashboard", label: "Tableau de bord" },
   { href: "/therapists", label: "Psychologues" },
   { href: "/appointments", label: "Rendez-vous" },
+  { href: "/messages", label: "Messages" },
   { href: "/subscription", label: "Abonnement" },
   { href: "/quiz", label: "Quiz" },
   { href: "/blog", label: "Articles" },
@@ -20,6 +23,7 @@ const THERAPIST_LINKS: NavLink[] = [
   { href: "/dashboard", label: "Tableau de bord" },
   { href: "/patients", label: "Mes patients" },
   { href: "/appointments", label: "Rendez-vous" },
+  { href: "/messages", label: "Messages" },
   { href: "/disponibilites", label: "Disponibilités" },
   { href: "/earnings", label: "Mes gains" },
   { href: "/articles/proposer", label: "Mes articles" },
@@ -34,8 +38,16 @@ const THERAPIST_LINKS: NavLink[] = [
  * plateforme lus ici (bannière/maintenance) sont toujours à jour.
  */
 export async function AppHeader({ role, displayName }: { role: string; displayName: string }) {
-  const links = role === "therapist" ? THERAPIST_LINKS : PATIENT_LINKS;
   const settings = await getPlatformSettings();
+  // Nombre de conversations non lues, affiché à côté de « Messages ».
+  const session = await auth();
+  const unread =
+    session?.user && (role === "patient" || role === "therapist")
+      ? await unreadConversationCount({ id: Number(session.user.id), role })
+      : 0;
+  const links = (role === "therapist" ? THERAPIST_LINKS : PATIENT_LINKS).map((l) =>
+    l.href === "/messages" && unread > 0 ? { ...l, label: `Messages (${unread})` } : l
+  );
 
   const signOut = (
     <form action={signOutAction}>

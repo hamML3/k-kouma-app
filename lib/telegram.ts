@@ -271,6 +271,10 @@ export type StaffAlertFacts = {
   count?: number;
   /** Paiement concerné : permet les boutons Valider / Refuser quand le menu du bot est actif. */
   paymentId?: number;
+  /** Rôle de l'auteur d'un message au support : « patient » ou « praticien », jamais son identité. */
+  fromRole?: "patient" | "praticien";
+  /** Rôle du compte qui vient de vérifier son e-mail. */
+  accountRole?: "patient" | "praticien";
 };
 
 type StaffAlertInput = { type: string; link?: string; alert?: StaffAlertFacts };
@@ -337,6 +341,16 @@ const STAFF_ALERTS: Record<string, StaffAlertSpec> = {
       typeof facts.count === "number" && facts.count > 0
         ? [`${facts.count} inscription${facts.count > 1 ? "s" : ""} aujourd'hui.`]
         : [],
+    linkLabel: "Voir les utilisateurs",
+  },
+  "support.message": {
+    title: "Nouveau message au support",
+    lines: (facts) => (facts.fromRole === "praticien" ? ["D'un praticien."] : facts.fromRole === "patient" ? ["D'un patient."] : []),
+    linkLabel: "Lire et répondre",
+  },
+  "email.verified": {
+    title: "E-mail vérifié",
+    lines: (facts) => [facts.accountRole === "praticien" ? "Un praticien a confirmé son adresse e-mail." : "Un patient a confirmé son adresse e-mail."],
     linkLabel: "Voir les utilisateurs",
   },
   "review.submitted": {

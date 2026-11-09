@@ -20,7 +20,7 @@ const PAGE_SIZE = 30;
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ role?: string; q?: string; page?: string; email?: string }>;
 }) {
   const session = await auth();
   // isAdmin : seul un véritable admin peut créer un compte admin/modérateur
@@ -31,11 +31,14 @@ export default async function AdminUsersPage({
 
   const params = await searchParams;
   const roleFilter = params.role;
+  // Filtre sur la vérification de l'adresse e-mail : "verifie" ou "non-verifie".
+  const emailFilter = params.email === "verifie" || params.email === "non-verifie" ? params.email : undefined;
   const q = params.q?.trim();
   const page = Math.max(1, Number(params.page) || 1);
 
   const where: Prisma.UserWhereInput = {
     ...(roleFilter ? { role: roleFilter as "admin" | "therapist" | "patient" | "moderator" } : {}),
+    ...(emailFilter ? { emailVerifiedAt: emailFilter === "verifie" ? { not: null } : null } : {}),
     ...(q
       ? {
           OR: [
@@ -60,6 +63,7 @@ export default async function AdminUsersPage({
         role: true,
         status: true,
         createdAt: true,
+        emailVerifiedAt: true,
         permissions: true,
         patientProfile: { select: { nickname: true } },
         therapistProfile: { select: { firstName: true, lastName: true, isVerified: true } },
@@ -81,6 +85,7 @@ export default async function AdminUsersPage({
   function pageHref(targetPage: number) {
     const sp = new URLSearchParams();
     if (roleFilter) sp.set("role", roleFilter);
+    if (emailFilter) sp.set("email", emailFilter);
     if (q) sp.set("q", q);
     if (targetPage > 1) sp.set("page", String(targetPage));
     const qs = sp.toString();
@@ -92,6 +97,7 @@ export default async function AdminUsersPage({
   function exportHref() {
     const sp = new URLSearchParams();
     if (roleFilter) sp.set("role", roleFilter);
+    if (emailFilter) sp.set("email", emailFilter);
     if (q) sp.set("q", q);
     const qs = sp.toString();
     return qs ? `/api/admin/export/users?${qs}` : "/api/admin/export/users";
@@ -118,6 +124,7 @@ export default async function AdminUsersPage({
 
       <form action="/admin/users" method="get" className="mb-4">
         {roleFilter && <input type="hidden" name="role" value={roleFilter} />}
+        {emailFilter && <input type="hidden" name="email" value={emailFilter} />}
         <input
           type="search"
           name="q"
@@ -132,6 +139,7 @@ export default async function AdminUsersPage({
           const active = roleFilter === f.value;
           const sp = new URLSearchParams();
           if (f.value) sp.set("role", f.value);
+          if (emailFilter) sp.set("email", emailFilter);
           if (q) sp.set("q", q);
           const qs = sp.toString();
           const href = qs ? `/admin/users?${qs}` : "/admin/users";
@@ -142,6 +150,35 @@ export default async function AdminUsersPage({
               className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
               style={{
                 background: active ? "var(--kk-green)" : "#fff",
+                color: active ? "#fff" : "var(--kk-mid)",
+                border: active ? "none" : "1.5px solid var(--kk-border-mid)",
+              }}
+            >
+              {f.label}
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-2 flex-wrap mb-6 -mt-3">
+        {[
+          { value: undefined, label: "Tous les e-mails" },
+          { value: "verifie", label: "E-mail vérifié" },
+          { value: "non-verifie", label: "E-mail non vérifié" },
+        ].map((f) => {
+          const active = emailFilter === f.value;
+          const sp = new URLSearchParams();
+          if (roleFilter) sp.set("role", roleFilter);
+          if (f.value) sp.set("email", f.value);
+          if (q) sp.set("q", q);
+          const qs = sp.toString();
+          return (
+            <a
+              key={f.label}
+              href={qs ? `/admin/users?${qs}` : "/admin/users"}
+              className="px-3.5 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: active ? "var(--kk-purple)" : "#fff",
                 color: active ? "#fff" : "var(--kk-mid)",
                 border: active ? "none" : "1.5px solid var(--kk-border-mid)",
               }}
@@ -201,9 +238,20 @@ export default async function AdminUsersPage({
                       )}
                       {u.therapistProfile && !u.therapistProfile.isVerified && (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
-                          Non vérifié
+                          Dossier à valider
                         </span>
                       )}
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                        title={u.emailVerifiedAt ? `Vérifié le ${u.emailVerifiedAt.toLocaleDateString("fr-FR")}` : "Le lien de vérification n'a pas encore été ouvert"}
+                        style={
+                          u.emailVerifiedAt
+                            ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" }
+                            : { background: "#FFF1F0", color: "#9B2C20" }
+                        }
+                      >
+                        {u.emailVerifiedAt ? "E-mail vérifié ✓" : "E-mail non vérifié"}
+                      </span>
                     </div>
                     <p className="text-xs mt-0.5 truncate" style={{ color: "var(--kk-muted)" }}>
                       {u.email} · Inscrit le {u.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}

@@ -20,6 +20,8 @@ export default function ChatClient({
   otherName,
   otherId,
   durationMinutes,
+  opensAt,
+  endsAt,
   initialMessages,
 }: {
   appointmentId: number;
@@ -28,6 +30,8 @@ export default function ChatClient({
   otherName: string;
   otherId: number;
   durationMinutes: number;
+  opensAt: string;
+  endsAt: string;
   initialMessages: Message[];
 }) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -35,6 +39,18 @@ export default function ChatClient({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ended, setEnded] = useState(false);
+  // Une séance par écrit dure une heure comme les autres : l'écriture ouvre
+  // 15 minutes avant et se ferme à l'heure de fin (le serveur refuse aussi).
+  const [phase, setPhase] = useState<"early" | "open" | "ended">("open");
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      setPhase(now < new Date(opensAt).getTime() ? "early" : now >= new Date(endsAt).getTime() ? "ended" : "open");
+    };
+    tick();
+    const t = setInterval(tick, 15_000);
+    return () => clearInterval(t);
+  }, [opensAt, endsAt]);
   const [isPendingCompletion, startCompletionTransition] = useTransition();
 
   const lastAt = useRef<string>(initialMessages.at(-1)?.createdAt ?? new Date(0).toISOString());
@@ -198,6 +214,13 @@ export default function ChatClient({
       <div className="px-4 py-4" style={{ background: "#fff", borderTop: "1px solid var(--kk-border)" }}>
         <div className="max-w-xl mx-auto">
           {error && <p className="kk-error mb-2 text-xs">{error}</p>}
+          {phase !== "open" ? (
+            <p className="text-sm text-center py-2" style={{ color: "var(--kk-muted)" }}>
+              {phase === "early"
+                ? `La séance commence à ${new Date(new Date(opensAt).getTime() + 15 * 60_000).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} : vous pourrez écrire 15 minutes avant.`
+                : "L'heure de la séance est écoulée. Pour continuer l'échange, utilisez la messagerie (menu « Messages »)."}
+            </p>
+          ) : (
           <div className="flex items-end gap-2">
             <textarea
               value={draft}
@@ -222,6 +245,7 @@ export default function ChatClient({
               Envoyer
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

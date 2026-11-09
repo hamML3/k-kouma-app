@@ -13,7 +13,7 @@
  * vraiment quelque part.
  */
 
-export const PERMISSIONS = ["manage_users", "manage_therapists", "manage_finances", "manage_reports"] as const;
+export const PERMISSIONS = ["manage_users", "manage_therapists", "manage_finances", "manage_reports", "manage_support"] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -27,6 +27,9 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   // (allégations de comportement, parfois des détails de santé) est plus
   // sensible qu'une donnée financière, donc pas ouvert par défaut.
   manage_reports: "Signalements — consulter et traiter les signalements patients/psychologues",
+  // Comme les signalements, le contenu des échanges avec le support peut être
+  // sensible : la lecture elle-même est réservée à cette permission.
+  manage_support: "Support — lire et répondre aux messages des patients et praticiens",
 };
 
 /**

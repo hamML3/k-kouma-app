@@ -5,7 +5,10 @@ import { BOOKING_HORIZON_DAYS, SESSION_MINUTES, generateSlots, safeTimeZone } fr
  * `configured` est faux tant que le thérapeute n'a saisi aucune disponibilité :
  * la réservation reste alors libre, pour ne pas bloquer ses patients.
  */
-export async function getBookableSlots(therapistId: number): Promise<{ configured: boolean; slots: Date[] }> {
+export async function getBookableSlots(
+  therapistId: number,
+  excludeAppointmentId?: number
+): Promise<{ configured: boolean; slots: Date[] }> {
   const from = new Date();
   const horizon = new Date(from.getTime() + (BOOKING_HORIZON_DAYS + 1) * 86_400_000);
 
@@ -24,6 +27,8 @@ export async function getBookableSlots(therapistId: number): Promise<{ configure
         therapistId,
         status: { in: ["pending", "confirmed"] },
         scheduledAt: { gt: new Date(from.getTime() - 86_400_000), lt: horizon },
+        // Un rendez-vous qu'on déplace ne bloque pas son propre nouveau créneau.
+        ...(excludeAppointmentId ? { id: { not: excludeAppointmentId } } : {}),
       },
       select: { scheduledAt: true, durationMinutes: true },
     }),
@@ -45,7 +50,7 @@ export async function getBookableSlots(therapistId: number): Promise<{ configure
   };
 }
 
-export async function isSlotBookable(therapistId: number, startsAt: Date): Promise<boolean> {
-  const { configured, slots } = await getBookableSlots(therapistId);
+export async function isSlotBookable(therapistId: number, startsAt: Date, excludeAppointmentId?: number): Promise<boolean> {
+  const { configured, slots } = await getBookableSlots(therapistId, excludeAppointmentId);
   return !configured || slots.some((slot) => slot.getTime() === startsAt.getTime());
 }

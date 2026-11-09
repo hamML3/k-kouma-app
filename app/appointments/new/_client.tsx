@@ -80,7 +80,7 @@ export default function BookingClient({
                 Séance avec {therapistName}
               </p>
               <p className="text-xs" style={{ color: "var(--kk-mid)" }}>
-                {rate.toLocaleString("fr-FR")} XOF · 45 min
+                {rate.toLocaleString("fr-FR")} XOF · 1 h
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function BookingClient({
             className="rounded-xl p-4 text-xs"
             style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
           >
-            La séance dure <strong>45 minutes</strong>. Votre praticien confirmera votre créneau par email sous 24h.
+            La séance dure <strong>1 heure</strong>. Votre praticien confirmera votre créneau par email sous 24h.
           </div>
 
           <button type="submit" disabled={!ready} className="kk-btn-purple w-full">

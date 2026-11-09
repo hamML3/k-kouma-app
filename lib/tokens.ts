@@ -5,6 +5,7 @@ import type { VerificationTokenType } from "@prisma/client";
 const TTL_MS: Record<VerificationTokenType, number> = {
   email_verify: 24 * 60 * 60 * 1000, // 24h
   password_reset: 60 * 60 * 1000, // 1h
+  email_change: 24 * 60 * 60 * 1000, // 24h
 };
 
 function hashToken(raw: string): string {

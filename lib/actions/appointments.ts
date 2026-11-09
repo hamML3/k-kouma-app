@@ -10,12 +10,15 @@ import {
   sendAppointmentRequestEmail,
   sendAppointmentConfirmedEmail,
   sendAppointmentCanceledEmail,
+  sendAppointmentProposalEmail,
+  sendAppointmentNoticeEmail,
   formatDateTime,
 } from "@/lib/email";
 import { claimOldestFundingPayment, releaseFundingPayment } from "@/lib/credits";
 import { effectiveCommissionPercent, therapistShare } from "@/lib/commission";
 import { SESSION_PRICING, resolveTherapyType } from "@/lib/pricing";
 import { isSlotBookable } from "@/lib/therapistSlots";
+import { MIN_LEAD_MINUTES, SESSION_MINUTES } from "@/lib/availability";
 import { createNotification } from "@/lib/notifications";
 import { canChooseCoach } from "@/lib/practitioners";
 
@@ -113,7 +116,7 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
             patientId,
             therapistId,
             scheduledAt: new Date(scheduledAt),
-            durationMinutes: 45,
+            durationMinutes: SESSION_MINUTES,
             status: "pending",
             type: type as "video" | "audio" | "text",
             webrtcRoomId: type !== "text" ? randomUUID() : null,
@@ -151,6 +154,32 @@ export async function createAppointmentAction(formData: FormData): Promise<void>
     body: `${patient?.patientProfile?.nickname ?? "Un patient"}, le ${formatDateTime(new Date(scheduledAt))}.`,
     link: "/patients",
   });
+  // Accusé de réception pour le patient : sa demande attend la réponse du praticien.
+  const patientAccount = await prisma.user.findUnique({ where: { id: patientId }, select: { email: true } });
+  const therapistFullName = therapist?.therapistProfile
+    ? `${therapist.therapistProfile.firstName} ${therapist.therapistProfile.lastName}`
+    : "votre praticien";
+  await createNotification({
+    userId: patientId,
+    type: "appointment.requested",
+    title: "Demande de séance envoyée",
+    body: `${therapistFullName}, le ${formatDateTime(new Date(scheduledAt))}. Vous serez prévenu dès sa réponse.`,
+    link: "/appointments",
+  });
+  if (patientAccount) {
+    await notify("appointment.requested", () =>
+      sendAppointmentNoticeEmail({
+        to: patientAccount.email,
+        name: patient?.patientProfile?.nickname ?? "Bonjour",
+        subject: "Votre demande de séance est envoyée",
+        title: "Demande de séance envoyée",
+        lines: [
+          `Votre demande de séance avec ${therapistFullName} le ${formatDateTime(new Date(scheduledAt))} a bien été envoyée.`,
+          "Votre praticien va la confirmer ou vous proposer une autre date. Vous serez prévenu par e-mail.",
+        ],
+      })
+    );
+  }
   if (therapist?.therapistProfile) {
     await notify("appointment.request", () =>
       sendAppointmentRequestEmail(
@@ -237,10 +266,14 @@ export async function confirmAppointmentAction(formData: FormData): Promise<void
     select: { type: true, patientId: true, scheduledAt: true },
   });
 
+  // Le praticien confirme la date proposée par le patient ; une date qu'il a
+  // lui-même proposée attend la réponse du patient (acceptProposalAction).
   const updated = await prisma.appointment.updateMany({
-    where: { id: appointmentId, therapistId, status: "pending" },
+    where: { id: appointmentId, therapistId, status: "pending", proposedBy: "patient" },
     data: {
       status: "confirmed",
+      // La relance « en attente » a pu poser reminderSentAt : le rappel de la veille doit rester possible.
+      reminderSentAt: null,
       // Les séances "messagerie" n'ont pas de salle WebRTC — seuls audio/vidéo en ont besoin.
       ...(appointment?.type !== "text" ? { webrtcRoomId: randomUUID() } : {}),
     },
@@ -355,8 +388,172 @@ export async function completeAppointmentAction(formData: FormData): Promise<voi
     }),
   ]);
 
+  // Le patient est invité à donner son avis (formulaire sur /appointments).
+  await createNotification({
+    userId: appointment.patientId,
+    type: "appointment.completed",
+    title: "Séance terminée",
+    body: "Comment s'est passée votre séance ? Vous pouvez laisser un avis.",
+    link: "/appointments",
+  });
+
   revalidatePath("/appointments");
   revalidatePath("/patients");
   revalidatePath("/earnings");
   redirect("/appointments");
+}
+
+const PROPOSAL_MAX_DAYS = 60;
+
+/** Un autre rendez-vous (en attente ou confirmé) de ce praticien ou de ce patient chevauche-t-il ce créneau ? */
+async function overlapsOther(appointmentId: number, therapistId: number, patientId: number, start: Date, minutes: number): Promise<boolean> {
+  const end = new Date(start.getTime() + minutes * 60_000);
+  const others = await prisma.appointment.findMany({
+    where: {
+      id: { not: appointmentId },
+      status: { in: ["pending", "confirmed"] },
+      OR: [{ therapistId }, { patientId }],
+      scheduledAt: { lt: end, gt: new Date(start.getTime() - 3 * 3_600_000) },
+    },
+    select: { scheduledAt: true, durationMinutes: true },
+  });
+  return others.some((o) => o.scheduledAt.getTime() + (o.durationMinutes || SESSION_MINUTES) * 60_000 > start.getTime());
+}
+
+/**
+ * Négociation de la date d'un rendez-vous en attente : le patient propose,
+ * le praticien confirme ou propose une autre date, et ainsi de suite. Chacun
+ * peut proposer ; la date proposée par le patient doit tomber dans les
+ * disponibilités du praticien, celle du praticien est libre (c'est son
+ * agenda). Aucun chevauchement avec un autre rendez-vous de l'un ou l'autre.
+ */
+export async function proposeAppointmentTimeAction(formData: FormData): Promise<void> {
+  const session = await auth();
+  const role = session?.user?.role;
+  if (!session?.user || (role !== "patient" && role !== "therapist")) redirect("/login");
+  const userId = Number(session.user.id);
+  const appointmentId = Number(formData.get("appointmentId"));
+  const proposed = new Date(String(formData.get("scheduledAt") ?? ""));
+
+  const appointment = appointmentId
+    ? await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { id: true, patientId: true, therapistId: true, status: true, durationMinutes: true },
+      })
+    : null;
+  const byTherapist = appointment?.therapistId === userId;
+  if (!appointment || appointment.status !== "pending" || (!byTherapist && appointment.patientId !== userId)) {
+    redirect("/appointments");
+  }
+
+  const now = Date.now();
+  if (
+    isNaN(proposed.getTime()) ||
+    proposed.getTime() < now + MIN_LEAD_MINUTES * 60_000 ||
+    proposed.getTime() > now + PROPOSAL_MAX_DAYS * 86_400_000
+  ) {
+    redirect("/appointments?error=proposal_date");
+  }
+  const minutes = appointment.durationMinutes || SESSION_MINUTES;
+  if (!byTherapist && !(await isSlotBookable(appointment.therapistId, proposed, appointment.id))) {
+    redirect("/appointments?error=proposal_unavailable");
+  }
+  if (await overlapsOther(appointment.id, appointment.therapistId, appointment.patientId, proposed, minutes)) {
+    redirect("/appointments?error=proposal_conflict");
+  }
+
+  const { count } = await prisma.appointment.updateMany({
+    where: { id: appointment.id, status: "pending" },
+    data: { scheduledAt: proposed, proposedBy: byTherapist ? "therapist" : "patient", reminderSentAt: null },
+  });
+  if (count === 0) redirect("/appointments");
+
+  const recipientId = byTherapist ? appointment.patientId : appointment.therapistId;
+  const [recipient, sender] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { email: true, patientProfile: { select: { nickname: true } }, therapistProfile: { select: { firstName: true } } },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { patientProfile: { select: { nickname: true } }, therapistProfile: { select: { firstName: true, lastName: true } } },
+    }),
+  ]);
+  const fromName = sender?.therapistProfile
+    ? `${sender.therapistProfile.firstName} ${sender.therapistProfile.lastName}`
+    : sender?.patientProfile?.nickname ?? "Votre interlocuteur";
+  await createNotification({
+    userId: recipientId,
+    type: "appointment.proposal",
+    title: "Nouvelle date proposée",
+    body: `${fromName} propose le ${formatDateTime(proposed)}.`,
+    link: "/appointments",
+  });
+  if (recipient) {
+    await notify("appointment.proposal", () =>
+      sendAppointmentProposalEmail(
+        recipient.email,
+        recipient.patientProfile?.nickname ?? recipient.therapistProfile?.firstName ?? "Bonjour",
+        fromName,
+        proposed
+      )
+    );
+  }
+
+  revalidatePath("/appointments");
+  revalidatePath("/patients");
+  redirect("/appointments?proposal=sent");
+}
+
+/** Le patient accepte la date proposée par son praticien : le rendez-vous est confirmé. */
+export async function acceptProposalAction(formData: FormData): Promise<void> {
+  const patientId = await requireUserId("patient");
+  const appointmentId = Number(formData.get("appointmentId"));
+  const appointment = appointmentId
+    ? await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { id: true, patientId: true, therapistId: true, status: true, proposedBy: true, scheduledAt: true, durationMinutes: true, type: true },
+      })
+    : null;
+  if (!appointment || appointment.patientId !== patientId || appointment.status !== "pending" || appointment.proposedBy !== "therapist") {
+    redirect("/appointments");
+  }
+  if (appointment.scheduledAt.getTime() <= Date.now()) redirect("/appointments?error=proposal_date");
+  if (await overlapsOther(appointment.id, appointment.therapistId, patientId, appointment.scheduledAt, appointment.durationMinutes || SESSION_MINUTES)) {
+    redirect("/appointments?error=proposal_conflict");
+  }
+
+  const { count } = await prisma.appointment.updateMany({
+    where: { id: appointment.id, status: "pending", proposedBy: "therapist" },
+    data: { status: "confirmed", reminderSentAt: null, ...(appointment.type !== "text" ? { webrtcRoomId: randomUUID() } : {}) },
+  });
+  if (count > 0) {
+    const [patient, therapist] = await Promise.all([
+      prisma.user.findUnique({ where: { id: patientId }, select: { patientProfile: { select: { nickname: true } } } }),
+      prisma.user.findUnique({ where: { id: appointment.therapistId }, select: { email: true, therapistProfile: { select: { firstName: true } } } }),
+    ]);
+    const patientName = patient?.patientProfile?.nickname ?? "Votre patient";
+    await createNotification({
+      userId: appointment.therapistId,
+      type: "appointment.accepted",
+      title: "Date acceptée",
+      body: `${patientName} a accepté la séance du ${formatDateTime(appointment.scheduledAt)}.`,
+      link: "/appointments",
+    });
+    if (therapist) {
+      await notify("appointment.accepted", () =>
+        sendAppointmentNoticeEmail({
+          to: therapist.email,
+          name: therapist.therapistProfile?.firstName ?? "Bonjour",
+          subject: "Date acceptée : séance confirmée",
+          title: "Séance confirmée",
+          lines: [`${patientName} a accepté la date que vous avez proposée : la séance du ${formatDateTime(appointment.scheduledAt)} est confirmée.`],
+        })
+      );
+    }
+  }
+
+  revalidatePath("/appointments");
+  revalidatePath("/patients");
+  redirect("/appointments?proposal=accepted");
 }

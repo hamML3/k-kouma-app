@@ -1,4 +1,5 @@
 import { PublicNav } from "@/components/PublicNav";
+import { EMERGENCY_NUMBERS } from "@/lib/emergency";
 import { PublicFooter } from "@/components/PublicFooter";
 
 export const metadata = { title: "Contact — K-Kouma" };
@@ -51,8 +52,14 @@ export default function ContactPage() {
                 Urgence
               </p>
               <p className="text-sm" style={{ color: "var(--kk-mid)" }}>
-                K-Kouma n&apos;est pas un service d&apos;urgence. En cas de danger immédiat, contactez le{" "}
-                <strong>15</strong> (SAMU) ou le <strong>17</strong> (Police).
+                K-Kouma n&apos;est pas un service d&apos;urgence. En cas de danger immédiat, appelez{" "}
+                {EMERGENCY_NUMBERS.map((e, i) => (
+                  <span key={e.number}>
+                    {i > 0 && (i === EMERGENCY_NUMBERS.length - 1 ? " ou " : ", ")}
+                    {e.label} : <a href={`tel:${e.number}`} className="font-bold underline">{e.number}</a>
+                  </span>
+                ))}
+                .
               </p>
             </div>
           </div>

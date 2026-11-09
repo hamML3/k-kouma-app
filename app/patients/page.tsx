@@ -150,9 +150,14 @@ export default async function PatientsPage() {
                           color: a.status === "confirmed" ? "var(--kk-green)" : "var(--kk-gold)",
                         }}
                       >
-                        {a.status === "confirmed" ? "✓ Confirmé" : "En attente"}
+                        {a.status === "confirmed" ? "✓ Confirmé" : a.proposedBy === "therapist" ? "Proposition envoyée" : "En attente"}
                       </span>
-                      {a.status === "pending" && (
+                      {a.status === "pending" && a.proposedBy === "therapist" && (
+                        <Link href="/appointments" className="text-xs font-semibold" style={{ color: "var(--kk-muted)" }}>
+                          Date proposée au patient
+                        </Link>
+                      )}
+                      {a.status === "pending" && a.proposedBy === "patient" && (
                         <form action={confirmAppointmentAction}>
                           <input type="hidden" name="appointmentId" value={String(a.id)} />
                           <button

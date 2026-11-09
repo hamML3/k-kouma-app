@@ -180,8 +180,12 @@ export default async function PatientDetailPage({
               Patient depuis le {new Date(patient.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           </div>
-          {/* Signalement — déposable à tout moment, pas seulement pendant une séance */}
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col items-end gap-2">
+            {/* Messagerie hors séance : gratuite, ne consomme aucune séance du patient */}
+            <Link href={`/messages/patient/${patientUserId}`} className="kk-btn-purple text-xs px-4 py-2 whitespace-nowrap">
+              Écrire au patient
+            </Link>
+            {/* Signalement — déposable à tout moment, pas seulement pendant une séance */}
             <ReportButton reportedId={patientUserId} reportedName={nickname} />
           </div>
         </div>

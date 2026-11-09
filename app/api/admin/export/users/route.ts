@@ -36,9 +36,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const roleFilter = searchParams.get("role") || undefined;
   const q = searchParams.get("q")?.trim() || undefined;
+  const emailFilter = searchParams.get("email");
 
   const where: Prisma.UserWhereInput = {
     ...(roleFilter ? { role: roleFilter as "admin" | "therapist" | "patient" | "moderator" } : {}),
+    ...(emailFilter === "verifie" ? { emailVerifiedAt: { not: null } } : emailFilter === "non-verifie" ? { emailVerifiedAt: null } : {}),
     ...(q
       ? {
           OR: [
@@ -60,6 +62,7 @@ export async function GET(req: NextRequest) {
       role: true,
       status: true,
       createdAt: true,
+      emailVerifiedAt: true,
       patientProfile: { select: { nickname: true } },
       therapistProfile: { select: { firstName: true, lastName: true } },
     },
@@ -73,9 +76,10 @@ export async function GET(req: NextRequest) {
     u.patientProfile?.nickname ??
       (u.therapistProfile ? `${u.therapistProfile.firstName} ${u.therapistProfile.lastName}` : ""),
     u.createdAt.toISOString(),
+    u.emailVerifiedAt ? u.emailVerifiedAt.toISOString() : "",
   ]);
 
-  const csv = toCsv(["ID", "Email", "Rôle", "Statut", "Nom", "Inscrit le"], rows);
+  const csv = toCsv(["ID", "Email", "Rôle", "Statut", "Nom", "Inscrit le", "E-mail vérifié le"], rows);
 
   await logAudit({
     actor: { id: Number(session.user.id), email: session.user.email },

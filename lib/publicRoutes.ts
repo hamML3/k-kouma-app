@@ -4,6 +4,8 @@ const PUBLIC_PREFIXES = [
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  // Lien de changement d'adresse : peut s'ouvrir sur un autre appareil, sans session.
+  "/confirm-email",
   "/blog",
   "/faq",
   "/a-propos",

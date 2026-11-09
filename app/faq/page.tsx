@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EMERGENCY_TEXT } from "@/lib/emergency";
 import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 
@@ -14,7 +15,7 @@ const FAQ_GROUPS: { title: string; items: { q: string; a: string }[] }[] = [
       },
       {
         q: "K-Kouma remplace-t-il un suivi médical ou un traitement ?",
-        a: "Non. K-Kouma propose un accompagnement psychologique, pas un diagnostic médical ni la prescription de médicaments. En cas d'urgence ou de danger immédiat, contactez les secours (SAMU : 15, Police : 17).",
+        a: `Non. K-Kouma propose un accompagnement psychologique, pas un diagnostic médical ni la prescription de médicaments. En cas d'urgence ou de danger immédiat, appelez ${EMERGENCY_TEXT}.`,
       },
       {
         q: "Comment choisit-on mon psychologue ?",

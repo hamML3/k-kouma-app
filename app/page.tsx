@@ -6,6 +6,8 @@ import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import { SESSION_PRICING, type TherapyType } from "@/lib/pricing";
 import { getPlatformSettings } from "@/lib/platformSettings";
+import { prisma } from "@/lib/prisma";
+import { PRACTITIONER_TITLES } from "@/lib/practitioners";
 
 // Page statique régénérée au plus toutes les 60s (ISR) : assez réactif pour
 // un réglage admin (ex. showLifeCoachCard), sans rendre la page d'accueil
@@ -267,17 +269,73 @@ function WellbeingSection() {
 }
 
 /* ─── Therapists preview ─────────────────────────────────────────────────── */
-function TherapistsPreview() {
-  const therapists = [
-    { name: "Dr. Awa Diakité",    specialty: "Anxiété, Stress",  langs: ["Français", "Bambara", "Soraï"],          consults: 412, rating: 4.9, color: "var(--kk-green-text)" },
-    { name: "Dr. Mamadou Traoré", specialty: "Dépression",       langs: ["Français", "Bambara", "Peulh"],          consults: 538, rating: 4.8, color: "var(--kk-purple-text)" },
-    { name: "Dr. Néné Koffi",     specialty: "Couples",          langs: ["Français", "Malinké", "Bambara"],        consults: 367, rating: 4.9, color: "var(--kk-gold-text)" },
-    { name: "Dr. Idrissa Koné",   specialty: "Enfants",          langs: ["Français", "Peulh", "Malinké"],         consults: 290, rating: 4.7, color: "#4A7C9B" },
-  ];
+type PreviewTherapist = {
+  id: number;
+  name: string;
+  title: string;
+  specialty: string | null;
+  langs: string[];
+  photo: string | null;
+  consults: number;
+  rating: number | null;
+  reviews: number;
+};
+
+const AVATAR_COLORS = ["var(--kk-green-text)", "var(--kk-purple-text)", "var(--kk-gold-text)", "#4A7C9B"];
+
+/**
+ * Praticiens réellement validés, tirés au hasard à chaque régénération de la
+ * page (toutes les 60 s) : l'accueil reflète l'équipe réelle et la fait
+ * tourner. Les chiffres (consultations, note) sont les vrais, ou absents.
+ */
+async function loadPreviewTherapists(): Promise<PreviewTherapist[]> {
+  const profiles = await prisma.therapistProfile.findMany({
+    where: { isVerified: true, user: { status: "active" } },
+    select: {
+      id: true,
+      userId: true,
+      firstName: true,
+      lastName: true,
+      practitionerKind: true,
+      specialties: true,
+      languages: true,
+      profilePictureUrl: true,
+    },
+    take: 200,
+  });
+  const picked = profiles.sort(() => Math.random() - 0.5).slice(0, 4);
+  if (picked.length === 0) return [];
+  const ids = picked.map((p) => p.userId);
+  const [sessions, ratings] = await Promise.all([
+    prisma.appointment.groupBy({ by: ["therapistId"], where: { therapistId: { in: ids }, status: "completed" }, _count: true }),
+    prisma.sessionReview.groupBy({
+      by: ["therapistId"],
+      where: { therapistId: { in: ids }, status: "published" },
+      _avg: { rating: true },
+      _count: true,
+    }),
+  ]);
+  return picked.map((p) => {
+    const r = ratings.find((x) => x.therapistId === p.userId);
+    return {
+      id: p.id,
+      name: `${p.firstName} ${p.lastName}`.trim(),
+      title: PRACTITIONER_TITLES[p.practitionerKind],
+      specialty: (p.specialties ?? "").split(",").map((x) => x.trim()).filter(Boolean).slice(0, 2).join(", ") || null,
+      langs: (p.languages ?? "").split(",").map((l) => l.trim()).filter(Boolean),
+      photo: p.profilePictureUrl,
+      consults: sessions.find((x) => x.therapistId === p.userId)?._count ?? 0,
+      rating: r?._avg.rating ? Math.round(r._avg.rating * 10) / 10 : null,
+      reviews: r?._count ?? 0,
+    };
+  });
+}
+
+function TherapistsPreview({ therapists }: { therapists: PreviewTherapist[] }) {
+  if (therapists.length === 0) return null;
 
   function initials(name: string) {
-    const parts = name.replace("Dr. ", "").split(" ");
-    return parts.map((p) => p[0]).join("").slice(0, 2);
+    return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
   }
 
   return (
@@ -289,7 +347,7 @@ function TherapistsPreview() {
               className="text-2xl sm:text-3xl font-bold"
               style={{ fontFamily: "var(--font-lora)", color: "#1F2E20" }}
             >
-              Nos psychologues vérifiés
+              Nos praticiens vérifiés
             </h2>
           </div>
           <Link
@@ -302,59 +360,76 @@ function TherapistsPreview() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {therapists.map((t) => (
+          {therapists.map((t, i) => (
             <div
-              key={t.name}
+              key={t.id}
               className="rounded-2xl p-5"
               style={{ border: "1px solid #EDE8DC", background: "#FAFAF8" }}
             >
               {/* Avatar */}
               <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
-                  style={{ background: t.color }}
-                >
-                  {initials(t.name)}
-                </div>
+                {t.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.photo} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                  >
+                    {initials(t.name)}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="font-bold text-sm leading-tight truncate" style={{ color: "#1F2E20", fontFamily: "var(--font-lora)" }}>
                     {t.name}
                   </p>
-                  <p className="text-xs" style={{ color: "var(--kk-muted)" }}>Psychologue clinicien</p>
+                  <p className="text-xs" style={{ color: "var(--kk-muted)" }}>{t.title}</p>
                 </div>
               </div>
 
-              <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: "#5C645B" }}>
-                {(() => {
-                  const icon = getSpecialtyIcon(t.specialty);
-                  return icon ? <Icon name={icon} size={13} /> : null;
-                })()}
-                Spécialité : {t.specialty}
-              </p>
+              {t.specialty && (
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1.5" style={{ color: "#5C645B" }}>
+                  {(() => {
+                    const icon = getSpecialtyIcon(t.specialty.split(",")[0]);
+                    return icon ? <Icon name={icon} size={13} /> : null;
+                  })()}
+                  {t.specialty}
+                </p>
+              )}
 
               <div className="flex items-center gap-1 mb-3">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="#557B53">
                   <path d="M6 1l1.2 2.5L10 4l-2 1.9.5 2.6L6 7.2 3.5 8.5l.5-2.6L2 4l2.8-.5z" />
                 </svg>
-                <span className="text-xs font-bold" style={{ color: "var(--kk-green-text)" }}>Diplôme vérifié</span>
+                <span className="text-xs font-bold" style={{ color: "var(--kk-green-text)" }}>Vérifié par K-Kouma</span>
               </div>
 
-              <p className="text-xs mb-2" style={{ color: "var(--kk-muted)" }}>Langues</p>
-              <div className="flex flex-wrap gap-1 mb-3">
-                {t.langs.map((l) => (
-                  <span
-                    key={l}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "#E4EDDD", color: "var(--kk-green-text)" }}
-                  >
-                    {l}
-                  </span>
-                ))}
-              </div>
+              {t.langs.length > 0 && (
+                <>
+                  <p className="text-xs mb-2" style={{ color: "var(--kk-muted)" }}>Langues</p>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {t.langs.map((l) => (
+                      <span
+                        key={l}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: "#E4EDDD", color: "var(--kk-green-text)" }}
+                      >
+                        {l}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="flex justify-between text-xs" style={{ color: "var(--kk-muted)" }}>
-                <span>Consultations <strong style={{ color: "#1F2E20" }}>{t.consults}</strong></span>
-                <span>⭐ {t.rating} / 5</span>
+                <span>
+                  {t.consults > 0 ? (
+                    <>Séances <strong style={{ color: "#1F2E20" }}>{t.consults}</strong></>
+                  ) : (
+                    "Nouveau sur K-Kouma"
+                  )}
+                </span>
+                {t.rating !== null && <span>⭐ {t.rating.toLocaleString("fr-FR")} / 5 ({t.reviews})</span>}
               </div>
             </div>
           ))}
@@ -576,6 +651,12 @@ export default async function LandingPage() {
   // ne doit jamais faire échouer la page d'accueil — on retombe sur l'affichage
   // par défaut (carte "Coach de vie" visible) plutôt que de bloquer le build.
   let showLifeCoachCard = true;
+  let previewTherapists: PreviewTherapist[] = [];
+  try {
+    previewTherapists = await loadPreviewTherapists();
+  } catch (err) {
+    console.error("[accueil] praticiens non chargés:", err);
+  }
   try {
     const settings = await getPlatformSettings();
     showLifeCoachCard = settings?.showLifeCoachCard ?? true;
@@ -590,7 +671,7 @@ export default async function LandingPage() {
         <Hero />
         <TherapyTypes showLifeCoachCard={showLifeCoachCard} />
         <WellbeingSection />
-        <TherapistsPreview />
+        <TherapistsPreview therapists={previewTherapists} />
         <ConsultationModes showCoaching={showLifeCoachCard} />
         <SecuritySection />
       </main>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useSyncExternalStore } from "react";
+import { EMERGENCY_NUMBERS } from "@/lib/emergency";
 import Link from "next/link";
 import { saveOnboardingAnswers, type OnboardingAnswers } from "@/lib/actions/onboarding";
 import { Logo } from "@/components/Logo";
@@ -463,10 +464,14 @@ export default function OnboardingClient({ userId, coachingAvailable }: { userId
                 Votre sécurité est notre priorité
               </p>
               <p style={{ color: "#8B2020" }}>
-                Si vous êtes en danger immédiat, appelez le{" "}
-                <strong>15</strong> (SAMU) ou le{" "}
-                <strong>17</strong> (Police). Vous pouvez continuer à utiliser
-                K-Kouma pour un soutien professionnel.
+                Si vous êtes en danger immédiat, appelez{" "}
+                {EMERGENCY_NUMBERS.map((e, i) => (
+                  <span key={e.number}>
+                    {i > 0 && (i === EMERGENCY_NUMBERS.length - 1 ? " ou " : ", ")}
+                    {e.label} : <a href={`tel:${e.number}`} className="font-bold underline">{e.number}</a>
+                  </span>
+                ))}
+                . Vous pouvez continuer à utiliser K-Kouma pour un soutien professionnel.
               </p>
             </div>
           )}

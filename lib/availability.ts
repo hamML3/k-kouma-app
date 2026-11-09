@@ -1,6 +1,6 @@
-export const SESSION_MINUTES = 45;
-// Une séance par heure : 45 minutes de séance, 15 de pause.
-export const SLOT_STEP_MINUTES = 60;
+export const SESSION_MINUTES = 60;
+// Une séance d'une heure, puis 15 minutes de pause avant la suivante.
+export const SLOT_STEP_MINUTES = 75;
 export const BOOKING_HORIZON_DAYS = 14;
 export const MIN_LEAD_MINUTES = 120;
 export const DEFAULT_TIMEZONE = "Africa/Bamako";

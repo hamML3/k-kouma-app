@@ -19,6 +19,7 @@ export const BOT_COMMANDS = [
   { command: "resume", description: "Résumé de l'activité" },
   { command: "paiements", description: "Paiements à vérifier" },
   { command: "inscriptions", description: "Inscriptions récentes" },
+  { command: "utilisateurs", description: "Derniers comptes et e-mails vérifiés" },
   { command: "candidatures", description: "Praticiens à valider" },
   { command: "serveur", description: "État du serveur" },
   { command: "aide", description: "Aide" },
@@ -27,7 +28,7 @@ export const BOT_COMMANDS = [
 const MENU: InlineKeyboard = [
   [{ text: "📊 Résumé", callback_data: "m:resume" }, { text: "💳 Paiements", callback_data: "m:paiements" }],
   [{ text: "🆕 Inscriptions", callback_data: "m:inscriptions" }, { text: "🩺 Candidatures", callback_data: "m:candidatures" }],
-  [{ text: "🖥 Serveur", callback_data: "m:serveur" }],
+  [{ text: "👥 Utilisateurs", callback_data: "m:utilisateurs" }, { text: "🖥 Serveur", callback_data: "m:serveur" }],
 ];
 
 const REJECT_LABELS: Record<string, string> = {
@@ -123,6 +124,8 @@ async function runCommand(staff: Staff, chatId: string, command: string): Promis
       return sendPayments(staff, chatId);
     case "inscriptions":
       return void (await sendTelegramMessage(await registrations(), chatId));
+    case "utilisateurs":
+      return void (await sendTelegramMessage(await users(), chatId));
     case "candidatures":
       return void (await sendTelegramMessage(await applications(), chatId));
     case "serveur":
@@ -216,12 +219,13 @@ async function sendPayments(staff: Staff, chatId: string): Promise<void> {
 }
 
 async function registrations(): Promise<string> {
-  const [today, week, month, total, recent] = await Promise.all([
+  const [today, week, month, total, recent, verified] = await Promise.all([
     prisma.user.count({ where: { role: "patient", createdAt: { gte: startOfDay() } } }),
     prisma.user.count({ where: { role: "patient", createdAt: { gte: startOfDay(6) } } }),
     prisma.user.count({ where: { role: "patient", createdAt: { gte: startOfDay(29) } } }),
     prisma.user.count({ where: { role: "patient" } }),
     prisma.user.count({ where: { role: "therapist", createdAt: { gte: startOfDay(6) } } }),
+    prisma.user.count({ where: { role: "patient", emailVerifiedAt: { not: null } } }),
   ]);
   return [
     "<b>🆕 Inscriptions patients</b>",
@@ -229,9 +233,48 @@ async function registrations(): Promise<string> {
     `7 derniers jours : ${week}`,
     `30 derniers jours : ${month}`,
     `Total : ${total}`,
+    `E-mails vérifiés : ${verified} sur ${total}${total > verified ? ` (${total - verified} non vérifiés)` : ""}`,
     "",
     `Praticiens inscrits ces 7 derniers jours : ${recent}`,
     link("/admin/users", "Voir les utilisateurs"),
+  ].join("\n");
+}
+
+/**
+ * Derniers comptes créés. Les praticiens sont nommés (ce sont des
+ * professionnels inscrits publiquement) ; un patient n'apparaît que sous son
+ * numéro : être inscrit sur K-Kouma révèle un suivi psychologique, donnée de
+ * santé qui n'a pas sa place sur un service tiers. Son nom est à un clic, dans
+ * l'administration.
+ */
+async function users(): Promise<string> {
+  const recent = await prisma.user.findMany({
+    where: { role: { in: ["patient", "therapist"] } },
+    orderBy: { createdAt: "desc" },
+    take: 15,
+    select: {
+      id: true,
+      role: true,
+      createdAt: true,
+      emailVerifiedAt: true,
+      therapistProfile: { select: { firstName: true, lastName: true, practitionerKind: true, isVerified: true } },
+    },
+  });
+  if (recent.length === 0) return "Aucun compte pour l'instant.";
+  const lines = recent.map((u) => {
+    const who = u.therapistProfile
+      ? `${esc(`${u.therapistProfile.firstName} ${u.therapistProfile.lastName}`)} · ${esc(PRACTITIONER_TITLES[u.therapistProfile.practitionerKind])}${u.therapistProfile.isVerified ? "" : " · dossier à valider"}`
+      : `Patient n°${u.id}`;
+    const date = u.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone: "Africa/Bamako" });
+    return `${u.emailVerifiedAt ? "✅" : "✉️"} ${who} · ${date}`;
+  });
+  return [
+    "<b>👥 Derniers comptes</b>",
+    "✅ e-mail vérifié · ✉️ pas encore vérifié",
+    "",
+    ...lines,
+    "",
+    link("/admin/users?email=non-verifie", "Voir les e-mails non vérifiés"),
   ].join("\n");
 }
 

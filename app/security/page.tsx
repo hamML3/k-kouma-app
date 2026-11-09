@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EMERGENCY_TEXT } from "@/lib/emergency";
 import { PublicNav } from "@/components/PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 
@@ -38,7 +39,7 @@ const SECTIONS = [
   {
     title: "En cas d'urgence",
     body: [
-      "K-Kouma est un espace de soutien psychologique, mais ne remplace pas un service d'urgence. Si vous ou un proche êtes en danger immédiat, contactez les secours (SAMU : 15, Police : 17) ou rendez-vous aux urgences les plus proches.",
+      `K-Kouma est un espace de soutien psychologique, mais ne remplace pas un service d'urgence. Si vous ou un proche êtes en danger immédiat, appelez ${EMERGENCY_TEXT}, ou rendez-vous aux urgences les plus proches.`,
     ],
   },
 ];

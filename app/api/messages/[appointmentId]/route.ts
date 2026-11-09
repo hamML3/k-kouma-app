@@ -4,11 +4,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { publishMessage } from "@/lib/chatBus";
 import { sendNewMessageEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import { sessionPhase } from "@/lib/sessionWindow";
 
 async function getParticipantAppointment(appointmentId: number, userId: number) {
   const appt = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { id: true, patientId: true, therapistId: true, type: true },
+    select: { id: true, patientId: true, therapistId: true, type: true, scheduledAt: true, durationMinutes: true, status: true },
   });
   if (!appt) return null;
   if (appt.patientId !== userId && appt.therapistId !== userId) return null;
@@ -102,6 +103,12 @@ export async function POST(
   if (!appt) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   if (appt.type !== "text") {
     return NextResponse.json({ error: "Cette séance n'est pas une séance de messagerie" }, { status: 400 });
+  }
+  if (appt.status !== "confirmed" || sessionPhase(appt.scheduledAt, appt.durationMinutes) !== "open") {
+    return NextResponse.json(
+      { error: "La séance n'est pas en cours : utilisez la messagerie pour écrire en dehors des séances." },
+      { status: 403 }
+    );
   }
 
   const { body } = (await req.json()) as { body?: string };
