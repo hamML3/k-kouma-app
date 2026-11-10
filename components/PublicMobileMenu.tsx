@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
+import { BodyPortal } from "@/components/BodyPortal";
 import { useModalBehavior } from "@/lib/useModalBehavior";
 
 type NavItem = { label: string; href: string };
@@ -41,63 +42,65 @@ export function PublicMobileMenu({ items }: { items: NavItem[] }) {
         </svg>
       </button>
 
-      <div
-        className={`md:hidden fixed inset-0 z-[60] transition-opacity duration-200 ${
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        inert={!open}
-      >
-        <div className="absolute inset-0" style={{ background: "rgba(44,52,46,0.45)" }} onClick={() => setOpen(false)} />
+      <BodyPortal>
         <div
-          ref={panelRef}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu"
-          className={`absolute right-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-5 overflow-y-auto outline-none transition-transform duration-200 ease-out ${
-            open ? "translate-x-0" : "translate-x-full"
+          className={`md:hidden fixed inset-0 z-[60] transition-opacity duration-200 ${
+            open ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
-          style={{ background: "#fff", boxShadow: "-12px 0 40px rgba(60,70,55,0.18)" }}
+          inert={!open}
         >
-          <div className="flex items-center justify-between mb-6">
-            <Logo size={24} />
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Fermer le menu"
-              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
-              style={{ color: "var(--kk-muted)" }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-
-          <nav className="flex-1 space-y-1">
-            {items.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
+          <div className="absolute inset-0" style={{ background: "rgba(44,52,46,0.45)" }} onClick={() => setOpen(false)} />
+          <div
+            ref={panelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            className={`absolute right-0 top-0 h-full w-72 max-w-[85vw] flex flex-col py-6 px-5 overflow-y-auto outline-none transition-transform duration-200 ease-out ${
+              open ? "translate-x-0" : "translate-x-full"
+            }`}
+            style={{ background: "#fff", boxShadow: "-12px 0 40px rgba(60,70,55,0.18)" }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <Logo size={24} />
+              <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[var(--kk-border)]"
-                style={{ color: "var(--kk-mid)" }}
+                aria-label="Fermer le menu"
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kk-border)]"
+                style={{ color: "var(--kk-muted)" }}
               >
-                {item.label}
-              </a>
-            ))}
-          </nav>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
 
-          <div className="pt-4 mt-4 space-y-2" style={{ borderTop: "1px solid var(--kk-border)" }}>
-            <Link href="/login" className="kk-btn-outline w-full text-center block text-sm py-2.5">
-              Se connecter
-            </Link>
-            <Link href="/register" className="kk-btn-purple w-full text-center block text-sm py-2.5">
-              Créer un compte
-            </Link>
+            <nav className="flex-1 space-y-1">
+              {items.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors hover:bg-[var(--kk-border)]"
+                  style={{ color: "var(--kk-mid)" }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="pt-4 mt-4 space-y-2" style={{ borderTop: "1px solid var(--kk-border)" }}>
+              <Link href="/login" className="kk-btn-outline w-full text-center block text-sm py-2.5">
+                Se connecter
+              </Link>
+              <Link href="/register" className="kk-btn-purple w-full text-center block text-sm py-2.5">
+                Créer un compte
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </BodyPortal>
     </>
   );
 }
