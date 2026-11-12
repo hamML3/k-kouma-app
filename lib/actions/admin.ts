@@ -10,7 +10,8 @@ import { logAudit } from "@/lib/audit";
 import { effectiveCommissionPercent, needsCommissionAcceptance } from "@/lib/commission";
 import { sendCommissionTermsChangedEmail, sendTherapistVerifiedEmail } from "@/lib/email";
 import { PERMISSIONS, type Permission, hasPermission, canActOnRole } from "@/lib/permissions";
-import { markTherapistEarningsPaid } from "@/lib/payouts";
+import { announcePayout, recordTherapistPayout } from "@/lib/payouts";
+import { recordPayoutSchema } from "@/lib/validators/payments";
 import { createNotification } from "@/lib/notifications";
 import { isRejectionReason, type ManualPaymentRejectionReason } from "@/lib/validators/payments";
 import { confirmManualPayment, rejectManualPayment } from "@/lib/manualPayments";
@@ -371,32 +372,27 @@ export async function updateTherapistCommissionAction(formData: FormData): Promi
   redirect(`/admin/therapists/${therapistId}`);
 }
 
-/** Marque tous les gains non reversés d'un thérapeute comme payés, en une fois. */
+/**
+ * Versement spontané, sans demande du praticien : solde tous ses gains non
+ * reversés, avec la référence du transfert et le numéro qui l'a reçu.
+ */
 export async function markTherapistPayoutAction(formData: FormData): Promise<void> {
   const admin = await requireAdminOrModerator();
   const therapistId = Number(formData.get("therapistId"));
   if (!therapistId) redirect("/admin/finances");
 
-  const result = await markTherapistEarningsPaid(therapistId);
-
-  await logAudit({
-    actor: admin,
-    action: "admin.payout.mark_paid",
-    targetType: "user",
-    targetId: therapistId,
-    metadata: { earningsCount: result.count },
-  });
-
-  if (result.count > 0) {
-    await createNotification({
-      userId: therapistId,
-      type: "payout.paid",
-      title: "Reversement effectué",
-      body: "Vos gains ont été marqués comme reversés.",
-      link: "/earnings",
-    });
+  const parsed = recordPayoutSchema.safeParse({ reference: formData.get("reference") ?? "", phone: formData.get("phone") ?? "" });
+  if (!parsed.success) {
+    redirect(`/admin/finances?erreur=${parsed.error.issues[0]?.path[0] === "phone" ? "telephone" : "reference"}`);
   }
 
+  const input = { therapistId, ...parsed.data };
+  const result = await recordTherapistPayout({ ...input, actorId: admin.id });
+  if (!result.ok) redirect(`/admin/finances?erreur=${result.reason}`);
+
+  await announcePayout(result, input, admin);
+
   revalidatePath("/admin/finances");
-  redirect("/admin/finances");
+  revalidatePath("/earnings");
+  redirect(`/admin/finances?versement=${result.payoutId}`);
 }

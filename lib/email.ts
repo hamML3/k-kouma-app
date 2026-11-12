@@ -271,6 +271,58 @@ export async function sendInvoiceEmail(to: string, invoice: InvoiceView) {
   });
 }
 
+export type PayoutStatement = {
+  firstName: string;
+  payoutId: number;
+  date: string;
+  amount: string;
+  phone: string;
+  reference: string;
+  lines: { date: string; format: string; commission: string; amount: string }[];
+};
+
+/** Relevé d'un versement au praticien : les séances payées, sans nom de patient. */
+export async function sendPayoutStatementEmail(to: string, s: PayoutStatement) {
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:4px 0;color:#8A9183;font-size:13px;">${label}</td><td style="padding:4px 0;text-align:right;font-size:13px;font-weight:700;color:#2C342E;">${esc(value)}</td></tr>`;
+  const sessions = s.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:6px 0;font-size:13px;color:#2C342E;border-top:1px solid #EDE8DC;">${esc(l.date)} · ${esc(l.format)}${
+          l.commission ? `<br><span style="color:#8A9183;font-size:12px;">Commission K-Kouma ${esc(l.commission)}</span>` : ""
+        }</td><td style="padding:6px 0;font-size:13px;text-align:right;white-space:nowrap;color:#2C342E;border-top:1px solid #EDE8DC;">${esc(l.amount)}</td></tr>`
+    )
+    .join("");
+  const html = wrapper(
+    "Relevé de versement",
+    `<p style="font-size:14px;line-height:1.6;color:#5C645B;">Bonjour ${esc(s.firstName)},</p>
+     <p style="font-size:14px;line-height:1.6;color:#5C645B;">Nous vous avons envoyé vos gains par Orange Money. Voici le détail.</p>
+     <table role="presentation" style="width:100%;border-collapse:collapse;margin:16px 0 8px;">
+       ${row("Relevé", `V-${String(s.payoutId).padStart(6, "0")}`)}
+       ${row("Date", s.date)}
+       ${row("Envoyé au", s.phone)}
+       ${row("Référence Orange Money", s.reference)}
+     </table>
+     <p style="font-size:13px;font-weight:700;color:#2C342E;margin:16px 0 4px;">Séances payées (${s.lines.length})</p>
+     <table role="presentation" style="width:100%;border-collapse:collapse;">${sessions}</table>
+     <table role="presentation" style="width:100%;border-collapse:collapse;border-top:2px solid #EDE8DC;margin-top:4px;">
+       <tr>
+         <td style="padding:10px 0;font-size:15px;font-weight:700;color:#2C342E;">Total versé</td>
+         <td style="padding:10px 0;font-size:17px;font-weight:700;text-align:right;color:#486946;white-space:nowrap;">${esc(s.amount)}</td>
+       </tr>
+     </table>
+     <p style="font-size:13px;line-height:1.6;color:#5C645B;">Si vous ne trouvez pas ce transfert sur votre compte Orange Money, répondez-nous en indiquant la référence ci-dessus.</p>
+     ${button(`${APP_URL}/earnings`, "Voir mes gains")}`
+  );
+
+  return client().emails.send({
+    from: FROM,
+    to,
+    subject: `Versement de ${s.amount} — K-Kouma`,
+    html,
+  });
+}
+
 /** L'autre partie propose une nouvelle date pour un rendez-vous en attente. */
 export async function sendAppointmentProposalEmail(to: string, recipientName: string, fromName: string, scheduledAt: Date) {
   const html = wrapper(

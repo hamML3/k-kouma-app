@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/AppHeader";
 import { BarChart } from "@/components/charts/BarChart";
 import { lastMonths, bucketByMonth } from "@/lib/chartHelpers";
-import { RequestPayoutSection } from "./_client";
+import { PayoutPhoneForm, RequestPayoutSection } from "./_client";
 
 export const metadata = { title: "Mes gains — K-Kouma" };
 
@@ -19,7 +19,7 @@ export default async function EarningsPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const months = lastMonths(6);
 
-  const [earnings, pendingPayoutRequest, allTime, unpaid, thisMonth, chartRows] = await Promise.all([
+  const [earnings, pendingPayoutRequest, allTime, unpaid, thisMonth, chartRows, profile, payouts] = await Promise.all([
     prisma.therapistEarning.findMany({
       where: { therapistId },
       orderBy: { createdAt: "desc" },
@@ -49,6 +49,13 @@ export default async function EarningsPage() {
     prisma.therapistEarning.findMany({
       where: { therapistId, createdAt: { gte: months[0].start } },
       select: { createdAt: true, amount: true },
+    }),
+    prisma.therapistProfile.findUnique({ where: { userId: therapistId }, select: { payoutPhone: true } }),
+    prisma.therapistPayout.findMany({
+      where: { therapistId },
+      orderBy: { createdAt: "desc" },
+      take: 24,
+      select: { id: true, amount: true, currency: true, phone: true, reference: true, createdAt: true, _count: { select: { earnings: true } } },
     }),
   ]);
 
@@ -113,8 +120,11 @@ export default async function EarningsPage() {
           </div>
         </div>
 
+        <PayoutPhoneForm initialPhone={profile?.payoutPhone ?? null} />
+
         <RequestPayoutSection
           unpaidTotal={unpaidTotal}
+          hasPayoutPhone={Boolean(profile?.payoutPhone)}
           initialPendingRequest={
             pendingPayoutRequest
               ? { amount: Number(pendingPayoutRequest.amount), createdAt: pendingPayoutRequest.createdAt.toISOString() }
@@ -133,6 +143,38 @@ export default async function EarningsPage() {
             formatValue={(n) => n.toLocaleString("fr-FR")}
           />
         </div>
+
+        {payouts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-muted)" }}>
+              Versements reçus
+            </h2>
+            <div className="space-y-2">
+              {payouts.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-xl p-4 flex items-center justify-between gap-3"
+                  style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>
+                      {p.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                      <span className="font-normal" style={{ color: "var(--kk-muted)" }}>
+                        {" "}· {p._count.earnings} séance{p._count.earnings > 1 ? "s" : ""}
+                      </span>
+                    </p>
+                    <p className="text-xs mt-0.5 break-all" style={{ color: "var(--kk-muted)" }}>
+                      Envoyé au {p.phone} · réf. <span className="font-mono">{p.reference}</span>
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-green-text)" }}>
+                    {Number(p.amount).toLocaleString("fr-FR")} {p.currency}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-muted)" }}>
           Détail par séance

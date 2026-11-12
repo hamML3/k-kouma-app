@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
-import { markTherapistEarningsPaid } from "@/lib/payouts";
+import { announcePayout, recordTherapistPayout } from "@/lib/payouts";
+import { phoneSchema, recordPayoutSchema } from "@/lib/validators/payments";
 import { createNotification, notifyStaff } from "@/lib/notifications";
 
 export type RequestPayoutState = {
@@ -50,6 +51,12 @@ export async function requestPayoutAction(): Promise<RequestPayoutState> {
   if (!session?.user || session.user.role !== "therapist") redirect("/login");
 
   const therapistId = Number(session.user.id);
+
+  // Sans numéro de versement, l'équipe ne saurait pas où envoyer l'argent.
+  const profile = await prisma.therapistProfile.findUnique({ where: { userId: therapistId }, select: { payoutPhone: true } });
+  if (!profile?.payoutPhone) {
+    return { error: "Indiquez d'abord le numéro Orange Money sur lequel recevoir vos gains." };
+  }
 
   // Pas de doublon : si une demande est déjà en attente, on la renvoie telle
   // quelle plutôt que d'en créer une seconde ou d'afficher une erreur muette.
@@ -104,11 +111,10 @@ export async function requestPayoutAction(): Promise<RequestPayoutState> {
 }
 
 /**
- * Approuve une demande de retrait : clôt la demande ET reverse les gains du
- * thérapeute, dans la même transaction — c'est l'effet concret attendu par
- * le thérapeute qui a demandé, pas seulement un changement de statut. La
- * marque des gains réutilise markTherapistEarningsPaid (lib/payouts.ts),
- * partagée avec markTherapistPayoutAction, plutôt que de la dupliquer.
+ * Approuve une demande de retrait, une fois l'argent envoyé : l'équipe saisit
+ * la référence du transfert Orange Money et le numéro qui l'a reçu. Seuls
+ * les gains acquis à la date de la demande sont soldés (lib/payouts.ts) ;
+ * ceux arrivés depuis restent pour le prochain versement.
  */
 export async function approvePayoutRequestAction(formData: FormData): Promise<void> {
   const admin = await requireAdminOrModerator();
@@ -116,39 +122,48 @@ export async function approvePayoutRequestAction(formData: FormData): Promise<vo
   if (!requestId) redirect("/admin/finances");
 
   const request = await prisma.payoutRequest.findUnique({ where: { id: requestId } });
-  if (!request || request.status !== "pending") redirect("/admin/finances");
+  if (!request || request.status !== "pending") redirect("/admin/finances?erreur=already_handled");
 
-  const [, earningsResult] = await prisma.$transaction([
-    prisma.payoutRequest.update({
-      where: { id: requestId },
-      data: { status: "approved", reviewedById: admin.id, reviewedAt: new Date() },
-    }),
-    markTherapistEarningsPaid(request.therapistId),
-  ]);
+  const parsed = recordPayoutSchema.safeParse({ reference: formData.get("reference") ?? "", phone: formData.get("phone") ?? "" });
+  if (!parsed.success) {
+    redirect(`/admin/finances?erreur=${parsed.error.issues[0]?.path[0] === "phone" ? "telephone" : "reference"}#retraits`);
+  }
 
-  await logAudit({
-    actor: admin,
-    action: "payout_request.approve",
-    targetType: "payout_request",
-    targetId: requestId,
-    metadata: {
-      therapistId: request.therapistId,
-      amount: Number(request.amount),
-      earningsCount: earningsResult.count,
-    },
+  const input = { therapistId: request.therapistId, ...parsed.data };
+  const result = await recordTherapistPayout({
+    ...input,
+    actorId: admin.id,
+    request: { id: request.id, createdAt: request.createdAt },
   });
+  if (!result.ok) redirect(`/admin/finances?erreur=${result.reason}#retraits`);
 
-  await createNotification({
-    userId: request.therapistId,
-    type: "payout_request.approved",
-    title: "Demande de retrait approuvée",
-    body: `${Number(request.amount).toLocaleString("fr-FR")} XOF reversés.`,
-    link: "/earnings",
-  });
+  await announcePayout(result, input, admin);
 
   revalidatePath("/admin/finances");
   revalidatePath("/earnings");
-  redirect("/admin/finances");
+  redirect(`/admin/finances?versement=${result.payoutId}`);
+}
+
+export type SavePayoutPhoneState = { error?: string; saved?: boolean; phone?: string };
+
+/** Le praticien indique le numéro Orange Money sur lequel recevoir ses gains. */
+export async function savePayoutPhoneAction(_prev: SavePayoutPhoneState, formData: FormData): Promise<SavePayoutPhoneState> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "therapist") redirect("/login");
+
+  const parsed = phoneSchema.safeParse(formData.get("payoutPhone") ?? "");
+  if (!parsed.success) return { error: "Numéro invalide. Exemple : +223 70 00 00 00." };
+
+  const therapistId = Number(session.user.id);
+  await prisma.therapistProfile.update({ where: { userId: therapistId }, data: { payoutPhone: parsed.data } });
+  await logAudit({
+    actor: { id: therapistId, email: session.user.email ?? undefined },
+    action: "therapist.payout_phone.update",
+    targetType: "user",
+    targetId: therapistId,
+  });
+  revalidatePath("/earnings");
+  return { saved: true, phone: parsed.data };
 }
 
 /**

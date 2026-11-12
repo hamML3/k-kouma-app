@@ -68,6 +68,8 @@ model User {
   therapistEarnings        TherapistEarning[]
   payoutRequests           PayoutRequest[]       @relation("PayoutRequestTherapist")
   payoutRequestsReviewed   PayoutRequest[]       @relation("PayoutRequestReviewer")
+  therapistPayouts         TherapistPayout[]     @relation("PayoutTherapist")
+  payoutsMade              TherapistPayout[]     @relation("PayoutAuthor")
   auditLogs                AuditLog[]
   submittedArticles        SubmittedArticle[]    @relation("ArticleAuthor")
   reviewedArticles         SubmittedArticle[]    @relation("ArticleReviewer")
@@ -190,6 +192,9 @@ model TherapistProfile {
   diplomaUrl                String?          @map("diploma_url") @db.VarChar(512)
   documentsJson             Json?            @map("documents_json")
   rejectedAt                DateTime?        @map("rejected_at")
+  // Numéro Orange Money sur lequel le praticien reçoit ses gains, saisi par
+  // lui-même sur « Mes gains » ; demandé avant toute demande de retrait.
+  payoutPhone               String?          @map("payout_phone") @db.VarChar(20)
   // Commission K-Kouma sur les séances de ce thérapeute (pourcentage, ex.
   // 20.00 = 20%). NULL = utilise PlatformSettings.defaultCommissionPercent.
   commissionPercent         Decimal?         @map("commission_percent") @db.Decimal(5, 2)
@@ -361,14 +366,44 @@ model TherapistEarning {
   // déjà eu lieu au moment de l'achat des séances.
   paidOut           Boolean   @default(false) @map("paid_out")
   paidOutAt         DateTime? @map("paid_out_at")
+  // Versement qui a payé ce gain (absent pour les gains reversés avant
+  // l'enregistrement des versements).
+  payoutId          Int?      @map("payout_id")
   createdAt         DateTime  @default(now()) @map("created_at")
 
-  therapist   User        @relation(fields: [therapistId], references: [id])
-  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  therapist   User             @relation(fields: [therapistId], references: [id])
+  appointment Appointment      @relation(fields: [appointmentId], references: [id])
+  payout      TherapistPayout? @relation(fields: [payoutId], references: [id])
 
   @@index([therapistId])
   @@index([therapistId, paidOut])
+  @@index([payoutId])
   @@map("therapist_earnings")
+}
+
+/// Versement réel au praticien : montant envoyé, numéro Orange Money qui l'a
+/// reçu et référence du transfert, pour pouvoir prouver le paiement. Le
+/// praticien en reçoit le relevé par e-mail (lib/payouts.ts).
+model TherapistPayout {
+  id              Int       @id @default(autoincrement())
+  therapistId     Int       @map("therapist_id")
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("XOF") @db.VarChar(3)
+  phone           String    @db.VarChar(20)
+  reference       String    @unique @db.VarChar(100)
+  paidById        Int?      @map("paid_by_id")
+  // Demande de retrait close par ce versement, s'il y en avait une.
+  payoutRequestId Int?      @unique @map("payout_request_id")
+  statementSentAt DateTime? @map("statement_sent_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  therapist     User               @relation("PayoutTherapist", fields: [therapistId], references: [id])
+  paidBy        User?              @relation("PayoutAuthor", fields: [paidById], references: [id])
+  payoutRequest PayoutRequest?     @relation(fields: [payoutRequestId], references: [id])
+  earnings      TherapistEarning[]
+
+  @@index([therapistId, createdAt])
+  @@map("therapist_payouts")
 }
 
 /// Demande de retrait initiée par le thérapeute lui-même, plutôt que
@@ -386,8 +421,9 @@ model PayoutRequest {
   reviewedAt   DateTime?           @map("reviewed_at")
   createdAt    DateTime            @default(now()) @map("created_at")
 
-  therapist  User  @relation("PayoutRequestTherapist", fields: [therapistId], references: [id])
-  reviewedBy User? @relation("PayoutRequestReviewer", fields: [reviewedById], references: [id])
+  therapist  User             @relation("PayoutRequestTherapist", fields: [therapistId], references: [id])
+  reviewedBy User?            @relation("PayoutRequestReviewer", fields: [reviewedById], references: [id])
+  payout     TherapistPayout?
 
   @@index([therapistId])
   @@index([status])

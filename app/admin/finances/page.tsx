@@ -7,10 +7,16 @@ import { confirmManualPaymentAction, rejectManualPaymentAction, markTherapistPay
 import { approvePayoutRequestAction, rejectPayoutRequestAction } from "@/lib/actions/payouts";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { hasPermission } from "@/lib/permissions";
+import { PAYOUT_ERRORS } from "@/lib/payouts";
 
 export const metadata = { title: "Finances — Administration K-Kouma" };
 
-export default async function AdminFinancesPage() {
+export default async function AdminFinancesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ erreur?: string; versement?: string }>;
+}) {
+  const { erreur, versement } = await searchParams;
   const session = await auth();
   const canManageFinances = hasPermission(session?.user?.role, session?.user?.permissions, "manage_finances");
 
@@ -30,6 +36,7 @@ export default async function AdminFinancesPage() {
     therapists,
     pendingManualPayments,
     pendingPayoutRequests,
+    recentPayouts,
   ] = await Promise.all([
     prisma.payment.findMany({
       where: { status: "completed" },
@@ -48,13 +55,14 @@ export default async function AdminFinancesPage() {
       _sum: { amount: true },
       _count: { _all: true },
     }),
+    // « Reversé » : gains effectivement payés, datés du jour du versement.
     prisma.therapistEarning.findMany({
-      where: { createdAt: { gte: months[0].start } },
-      select: { createdAt: true, amount: true },
+      where: { paidOut: true, paidOutAt: { gte: months[0].start } },
+      select: { paidOutAt: true, amount: true },
     }),
     prisma.therapistProfile.findMany({
       where: { isVerified: true },
-      select: { userId: true, firstName: true, lastName: true },
+      select: { userId: true, firstName: true, lastName: true, payoutPhone: true },
     }),
     prisma.payment.findMany({
       where: { status: "pending", provider: "orange_money_manual" },
@@ -65,7 +73,16 @@ export default async function AdminFinancesPage() {
       where: { status: "pending" },
       orderBy: { createdAt: "asc" },
       include: {
-        therapist: { select: { therapistProfile: { select: { firstName: true, lastName: true } }, email: true } },
+        therapist: { select: { therapistProfile: { select: { firstName: true, lastName: true, payoutPhone: true } }, email: true } },
+      },
+    }),
+    prisma.therapistPayout.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        therapist: { select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } } },
+        paidBy: { select: { email: true } },
+        _count: { select: { earnings: true } },
       },
     }),
   ]);
@@ -78,10 +95,17 @@ export default async function AdminFinancesPage() {
   // Regroupe les gains par thérapeute, en distinguant ce qui a déjà été reversé
   const earningsByTherapist = new Map<
     number,
-    { therapistId: number; name: string; total: number; count: number; unpaid: number }
+    { therapistId: number; name: string; payoutPhone: string | null; total: number; count: number; unpaid: number }
   >();
   for (const t of therapists) {
-    earningsByTherapist.set(t.userId, { therapistId: t.userId, name: `${t.firstName} ${t.lastName}`, total: 0, count: 0, unpaid: 0 });
+    earningsByTherapist.set(t.userId, {
+      therapistId: t.userId,
+      name: `${t.firstName} ${t.lastName}`,
+      payoutPhone: t.payoutPhone,
+      total: 0,
+      count: 0,
+      unpaid: 0,
+    });
   }
   for (const g of earningGroups) {
     const entry = earningsByTherapist.get(g.therapistId);
@@ -101,7 +125,7 @@ export default async function AdminFinancesPage() {
     (p) => Number(p.amount),
     months
   );
-  const monthlyPayout = bucketByMonth(chartEarnings, (e) => e.createdAt, (e) => Number(e.amount), months);
+  const monthlyPayout = bucketByMonth(chartEarnings, (e) => e.paidOutAt as Date, (e) => Number(e.amount), months);
 
   const STATS = [
     { label: "Revenu total (payé)", value: totalRevenue, color: "var(--kk-green-text)", bg: "var(--kk-green-light)", icon: "💰" },
@@ -133,6 +157,17 @@ export default async function AdminFinancesPage() {
           </div>
         )}
       </div>
+
+      {erreur && (
+        <div className="kk-error mb-6" role="alert">
+          {PAYOUT_ERRORS[erreur] ?? "Le versement n'a pas pu être enregistré."}
+        </div>
+      )}
+      {versement && !erreur && (
+        <div className="rounded-2xl p-4 mb-6 text-sm font-semibold" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
+          Versement enregistré. Le praticien est prévenu et reçoit son relevé par e-mail.
+        </div>
+      )}
 
       {pendingManualPayments.length > 0 && (
         <div className="mb-8 sm:mb-10">
@@ -207,7 +242,7 @@ export default async function AdminFinancesPage() {
       )}
 
       {pendingPayoutRequests.length > 0 && (
-        <div className="mb-8 sm:mb-10">
+        <div id="retraits" className="mb-8 sm:mb-10">
           <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-gold-text)" }}>
             Demandes de retrait à traiter ({pendingPayoutRequests.length})
           </h2>
@@ -217,11 +252,7 @@ export default async function AdminFinancesPage() {
                 ? `${r.therapist.therapistProfile.firstName} ${r.therapist.therapistProfile.lastName}`
                 : r.therapist.email;
               return (
-                <div
-                  key={r.id}
-                  className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                  style={{ background: "#fff", border: "1.5px solid #E9C98A" }}
-                >
+                <div key={r.id} className="rounded-xl p-4 space-y-3" style={{ background: "#fff", border: "1.5px solid #E9C98A" }}>
                   <div className="min-w-0">
                     <p className="text-sm font-bold" style={{ color: "var(--kk-dark)" }}>
                       {therapistName}
@@ -233,27 +264,45 @@ export default async function AdminFinancesPage() {
                       {r.therapist.email} · demandé le{" "}
                       {r.createdAt.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </p>
+                    <p className="text-sm mt-1" style={{ color: "var(--kk-mid)" }}>
+                      À envoyer par Orange Money au{" "}
+                      <strong style={{ color: "var(--kk-dark)" }}>{r.therapist.therapistProfile?.payoutPhone ?? "numéro non renseigné"}</strong>
+                    </p>
                   </div>
                   {canManageFinances && (
-                    <div className="flex gap-2 shrink-0">
-                      <form action={rejectPayoutRequestAction} className="flex-1 sm:flex-none">
+                    <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                      <form action={approvePayoutRequestAction} className="flex-1 flex flex-col sm:flex-row sm:items-end gap-2">
+                        <input type="hidden" name="requestId" value={r.id} />
+                        <label className="flex-1 text-xs" style={{ color: "var(--kk-muted)" }}>
+                          Numéro qui a reçu l&apos;argent
+                          <input
+                            name="phone"
+                            type="tel"
+                            required
+                            defaultValue={r.therapist.therapistProfile?.payoutPhone ?? ""}
+                            className="kk-input mt-1 text-sm"
+                          />
+                        </label>
+                        <label className="flex-1 text-xs" style={{ color: "var(--kk-muted)" }}>
+                          Référence du transfert (SMS Orange Money)
+                          <input name="reference" required autoComplete="off" spellCheck={false} placeholder="Ex. ID:PP261125.123.C34567" className="kk-input mt-1 text-sm" />
+                        </label>
+                        <ConfirmSubmitButton
+                          confirmMessage={`Confirmer l'envoi de ${Number(r.amount).toLocaleString("fr-FR")} XOF à ${therapistName} ? Le praticien recevra son relevé par e-mail.`}
+                          className="text-xs font-bold px-3.5 py-2.5 rounded-full transition-colors hover:bg-[var(--kk-green-hover)]"
+                          style={{ background: "var(--kk-green)", color: "#fff" }}
+                        >
+                          Argent envoyé : valider
+                        </ConfirmSubmitButton>
+                      </form>
+                      <form action={rejectPayoutRequestAction}>
                         <input type="hidden" name="requestId" value={r.id} />
                         <ConfirmSubmitButton
                           confirmMessage="Rejeter cette demande de retrait ? Les gains du psychologue ne seront pas marqués reversés."
-                          className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"
+                          className="w-full text-xs font-bold px-3.5 py-2.5 rounded-full transition-colors hover:bg-[var(--kk-border-mid)]"
                           style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}
                         >
                           Rejeter
-                        </ConfirmSubmitButton>
-                      </form>
-                      <form action={approvePayoutRequestAction} className="flex-1 sm:flex-none">
-                        <input type="hidden" name="requestId" value={r.id} />
-                        <ConfirmSubmitButton
-                          confirmMessage={`Approuver et reverser ${Number(r.amount).toLocaleString("fr-FR")} XOF à ${therapistName} ?`}
-                          className="w-full text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green-hover)]"
-                          style={{ background: "var(--kk-green)", color: "#fff" }}
-                        >
-                          Approuver
                         </ConfirmSubmitButton>
                       </form>
                     </div>
@@ -326,7 +375,7 @@ export default async function AdminFinancesPage() {
               {therapistRows.map((t) => (
                 <div
                   key={t.therapistId}
-                  className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                  className="rounded-xl p-4 flex flex-wrap items-center justify-between gap-3"
                   style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
                 >
                   <div>
@@ -346,19 +395,32 @@ export default async function AdminFinancesPage() {
                     <p className="text-sm font-bold" style={{ color: "var(--kk-gold-text)" }}>
                       {t.total.toLocaleString("fr-FR")} XOF
                     </p>
-                    {t.unpaid > 0 && canManageFinances && (
-                      <form action={markTherapistPayoutAction}>
+                  </div>
+                  {t.unpaid > 0 && canManageFinances && (
+                    <details className="w-full sm:basis-full text-xs">
+                      <summary className="cursor-pointer font-bold" style={{ color: "var(--kk-green-text)" }}>
+                        Enregistrer un versement de {t.unpaid.toLocaleString("fr-FR")} XOF
+                      </summary>
+                      <form action={markTherapistPayoutAction} className="mt-2 flex flex-col gap-2">
                         <input type="hidden" name="therapistId" value={t.therapistId} />
+                        <label style={{ color: "var(--kk-muted)" }}>
+                          Numéro qui a reçu l&apos;argent
+                          <input name="phone" type="tel" required defaultValue={t.payoutPhone ?? ""} placeholder="+223 70 00 00 00" className="kk-input mt-1 text-sm" />
+                        </label>
+                        <label style={{ color: "var(--kk-muted)" }}>
+                          Référence du transfert (SMS Orange Money)
+                          <input name="reference" required autoComplete="off" spellCheck={false} placeholder="Ex. ID:PP261125.123.C34567" className="kk-input mt-1 text-sm" />
+                        </label>
                         <ConfirmSubmitButton
-                          confirmMessage={`Marquer ${t.unpaid.toLocaleString("fr-FR")} XOF comme reversés à ${t.name} ?`}
-                          className="text-xs font-bold px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--kk-green)] hover:text-white"
-                          style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}
+                          confirmMessage={`Confirmer l'envoi de ${t.unpaid.toLocaleString("fr-FR")} XOF à ${t.name} ? Le praticien recevra son relevé par e-mail.`}
+                          className="self-start text-xs font-bold px-3.5 py-2 rounded-full transition-colors hover:bg-[var(--kk-green-hover)]"
+                          style={{ background: "var(--kk-green)", color: "#fff" }}
                         >
-                          Marquer reversé
+                          Argent envoyé : valider
                         </ConfirmSubmitButton>
                       </form>
-                    )}
-                  </div>
+                    </details>
+                  )}
                 </div>
               ))}
               </div>
@@ -403,6 +465,41 @@ export default async function AdminFinancesPage() {
           )}
         </div>
       </div>
+
+      {recentPayouts.length > 0 && (
+        <div className="mt-8 sm:mt-10">
+          <h2 className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "var(--kk-muted)" }}>
+            Versements récents aux praticiens
+          </h2>
+          <div className="space-y-2">
+            {recentPayouts.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-xl p-4 flex items-center justify-between gap-3"
+                style={{ background: "#fff", border: "1px solid var(--kk-border)" }}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "var(--kk-dark)" }}>
+                    {p.therapist.therapistProfile ? `${p.therapist.therapistProfile.firstName} ${p.therapist.therapistProfile.lastName}` : p.therapist.email}
+                    <span className="font-normal" style={{ color: "var(--kk-muted)" }}>
+                      {" "}· {p._count.earnings} séance{p._count.earnings > 1 ? "s" : ""}
+                    </span>
+                  </p>
+                  <p className="text-xs mt-0.5 break-all" style={{ color: "var(--kk-muted)" }}>
+                    {p.createdAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} · au {p.phone} · réf.{" "}
+                    <span className="font-mono">{p.reference}</span>
+                    {p.paidBy && ` · par ${p.paidBy.email}`}
+                    {p.statementSentAt ? " · relevé envoyé" : " · relevé non envoyé"}
+                  </p>
+                </div>
+                <p className="text-sm font-bold shrink-0" style={{ color: "var(--kk-purple-text)" }}>
+                  {Number(p.amount).toLocaleString("fr-FR")} {p.currency}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }

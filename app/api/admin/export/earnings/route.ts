@@ -16,6 +16,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       therapist: { select: { email: true, therapistProfile: { select: { firstName: true, lastName: true } } } },
+      payout: { select: { reference: true, phone: true } },
     },
   });
 
@@ -30,11 +31,13 @@ export async function GET() {
     e.commissionPercent != null ? `${Number(e.commissionPercent)}%` : "",
     e.paidOut ? "Oui" : "Non",
     e.paidOutAt ? e.paidOutAt.toISOString() : "",
+    e.payout?.reference ?? "",
+    e.payout?.phone ?? "",
     e.createdAt.toISOString(),
   ]);
 
   const csv = toCsv(
-    ["ID", "Psychologue", "Email psychologue", "Montant", "Devise", "Commission", "Reversé", "Reversé le", "Créé le"],
+    ["ID", "Psychologue", "Email psychologue", "Montant", "Devise", "Commission", "Reversé", "Reversé le", "Référence du versement", "Envoyé au", "Créé le"],
     rows
   );
 

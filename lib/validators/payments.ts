@@ -1,26 +1,36 @@
 import { z } from "zod";
 
+// Les références Orange Money sont recopiées à la main depuis un SMS, où
+// elles apparaissent sous la forme « ID:PP261125.123.C34567 ». On retire
+// espaces et préfixe « ID: », et on met en majuscules, pour qu'une même
+// référence ne puisse pas être enregistrée deux fois sous deux écritures.
+export const orangeReferenceSchema = z
+  .string()
+  .transform((s) => s.replace(/\s+/g, "").toUpperCase().replace(/^ID:/, ""))
+  .pipe(
+    z
+      .string()
+      .min(4, "Référence de transaction trop courte.")
+      .max(100, "Référence de transaction trop longue.")
+      .regex(/^[A-Z0-9.\-_/]+$/, "La référence ne doit contenir que des lettres, des chiffres et des points.")
+  );
+
+// "+223 70 00 00 00", "70-00-00-00" ou "70000000" sont tous acceptés.
+export const phoneSchema = z
+  .string()
+  .transform((s) => s.replace(/[\s.\-()]/g, ""))
+  .pipe(z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide."));
+
 export const declareManualPaymentSchema = z.object({
   pack: z.enum(["single", "pack3"]),
-  // Les références Orange Money sont recopiées à la main depuis un SMS, où
-  // elles apparaissent sous la forme « ID:PP261125.123.C34567 ». On retire
-  // espaces et préfixe « ID: », et on met en majuscules, pour qu'une même
-  // référence ne puisse pas être déclarée deux fois sous deux écritures.
-  reference: z
-    .string()
-    .transform((s) => s.replace(/\s+/g, "").toUpperCase().replace(/^ID:/, ""))
-    .pipe(
-      z
-        .string()
-        .min(4, "Référence de transaction trop courte.")
-        .max(100, "Référence de transaction trop longue.")
-        .regex(/^[A-Z0-9.\-_/]+$/, "La référence ne doit contenir que des lettres, des chiffres et des points.")
-    ),
-  // "+223 70 00 00 00", "70-00-00-00" ou "70000000" sont tous acceptés.
-  payerPhone: z
-    .string()
-    .transform((s) => s.replace(/[\s.\-()]/g, ""))
-    .pipe(z.string().regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide.")),
+  reference: orangeReferenceSchema,
+  payerPhone: phoneSchema,
+});
+
+/** Versement à un praticien : référence du transfert et numéro qui l'a reçu. */
+export const recordPayoutSchema = z.object({
+  reference: orangeReferenceSchema,
+  phone: phoneSchema,
 });
 
 export type DeclareManualPaymentInput = z.infer<typeof declareManualPaymentSchema>;
