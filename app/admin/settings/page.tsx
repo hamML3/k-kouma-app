@@ -15,6 +15,7 @@ import { telegramApi, telegramStatus, telegramWebhookUrl } from "@/lib/telegram"
 import Link from "next/link";
 import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
+import { readWebpayConfig } from "@/lib/orangeMoneyWebpay";
 
 export const metadata = { title: "Réglages — Administration K-Kouma" };
 
@@ -35,7 +36,8 @@ export default async function AdminSettingsPage({
   const maintenanceModeEnabled = settings?.maintenanceModeEnabled ?? false;
   const orangeMoney = await getOrangeMoneyConfig();
   const merchantCodeFromEnv = !settings?.orangeMoneyMerchantCode && orangeMoney.merchantCode !== null;
-  const paydunyaActive = isPaydunyaConfigured();
+  const webpay = readWebpayConfig();
+  const paydunyaActive = isPaydunyaConfigured() || webpay !== null;
   const telegram = telegramStatus();
   const commandsEnabled = Boolean(settings?.telegramCommandsEnabledAt);
   // État réel côté Telegram, seulement si le menu est censé être actif.
@@ -199,6 +201,20 @@ export default async function AdminSettingsPage({
             compte marchand.
           </p>
           <p
+            className="text-xs font-semibold rounded-xl px-3 py-2 mb-3"
+            style={
+              webpay && !webpay.sandbox
+                ? { background: "var(--kk-green-light)", color: "var(--kk-green-text)" }
+                : { background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }
+            }
+          >
+            {!webpay
+              ? "API Orange Money : non configurée (variables ORANGE_MONEY_CLIENT_ID, ORANGE_MONEY_CLIENT_SECRET et ORANGE_MONEY_MERCHANT_KEY du .env)."
+              : webpay.sandbox
+              ? "API Orange Money : active en mode test (bac à sable, devise OUV). Aucun argent réel : ne laissez pas ce réglage sur le site de production."
+              : `API Orange Money : active en production (segment « ${webpay.env} », XOF). Les séances sont créditées automatiquement.`}
+          </p>
+          <p
             className="text-xs font-semibold rounded-xl px-3 py-2 mb-4"
             style={
               orangeMoney.enabled && !paydunyaActive
@@ -207,7 +223,7 @@ export default async function AdminSettingsPage({
             }
           >
             {paydunyaActive
-              ? "Le paiement en ligne PayDunya est actif : le paiement manuel n'est pas proposé aux patients."
+              ? `Le paiement en ligne ${webpay ? "Orange Money" : "PayDunya"} est actif : le paiement manuel n'est pas proposé aux patients.`
               : orangeMoney.enabled
               ? "Actif : les patients voient ce mode de paiement sur la page Mes séances."
               : !orangeMoney.merchantCode

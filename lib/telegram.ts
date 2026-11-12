@@ -315,6 +315,19 @@ const STAFF_ALERTS: Record<string, StaffAlertSpec> = {
     },
     linkLabel: "Ouvrir les finances",
   },
+  "payment.received": {
+    title: "Paiement Orange Money reçu",
+    lines: (facts) => {
+      const lines = amountLine(facts);
+      const reference = facts.reference?.trim();
+      if (reference && SAFE_REFERENCE_PATTERN.test(reference)) {
+        lines.push(`Transaction : <code>${escapeTelegramHtml(reference)}</code>`);
+      }
+      lines.push("Séances créditées automatiquement.");
+      return lines;
+    },
+    linkLabel: "Ouvrir les finances",
+  },
   "payout_request.created": {
     title: "Demande de retrait d'un praticien",
     lines: amountLine,

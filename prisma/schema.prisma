@@ -312,6 +312,13 @@ model Payment {
   // uniquement pour les paiements déclarés manuellement (Orange Money),
   // pour aider l'admin à recouper avec l'historique du compte marchand.
   payerPhone        String?       @map("payer_phone") @db.VarChar(20)
+  // API Orange Money Web Payment (provider "orange_money") : providerRef
+  // garde le pay_token ; order_id envoyé à Orange (unique chez eux, 30
+  // caractères au plus), notif_token qui authentifie leur notification, et
+  // numéro de transaction Orange Money (txnid) une fois le paiement réussi.
+  providerOrderId   String?       @unique @map("provider_order_id") @db.VarChar(30)
+  notifToken        String?       @unique @map("notif_token") @db.VarChar(64)
+  providerTxnId     String?       @map("provider_txn_id") @db.VarChar(64)
   status            PaymentStatus @default(pending)
   // Nombre de séances de ce paiement pas encore réclamées par une réservation
   // — permet de calculer le gain du thérapeute au prorata du prix réel payé

@@ -11,6 +11,8 @@ import { getPlatformSettings } from "@/lib/platformSettings";
 import { declareManualPaymentSchema } from "@/lib/validators/payments";
 import { isMaintenanceModeEnabled } from "@/lib/platformSettings";
 import { isOrangeMoneyManualEnabled, MAX_PENDING_MANUAL_PAYMENTS } from "@/lib/orangeMoney";
+import { createWebPayment, isOrangeWebpayConfigured, orangeOrderId } from "@/lib/orangeMoneyWebpay";
+import { ORANGE_MONEY_PROVIDER } from "@/lib/orangeMoneyPayments";
 
 const MAINTENANCE_ERROR =
   "La plateforme est actuellement en maintenance. Les achats de séances sont temporairement suspendus — réessayez dans quelques instants.";
@@ -35,7 +37,8 @@ export async function buySessionsAction(
     return { error: MAINTENANCE_ERROR };
   }
 
-  if (!isPaydunyaConfigured()) {
+  const useOrangeMoney = isOrangeWebpayConfigured();
+  if (!useOrangeMoney && !isPaydunyaConfigured()) {
     return {
       error:
         "Le paiement en ligne n'est pas encore actif (compte PayDunya en cours d'approbation). Réessayez bientôt.",
@@ -60,6 +63,8 @@ export async function buySessionsAction(
 
   const amount = amountFor(therapyType, pack);
   const sessionsCount = sessionsCountFor(pack);
+
+  if (useOrangeMoney) return startOrangeMoneyPayment({ patientId, therapyType, sessionsCount, amount });
 
   const payment = await prisma.payment.create({
     data: {
@@ -97,6 +102,47 @@ export async function buySessionsAction(
     console.error("[paydunya] création de facture échouée:", err);
     return { error: "Impossible de démarrer le paiement pour le moment. Réessayez plus tard." };
   }
+}
+
+/**
+ * Paiement par l'API Orange Money Web Payment : le paiement est créé chez
+ * Orange, puis le patient est redirigé vers la page Orange où il confirme
+ * avec son numéro et un code à usage unique. Les séances ne sont créditées
+ * qu'une fois Orange ayant confirmé (lib/orangeMoneyPayments.ts).
+ */
+async function startOrangeMoneyPayment(input: {
+  patientId: number;
+  therapyType: string;
+  sessionsCount: number;
+  amount: number;
+}): Promise<BuySessionsState> {
+  const payment = await prisma.payment.create({
+    data: { ...input, currency: CURRENCY, provider: ORANGE_MONEY_PROVIDER, status: "pending" },
+    select: { id: true },
+  });
+  const orderId = orangeOrderId(payment.id);
+  const back = `${APP_URL}/api/payments/orange-money/retour?p=${payment.id}`;
+
+  let paymentUrl: string;
+  try {
+    const created = await createWebPayment({
+      orderId,
+      amount: input.amount,
+      returnUrl: back,
+      cancelUrl: `${back}&annule=1`,
+      notifUrl: `${APP_URL}/api/payments/orange-money/notification`,
+    });
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { providerRef: created.payToken, providerOrderId: orderId, notifToken: created.notifToken },
+    });
+    paymentUrl = created.paymentUrl;
+  } catch (err) {
+    await prisma.payment.update({ where: { id: payment.id }, data: { status: "failed" } });
+    console.error("[orange_money] création du paiement échouée:", err instanceof Error ? err.message : err);
+    return { error: "Impossible de joindre Orange Money pour le moment. Réessayez dans quelques minutes." };
+  }
+  redirect(paymentUrl);
 }
 
 export type DeclareManualPaymentState = {

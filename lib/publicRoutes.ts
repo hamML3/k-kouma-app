@@ -22,6 +22,9 @@ const PUBLIC_PREFIXES = [
   "/api/therapists",
   "/api/platform-banner",
   "/api/payments/paydunya/webhook",
+  // Notification et retour du paiement Orange Money : l'état est toujours
+  // vérifié auprès d'Orange, jamais déduit de la requête.
+  "/api/payments/orange-money",
   // Protégée par le secret que Telegram joint à chaque appel.
   "/api/telegram/webhook",
   // Protégée par CRON_SECRET, le cron n'a pas de session.

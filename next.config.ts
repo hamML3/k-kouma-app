@@ -4,7 +4,7 @@ const BLOCKING_CSP = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'
 
 // Politique complète en observation seulement : à passer dans BLOCKING_CSP une
 // fois vérifié sur le serveur de test qu'elle ne remonte aucune violation
-// (appels vidéo et paiement PayDunya compris), voir docs/exploitation.md.
+// (appels vidéo, paiements PayDunya et Orange Money compris), voir docs/exploitation.md.
 const REPORT_ONLY_CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -13,7 +13,7 @@ const REPORT_ONLY_CSP = [
   "font-src 'self' data:",
   "connect-src 'self' https://*.sentry.io",
   "media-src 'self' blob: mediastream:",
-  "form-action 'self' https://app.paydunya.com https://paydunya.com",
+  "form-action 'self' https://app.paydunya.com https://paydunya.com https://*.orange-money.com",
 ].join("; ");
 
 const nextConfig: NextConfig = {

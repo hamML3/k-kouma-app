@@ -9,13 +9,14 @@ import { chooseTherapyTypeAction } from "@/lib/actions/payments";
 import { getPlatformSettings } from "@/lib/platformSettings";
 import { isPaydunyaConfigured } from "@/lib/paydunya";
 import { getOrangeMoneyConfig } from "@/lib/orangeMoney";
+import { isOrangeWebpayConfigured, isOrangeWebpaySandbox } from "@/lib/orangeMoneyWebpay";
 
 export const metadata = { title: "Mes séances — K-Kouma" };
 
 export default async function SubscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; canceled?: string; error?: string; type?: string }>;
+  searchParams: Promise<{ paid?: string; canceled?: string; error?: string; type?: string; om?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -63,7 +64,10 @@ export default async function SubscriptionPage({
   ];
   const pricing = SESSION_PRICING[therapyType];
   const credits = profile?.sessionCredits ?? 0;
-  const paymentAvailable = isPaydunyaConfigured();
+  // Paiement en ligne : l'API Orange Money si elle est configurée, sinon PayDunya.
+  const orangeOnline = isOrangeWebpayConfigured();
+  const orangeSandbox = orangeOnline && isOrangeWebpaySandbox();
+  const paymentAvailable = orangeOnline || isPaydunyaConfigured();
   const orangeMoney = await getOrangeMoneyConfig();
   const manualOrangeMoneyEnabled = orangeMoney.enabled;
   const pendingManualCount = payments.filter(
@@ -92,6 +96,18 @@ export default async function SubscriptionPage({
         {params.paid === "1" && (
           <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-green-light)", color: "var(--kk-green-text)" }}>
             Paiement en cours de confirmation — vos séances seront créditées dans quelques instants.
+          </div>
+        )}
+        {params.om === "attente" && (
+          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
+            Votre paiement Orange Money est en cours de traitement. Vos séances seront créditées dès qu&apos;Orange
+            l&apos;aura confirmé, et vous recevrez une notification.
+          </div>
+        )}
+        {params.om === "echec" && (
+          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "#FFF1F0", color: "#C0392B" }}>
+            Le paiement Orange Money n&apos;a pas abouti et aucune séance n&apos;a été ajoutée. Vous pouvez réessayer
+            ci-dessous.
           </div>
         )}
         {params.canceled === "1" && (
@@ -191,7 +207,9 @@ export default async function SubscriptionPage({
             Chaque séance dure 1 heure, en vidéo, en audio ou par messagerie.
           </p>
           <p className="text-sm" style={{ color: "var(--kk-muted)" }}>
-            {paymentAvailable
+            {orangeOnline
+              ? "Paiement sécurisé par Orange Money : vous validez sur la page d'Orange avec votre numéro et un code reçu par SMS."
+              : paymentAvailable
               ? "Paiement par Mobile Money (Orange Money, Wave) via PayDunya."
               : manualOrangeMoneyEnabled
               ? "Paiement par Orange Money, vérifié manuellement par notre équipe."
@@ -251,6 +269,15 @@ export default async function SubscriptionPage({
           </div>
         )}
 
+        {orangeSandbox && (
+          <p
+            className="text-xs font-semibold rounded-xl px-3 py-2 mb-4"
+            style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}
+          >
+            Mode test Orange Money (bac à sable) : aucun argent réel n&apos;est débité.
+          </p>
+        )}
+
         {paymentAvailable && (
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <div className="rounded-2xl p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(60,70,55,0.1)]" style={{ background: "#fff", border: "1.5px solid var(--kk-border)" }}>
@@ -307,6 +334,8 @@ export default async function SubscriptionPage({
                     ? { ...PAYMENT_STATUS_LABELS.pending, label: "Vérification en cours" }
                     : p.provider === "orange_money_manual" && p.status === "failed"
                     ? { ...PAYMENT_STATUS_LABELS.failed, label: "Non validé" }
+                    : p.provider === "orange_money" && p.status === "pending"
+                    ? { ...PAYMENT_STATUS_LABELS.pending, label: "En cours chez Orange" }
                     : PAYMENT_STATUS_LABELS[p.status] ?? PAYMENT_STATUS_LABELS.pending;
                 return (
                   <div

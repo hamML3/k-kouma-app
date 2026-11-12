@@ -7,6 +7,7 @@ import { sendInvoiceEmail } from "@/lib/email";
 const PROVIDER_LABELS: Record<string, string> = {
   paydunya: "PayDunya",
   orange_money_manual: "Orange Money",
+  orange_money: "Orange Money",
 };
 
 const THERAPY_LABELS: Record<string, string> = {
@@ -37,6 +38,7 @@ type InvoicePayment = {
   createdAt: Date;
   provider: string;
   providerRef: string | null;
+  providerTxnId?: string | null;
   therapyType: string;
   sessionsCount: number;
   amount: { toString(): string } | number;
@@ -51,7 +53,8 @@ export function invoiceView(payment: InvoicePayment, taxNote: string | null): In
     number: formatInvoiceNumber(payment.invoiceNumber, paidAt),
     date: paidAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Bamako" }),
     provider: PROVIDER_LABELS[payment.provider] ?? payment.provider,
-    reference: payment.providerRef,
+    // Paiement par l'API : le numéro de transaction Orange, pas le jeton technique.
+    reference: payment.provider === "orange_money" ? (payment.providerTxnId ?? null) : payment.providerRef,
     designation: `${THERAPY_LABELS[payment.therapyType] ?? "Séance"}, ${
       payment.sessionsCount === 1 ? "1 séance" : `pack de ${payment.sessionsCount} séances`
     }`,
