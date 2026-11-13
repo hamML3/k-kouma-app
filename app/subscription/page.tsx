@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
-import { BuyButton, ManualPaymentForm } from "./_client";
+import { BuyButton, ManualPaymentForm, PaymentStatusBanner } from "./_client";
 import { SESSION_PRICING, isTherapyType, resolveTherapyType, type TherapyType } from "@/lib/pricing";
 import { chooseTherapyTypeAction } from "@/lib/actions/payments";
 import { getPlatformSettings } from "@/lib/platformSettings";
@@ -16,7 +16,7 @@ export const metadata = { title: "Mes séances — K-Kouma" };
 export default async function SubscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; canceled?: string; error?: string; type?: string; om?: string }>;
+  searchParams: Promise<{ paid?: string; canceled?: string; error?: string; type?: string; paiement?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -39,6 +39,13 @@ export default async function SubscriptionPage({
       where: { patientId: userId, status: { not: "canceled" } },
     }),
   ]);
+
+  // Retour de la page Orange Money : l'état vient de la base, jamais de l'URL.
+  const returnedId = Number(params.paiement);
+  const returnedPayment =
+    Number.isInteger(returnedId) && returnedId > 0
+      ? await prisma.payment.findFirst({ where: { id: returnedId, patientId: userId }, select: { id: true, status: true, sessionsCount: true } })
+      : null;
 
   const totalSpent = payments
     .filter((p) => p.status === "completed")
@@ -98,22 +105,13 @@ export default async function SubscriptionPage({
             Paiement en cours de confirmation — vos séances seront créditées dans quelques instants.
           </div>
         )}
-        {params.om === "attente" && (
-          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-gold-light)", color: "var(--kk-gold-text)" }}>
-            Votre paiement Orange Money est en cours de traitement. Vos séances seront créditées dès qu&apos;Orange
-            l&apos;aura confirmé, et vous recevrez une notification.
-          </div>
-        )}
-        {params.om === "echec" && (
-          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "#FFF1F0", color: "#C0392B" }}>
-            Le paiement Orange Money n&apos;a pas abouti et aucune séance n&apos;a été ajoutée. Vous pouvez réessayer
-            ci-dessous.
-          </div>
-        )}
-        {params.canceled === "1" && (
-          <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "var(--kk-border)", color: "var(--kk-mid)" }}>
-            Paiement annulé — aucune séance n&apos;a été débitée.
-          </div>
+        {returnedPayment && (
+          <PaymentStatusBanner
+            key={returnedPayment.id}
+            paymentId={returnedPayment.id}
+            initialStatus={returnedPayment.status}
+            sessionsCount={returnedPayment.sessionsCount}
+          />
         )}
         {params.error === "credit" && (
           <div className="rounded-2xl p-4 mb-6 text-sm" style={{ background: "#FFF1F0", color: "#C0392B" }}>

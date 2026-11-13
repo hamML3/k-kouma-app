@@ -1,6 +1,7 @@
 'use client'
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { buySessionsAction, declareManualPaymentAction } from "@/lib/actions/payments";
 
 export function BuyButton({
@@ -265,6 +266,116 @@ export function ManualPaymentForm({
           Vos séances sont créditées après vérification par notre équipe.
         </p>
       </form>
+    </div>
+  );
+}
+
+type PaymentStatus = "pending" | "completed" | "failed" | "canceled";
+
+const POLL_MS = 3_000;
+const POLL_FOR_MS = 3 * 60_000;
+
+/**
+ * État d'un paiement au retour de la page Orange Money, suivi en direct tant
+ * qu'il est en attente : dès qu'Orange confirme, le bandeau passe au vert et
+ * la page se recharge (séances disponibles, historique).
+ */
+export function PaymentStatusBanner({
+  paymentId,
+  initialStatus,
+  sessionsCount,
+}: {
+  paymentId: number;
+  initialStatus: PaymentStatus;
+  sessionsCount: number;
+}) {
+  const router = useRouter();
+  const [status, setStatus] = useState<PaymentStatus>(initialStatus);
+  const [gaveUp, setGaveUp] = useState(false);
+
+  useEffect(() => {
+    if (status !== "pending") return;
+    const started = Date.now();
+    let stopped = false;
+    const timer = setInterval(async () => {
+      if (stopped) return;
+      if (Date.now() - started > POLL_FOR_MS) {
+        clearInterval(timer);
+        setGaveUp(true);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/payments/${paymentId}/status`, { cache: "no-store" });
+        if (!res.ok) return;
+        const next = ((await res.json()) as { status: PaymentStatus }).status;
+        if (next !== "pending" && !stopped) {
+          stopped = true;
+          clearInterval(timer);
+          setStatus(next);
+          router.refresh();
+        }
+      } catch {
+        // réseau coupé : nouvel essai au prochain passage
+      }
+    }, POLL_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [status, paymentId, router]);
+
+  const n = sessionsCount;
+  const box = (bg: string, color: string, border: string, children: React.ReactNode) => (
+    <div className="rounded-2xl p-4 mb-6 text-sm" role="status" aria-live="polite" style={{ background: bg, color, border: `1px solid ${border}` }}>
+      {children}
+    </div>
+  );
+
+  if (status === "completed") {
+    return box(
+      "var(--kk-green-light)",
+      "var(--kk-green-text)",
+      "#C2D9BC",
+      <>
+        <p className="font-bold">Paiement reçu ✓</p>
+        <p className="mt-0.5">
+          {n} séance{n > 1 ? "s" : ""} ajoutée{n > 1 ? "s" : ""} à votre compte. Votre facture vous a été envoyée par
+          e-mail. Vous pouvez réserver dès maintenant.
+        </p>
+      </>
+    );
+  }
+  if (status === "failed") {
+    return box(
+      "#FFF1F0",
+      "#C0392B",
+      "#F5C6C0",
+      <p>Le paiement Orange Money n&apos;a pas abouti et aucune séance n&apos;a été ajoutée. Vous pouvez réessayer ci-dessous.</p>
+    );
+  }
+  if (status === "canceled") {
+    return box("var(--kk-border)", "var(--kk-mid)", "var(--kk-border-mid)", <p>Paiement annulé : aucune somme n&apos;a été débitée.</p>);
+  }
+  return box(
+    "var(--kk-gold-light)",
+    "var(--kk-gold-text)",
+    "#E9C98A",
+    <div className="flex items-start gap-3">
+      {!gaveUp && (
+        <span
+          className="kk-spin w-4 h-4 mt-0.5 rounded-full shrink-0"
+          style={{ border: "2px solid currentColor", borderTopColor: "transparent" }}
+          aria-hidden
+        />
+      )}
+      <div>
+        <p className="font-bold">Paiement en cours de confirmation par Orange Money…</p>
+        <p className="mt-0.5">
+          {gaveUp
+            ? "Orange n'a pas encore confirmé. Vos séances seront créditées dès la confirmation, et vous recevrez une notification."
+            : "Cette page se met à jour toute seule, inutile de la recharger."}
+        </p>
+      </div>
     </div>
   );
 }

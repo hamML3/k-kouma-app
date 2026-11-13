@@ -4,6 +4,7 @@ import { signOutAction } from "@/lib/actions/auth";
 import { AppMobileMenu } from "./AppMobileMenu";
 import { AppNavLinks, type NavLink } from "./AppNavLinks";
 import { NotificationBell } from "./NotificationBell";
+import { NotificationToaster } from "./NotificationToaster";
 import { PlatformBanner } from "./PlatformBanner";
 import { getPlatformSettings } from "@/lib/platformSettings";
 import { auth } from "@/auth";
@@ -64,6 +65,7 @@ export async function AppHeader({ role, displayName }: { role: string; displayNa
         announcementText={settings?.announcementText ?? null}
         maintenanceModeEnabled={settings?.maintenanceModeEnabled ?? false}
       />
+      <NotificationToaster />
       <header
         className="sticky top-0 z-20 px-5 pt-4 pb-2"
         style={{

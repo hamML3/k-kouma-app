@@ -247,3 +247,13 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Pop-up des notifications (components/NotificationToaster.tsx) */
+@keyframes kk-toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.kk-toast { animation: kk-toast-in 0.22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .kk-toast { animation: none; }
+}

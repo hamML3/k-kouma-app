@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { scheduleStaffAlert, type StaffAlertFacts } from "@/lib/telegram";
+import { publishNotification } from "@/lib/chatBus";
 
 export type NotificationContent = {
   type: string;
@@ -39,7 +40,7 @@ export async function createNotification(
       });
       if (unread) return;
     }
-    await prisma.notification.create({
+    const created = await prisma.notification.create({
       data: {
         userId: params.userId,
         type: params.type,
@@ -48,23 +49,40 @@ export async function createNotification(
         link,
       },
     });
+    announce(created);
   } catch (err) {
     console.error(`[notification:${params.type}] création échouée:`, err);
+  }
+}
+
+/** Pop-up en direct dans les onglets ouverts du destinataire (components/NotificationToaster.tsx). */
+function announce(n: { id: number; userId: number; title: string; body: string | null; link: string | null; createdAt: Date }) {
+  try {
+    publishNotification(n.userId, { id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt.toISOString() });
+  } catch {
+    // le pop-up est un plus : la notification reste dans la cloche
   }
 }
 
 async function notifyMany(userIds: number[], content: NotificationContent): Promise<void> {
   if (userIds.length === 0) return;
   try {
-    await prisma.notification.createMany({
-      data: userIds.map((userId) => ({
-        userId,
-        type: content.type,
-        title: content.title.slice(0, 200),
-        body: content.body ?? null,
-        link: internalLink(content.link),
-      })),
-    });
+    // Une création par destinataire (et non createMany) pour connaître chaque
+    // id : il sert au pop-up ; l'équipe ne compte que quelques personnes.
+    const created = await prisma.$transaction(
+      userIds.map((userId) =>
+        prisma.notification.create({
+          data: {
+            userId,
+            type: content.type,
+            title: content.title.slice(0, 200),
+            body: content.body ?? null,
+            link: internalLink(content.link),
+          },
+        })
+      )
+    );
+    created.forEach(announce);
   } catch (err) {
     console.error(`[notification:${content.type}] création échouée:`, err);
   }

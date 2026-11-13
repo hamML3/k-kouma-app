@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { AdminNav } from "@/components/AdminNav";
 import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationToaster } from "@/components/NotificationToaster";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 
@@ -44,6 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen" style={{ background: "var(--kk-bg)" }}>
+      <NotificationToaster />
       <AdminNav role={session.user.role} permissions={session.user.permissions} footer={footer} bell={<NotificationBell href="/admin/notifications" />} />
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">{children}</main>
     </div>

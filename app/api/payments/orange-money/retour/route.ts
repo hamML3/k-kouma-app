@@ -3,18 +3,11 @@ import { syncOrangeMoneyPayment, type SyncOutcome } from "@/lib/orangeMoneyPayme
 
 // GET /api/payments/orange-money/retour?p=<id>[&annule=1]
 // return_url et cancel_url du paiement Orange Money : on demande l'état réel
-// à Orange (jamais déduit de l'URL) puis on renvoie le patient sur Mes séances.
-// Sans session requise : la vérification ne fait que constater l'état chez
-// Orange, et la destination est toujours la même page.
-const DESTINATION: Record<SyncOutcome | "error", string> = {
-  completed: "/subscription?paid=1",
-  pending: "/subscription?om=attente",
-  failed: "/subscription?om=echec",
-  canceled: "/subscription?canceled=1",
-  not_found: "/subscription",
-  error: "/subscription?om=attente",
-};
-
+// à Orange (jamais déduit de l'URL) puis on renvoie le patient sur Mes
+// séances, qui affiche cet état et le suit en direct tant qu'il est en
+// attente (PaymentStatusBanner). Sans session requise : la vérification ne
+// fait que constater l'état chez Orange, et la destination est toujours la
+// même page.
 export async function GET(req: NextRequest) {
   const id = Number(req.nextUrl.searchParams.get("p"));
   const canceledByPatient = req.nextUrl.searchParams.get("annule") === "1";
@@ -27,5 +20,6 @@ export async function GET(req: NextRequest) {
       outcome = "error";
     }
   }
-  return NextResponse.redirect(new URL(DESTINATION[outcome], process.env.NEXTAUTH_URL ?? req.nextUrl.origin), 303);
+  const destination = outcome === "not_found" ? "/subscription" : `/subscription?paiement=${id}`;
+  return NextResponse.redirect(new URL(destination, process.env.NEXTAUTH_URL ?? req.nextUrl.origin), 303);
 }

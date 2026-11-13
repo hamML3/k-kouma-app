@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { NOTIFICATION_EVENT } from "./NotificationToaster";
 
 const REFRESH_MS = 60_000;
 
@@ -25,11 +26,15 @@ export function NotificationBellLink({ href, initialCount }: { href: string; ini
         // Réseau coupé : on garde le dernier compteur connu.
       }
     };
+    // Le pop-up (NotificationToaster) signale chaque nouvelle notification.
+    const onNew = (ev: Event) => setCount((c) => c + ((ev as CustomEvent<{ count: number }>).detail?.count ?? 1));
     const timer = setInterval(refresh, REFRESH_MS);
     document.addEventListener("visibilitychange", refresh);
+    window.addEventListener(NOTIFICATION_EVENT, onNew);
     return () => {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener(NOTIFICATION_EVENT, onNew);
     };
   }, []);
 
